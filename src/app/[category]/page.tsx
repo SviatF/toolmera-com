@@ -9,6 +9,13 @@ import { categories, toolsForCategory } from '@/data/tools';
 import { categorySeoContent } from '@/data/seoContent';
 import { freeTitle } from '@/lib/seo';
 
+const calculatorGroups = [
+  { title: 'Finance & Growth', description: 'Loans, returns and interest calculations.', ids: ['loan','roi','simple-interest','compound','cagr'] },
+  { title: 'Everyday Math & Shopping', description: 'Percentages, discounts and statistical averages.', ids: ['percentage','discount','average'] },
+  { title: 'Date & Time', description: 'Calendar age and elapsed date calculations.', ids: ['age','date-difference'] },
+  { title: 'Health', description: 'General health screening calculations.', ids: ['bmi'] },
+];
+
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
   const {category}=await params;const cat=categories.find(c=>c.slug===category);if(!cat)return{};
@@ -34,10 +41,22 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
 
-    <section className="shell section categoryToolSection">
-      <div className="sectionHead"><div><span className="sectionKicker">TOOLS</span><h2>Choose a tool</h2><p>Each page is built around one clear task.</p></div></div>
-      <div className="toolGrid">{list.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
-    </section>
+    {category==='calculators'
+      ? <section className="shell section categoryToolSection calculatorGroups">
+          <div className="sectionHead"><div><span className="sectionKicker">GLOBAL CALCULATORS</span><h2>Choose by task</h2><p>Universal calculators grouped by what you are trying to solve.</p></div></div>
+          {calculatorGroups.map(group=>{
+            const groupTools=list.filter(t=>group.ids.includes(t.id));
+            if(!groupTools.length)return null;
+            return <div className="calculatorGroup" key={group.title}>
+              <div className="calculatorGroupHead"><h3>{group.title}</h3><p>{group.description}</p></div>
+              <div className="toolGrid">{groupTools.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
+            </div>
+          })}
+        </section>
+      : <section className="shell section categoryToolSection">
+          <div className="sectionHead"><div><span className="sectionKicker">TOOLS</span><h2>Choose a tool</h2><p>Each page is built around one clear task.</p></div></div>
+          <div className="toolGrid">{list.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
+        </section>}
 
     {seo?.sections?.length&&<section className="shell categoryGuide">
       {seo.sections.map(section=><article className="seoArticle" key={section.title}>
