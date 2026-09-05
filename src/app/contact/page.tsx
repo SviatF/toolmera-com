@@ -1,0 +1,3 @@
+import type { Metadata } from 'next';import { InfoPage } from '@/components/InfoPage';
+export const metadata:Metadata={title:'Contact',description:'Contact Toolmera.'};
+export default function Page(){return <InfoPage eyebrow="CONTACT" title="Talk to Toolmera." intro="Found a bug, have a tool request or want to discuss the product?"><h2>Product feedback</h2><p>For tool requests, bug reports, privacy questions or partnership enquiries, email <a className="inlineTextLink" href="mailto:hello@toolmera.com">hello@toolmera.com</a>.</p><h2>Useful details</h2><p>When reporting a problem, include the tool URL, browser, device and a short description of what happened. Do not send sensitive files unless specifically requested.</p></InfoPage>}
