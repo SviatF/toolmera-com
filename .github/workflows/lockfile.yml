@@ -1,0 +1,22 @@
+name: Lockfile
+on:
+  push:
+    paths:
+      - '.github/workflows/lockfile.yml'
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --package-lock-only --ignore-scripts
+      - name: Dependency audit
+        run: npm audit --omit=dev || true
+      - name: Emit lockfile
+        run: |
+          echo "LOCKFILE_BEGIN"
+          base64 -w0 package-lock.json
+          echo
+          echo "LOCKFILE_END"
