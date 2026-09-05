@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3 } from 'lucide-react';
 import { Header } from '@/components/Header';
@@ -6,9 +7,32 @@ import { ToolSearch } from '@/components/ToolSearch';
 import { ToolCard } from '@/components/ToolCard';
 import { categories, tools, toolUrl } from '@/data/tools';
 
+export const metadata: Metadata = {
+  alternates: { canonical: 'https://toolmera.com/' },
+  openGraph: {
+    title: 'Free Online Tools — Every Tool. One Place.',
+    description: 'Fast, privacy-minded online tools for files, numbers and everyday tasks.',
+    url: 'https://toolmera.com/',
+    siteName: 'Toolmera',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Free Online Tools — Every Tool. One Place.',
+    description: 'Fast, privacy-minded online tools for files, numbers and everyday tasks.',
+  },
+};
+
 const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, generators: QrCode, time: Clock3, text: TextCursorInput, developer: Code2 };
 
 export default function Home() {
+  const websiteSchema = {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    name:"Toolmera",
+    url:"https://toolmera.com/",
+    description:"Free online tools for files, calculators, converters, generators, time and developer tasks."
+  };
   const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
@@ -62,5 +86,5 @@ export default function Home() {
         </div>
       </div>
     </section>
-  </main><Footer/></>;
+  </main><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(websiteSchema)}}/><Footer/></>;
 }
