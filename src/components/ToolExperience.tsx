@@ -1,7 +1,7 @@
 'use client';
 
 import { DragEvent, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Download, FileUp, RefreshCw, ShieldCheck, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Copy, Download, FileUp, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import type { Tool } from '@/data/tools';
 
 type Result = { url: string; name: string; before?: number; after?: number };
@@ -436,13 +436,307 @@ function CompoundInterestCalculator(){
   </div>;
 }
 
-function UnitConverter({temperature=false}:{temperature?:boolean}){const [v,setV]=useState(1);const [from,setFrom]=useState(temperature?'c':'m');const [to,setTo]=useState(temperature?'f':'ft');const units=temperature?['c','f','k']:['m','km','cm','mm','ft','in','mi'];const result=useMemo(()=>{if(temperature){let c=from==='c'?v:from==='f'?(v-32)*5/9:v-273.15;return to==='c'?c:to==='f'?c*9/5+32:c+273.15}const meter:Record<string,number>={m:1,km:1000,cm:.01,mm:.001,ft:.3048,in:.0254,mi:1609.344};return v*meter[from]/meter[to]},[v,from,to,temperature]);return <div className="toolUi"><div className="fieldGrid"><label>Value<input type="number" value={v} onChange={e=>setV(+e.target.value)}/></label><label>From<select value={from} onChange={e=>setFrom(e.target.value)}>{units.map(u=><option key={u}>{u}</option>)}</select></label><label>To<select value={to} onChange={e=>setTo(e.target.value)}>{units.map(u=><option key={u}>{u}</option>)}</select></label></div><MetricCard label="Converted value" value={Number(result.toFixed(6)).toString()}/></div>}
+function UnitConverter({temperature=false}:{temperature?:boolean}){
+  const [v,setV]=useState(1);
+  const [from,setFrom]=useState(temperature?'c':'m');
+  const [to,setTo]=useState(temperature?'f':'ft');
 
-function TextTool({kind}:{kind:Tool['kind']}){const [text,setText]=useState('');const [output,setOutput]=useState('');const stats={words:text.trim()?text.trim().split(/\s+/).length:0,chars:text.length,sentences:text?text.split(/[.!?]+/).filter(Boolean).length:0};function action(type:string){if(kind==='case-converter'){setOutput(type==='upper'?text.toUpperCase():type==='lower'?text.toLowerCase():text.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()))}if(kind==='json-formatter'){try{const obj=JSON.parse(text);setOutput(type==='minify'?JSON.stringify(obj):JSON.stringify(obj,null,2))}catch(e){setOutput(`Invalid JSON: ${(e as Error).message}`)}}if(kind==='base64'){try{setOutput(type==='encode'?btoa(unescape(encodeURIComponent(text))):decodeURIComponent(escape(atob(text))))}catch{setOutput('Invalid Base64 input')}}}
-  return <div className="toolUi"><textarea className="textArea" value={text} onChange={e=>setText(e.target.value)} placeholder="Paste or type here…"/>{kind==='word-counter'?<div className="metricGrid"><MetricCard label="Words" value={stats.words}/><MetricCard label="Characters" value={stats.chars}/><MetricCard label="Sentences" value={stats.sentences}/><MetricCard label="Reading time" value={Math.max(1,Math.ceil(stats.words/220))} suffix=" min"/></div>:<><div className="buttonRow">{kind==='case-converter'&&<><button className="secondaryButton" onClick={()=>action('upper')}>UPPERCASE</button><button className="secondaryButton" onClick={()=>action('lower')}>lowercase</button><button className="secondaryButton" onClick={()=>action('title')}>Title Case</button></>}{kind==='json-formatter'&&<><button className="primaryButton" onClick={()=>action('format')}>Format JSON</button><button className="secondaryButton" onClick={()=>action('minify')}>Minify</button></>}{kind==='base64'&&<><button className="primaryButton" onClick={()=>action('encode')}>Encode</button><button className="secondaryButton" onClick={()=>action('decode')}>Decode</button></>}</div><textarea className="textArea output" readOnly value={output} placeholder="Result…"/></>}</div>}
+  const lengthUnits=[
+    {id:'m',label:'Meter (m)',factor:1},
+    {id:'km',label:'Kilometer (km)',factor:1000},
+    {id:'cm',label:'Centimeter (cm)',factor:.01},
+    {id:'mm',label:'Millimeter (mm)',factor:.001},
+    {id:'ft',label:'Foot (ft)',factor:.3048},
+    {id:'in',label:'Inch (in)',factor:.0254},
+    {id:'yd',label:'Yard (yd)',factor:.9144},
+    {id:'mi',label:'Mile (mi)',factor:1609.344},
+  ];
+  const tempUnits=[
+    {id:'c',label:'Celsius (°C)'},
+    {id:'f',label:'Fahrenheit (°F)'},
+    {id:'k',label:'Kelvin (K)'},
+  ];
+  const units=temperature?tempUnits:lengthUnits;
+
+  const calculation=useMemo(()=>{
+    if(temperature){
+      const celsius=from==='c'?v:from==='f'?(v-32)*5/9:v-273.15;
+      if(celsius < -273.15-1e-10) return {invalid:true,value:0};
+      const result=to==='c'?celsius:to==='f'?celsius*9/5+32:celsius+273.15;
+      return {invalid:false,value:result};
+    }
+    const meter=Object.fromEntries(lengthUnits.map(u=>[u.id,u.factor])) as Record<string,number>;
+    return {invalid:false,value:v*meter[from]/meter[to]};
+  },[v,from,to,temperature]);
+
+  const quickLength=[
+    {label:'in → cm',from:'in',to:'cm'},
+    {label:'ft → m',from:'ft',to:'m'},
+    {label:'mi → km',from:'mi',to:'km'},
+    {label:'yd → m',from:'yd',to:'m'},
+  ];
+  const quickTemp=[
+    {label:'Freezing',value:0,from:'c',to:'f'},
+    {label:'Body 37°C',value:37,from:'c',to:'f'},
+    {label:'Boiling',value:100,from:'c',to:'f'},
+    {label:'−40°',value:-40,from:'c',to:'f'},
+  ];
+
+  return <div className="toolUi">
+    <div className="fieldGrid">
+      <label>Value<input type="number" value={v} onChange={e=>setV(+e.target.value)}/></label>
+      <label>From<select value={from} onChange={e=>setFrom(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+      <label>To<select value={to} onChange={e=>setTo(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+    </div>
+
+    <div className="quickPills">
+      {(temperature?quickTemp:quickLength).map(item=><button key={item.label} onClick={()=>{
+        if(temperature && 'value' in item)setV(item.value);
+        setFrom(item.from);setTo(item.to);
+      }}>{item.label}</button>)}
+    </div>
+
+    {calculation.invalid
+      ? <div className="toolError">That value is below absolute zero. Physical temperatures cannot be lower than 0 K (−273.15 °C / −459.67 °F).</div>
+      : <MetricCard label="Converted value" value={Number(calculation.value.toFixed(6)).toString()}/>
+    }
+  </div>;
+}
+
+function countWords(text:string){
+  if(!text.trim())return 0;
+  const Segmenter=(Intl as typeof Intl & {Segmenter?:new(...args:any[])=>any}).Segmenter;
+  if(Segmenter){
+    const segmenter=new Segmenter(undefined,{granularity:'word'});
+    return Array.from(segmenter.segment(text)).filter((s:any)=>s.isWordLike).length;
+  }
+  return text.trim().split(/\s+/).length;
+}
+
+function countSentences(text:string){
+  if(!text.trim())return 0;
+  const Segmenter=(Intl as typeof Intl & {Segmenter?:new(...args:any[])=>any}).Segmenter;
+  if(Segmenter){
+    const segmenter=new Segmenter(undefined,{granularity:'sentence'});
+    return Array.from(segmenter.segment(text)).filter((s:any)=>s.segment.trim()).length;
+  }
+  return text.split(/[.!?]+/).filter(s=>s.trim()).length;
+}
+
+function WordCounter(){
+  const [text,setText]=useState('');
+  const words=useMemo(()=>countWords(text),[text]);
+  const chars=useMemo(()=>Array.from(text).length,[text]);
+  const charsNoSpaces=useMemo(()=>Array.from(text.replace(/\s/g,'')).length,[text]);
+  const sentences=useMemo(()=>countSentences(text),[text]);
+  const paragraphs=useMemo(()=>text.trim()?text.trim().split(/\n\s*\n+/).filter(p=>p.trim()).length:0,[text]);
+  const reading=words?Math.max(1,Math.ceil(words/220)):0;
+
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={e=>setText(e.target.value)} placeholder="Paste or type here…"/>
+    <div className="metricGrid textMetricGrid">
+      <MetricCard label="Words" value={words}/>
+      <MetricCard label="Characters" value={chars}/>
+      <MetricCard label="No spaces" value={charsNoSpaces}/>
+      <MetricCard label="Sentences" value={sentences}/>
+      <MetricCard label="Paragraphs" value={paragraphs}/>
+      <MetricCard label="Reading time" value={reading} suffix=" min"/>
+    </div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Reading time uses an estimated 220 words per minute. Sentence and word segmentation use the browser&apos;s language-aware segmenter when available.</span></div>
+  </div>;
+}
+
+function normalizeCaseWords(text:string){
+  return text
+    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+    .trim()
+    .split(/[\s_-]+/)
+    .map(w=>w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,''))
+    .filter(Boolean);
+}
+
+function simpleTitleCase(text:string){
+  return text.toLocaleLowerCase().replace(/\b(\p{L})/gu,(m)=>m.toLocaleUpperCase());
+}
+
+function sentenceCase(text:string){
+  const lower=text.toLocaleLowerCase();
+  return lower.replace(/(^|[.!?]\s+)(\p{L})/gu,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase());
+}
+
+function CaseConverter(){
+  const [text,setText]=useState('');
+  const [output,setOutput]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  function action(type:string){
+    const words=normalizeCaseWords(text);
+    if(type==='upper')setOutput(text.toLocaleUpperCase());
+    if(type==='lower')setOutput(text.toLocaleLowerCase());
+    if(type==='title')setOutput(simpleTitleCase(text));
+    if(type==='sentence')setOutput(sentenceCase(text));
+    if(type==='camel')setOutput(words.map((w,i)=>i===0?w.toLocaleLowerCase():w.charAt(0).toLocaleUpperCase()+w.slice(1).toLocaleLowerCase()).join(''));
+    if(type==='pascal')setOutput(words.map(w=>w.charAt(0).toLocaleUpperCase()+w.slice(1).toLocaleLowerCase()).join(''));
+    if(type==='snake')setOutput(words.map(w=>w.toLocaleLowerCase()).join('_'));
+    if(type==='kebab')setOutput(words.map(w=>w.toLocaleLowerCase()).join('-'));
+    if(type==='constant')setOutput(words.map(w=>w.toLocaleUpperCase()).join('_'));
+    setCopied(false);
+  }
+
+  async function copy(){
+    if(!output)return;
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    window.setTimeout(()=>setCopied(false),1400);
+  }
+
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={e=>setText(e.target.value)} placeholder="Paste or type here…"/>
+    <div className="buttonRow caseButtons">
+      <button className="secondaryButton" onClick={()=>action('upper')}>UPPERCASE</button>
+      <button className="secondaryButton" onClick={()=>action('lower')}>lowercase</button>
+      <button className="secondaryButton" onClick={()=>action('title')}>Simple Title Case</button>
+      <button className="secondaryButton" onClick={()=>action('sentence')}>Sentence case</button>
+      <button className="secondaryButton" onClick={()=>action('camel')}>camelCase</button>
+      <button className="secondaryButton" onClick={()=>action('pascal')}>PascalCase</button>
+      <button className="secondaryButton" onClick={()=>action('snake')}>snake_case</button>
+      <button className="secondaryButton" onClick={()=>action('kebab')}>kebab-case</button>
+      <button className="secondaryButton" onClick={()=>action('constant')}>CONSTANT_CASE</button>
+    </div>
+    <div className="outputWrap">
+      <textarea className="textArea output" readOnly value={output} placeholder="Result…"/>
+      <button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button>
+    </div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>“Simple Title Case” capitalizes every word. It does not apply AP, Chicago, APA or other editorial minor-word rules.</span></div>
+  </div>;
+}
+
+function jsonErrorDetail(message:string,input:string){
+  const match=message.match(/position\s+(\d+)/i);
+  if(!match)return message;
+  const pos=Number(match[1]);
+  const before=input.slice(0,pos);
+  const line=before.split('\n').length;
+  const col=before.length-before.lastIndexOf('\n');
+  return \`\${message} · line \${line}, column \${col}\`;
+}
+
+function JsonFormatter(){
+  const [text,setText]=useState('');
+  const [output,setOutput]=useState('');
+  const [indent,setIndent]=useState<'2'|'4'|'tab'>('2');
+  const [status,setStatus]=useState<'idle'|'valid'|'invalid'>('idle');
+  const [copied,setCopied]=useState(false);
+
+  function run(minify=false){
+    try{
+      const obj=JSON.parse(text);
+      const spacing=minify?undefined:indent==='tab'?'\t':Number(indent);
+      setOutput(JSON.stringify(obj,null,spacing));
+      setStatus('valid');
+    }catch(e){
+      setOutput(\`Invalid JSON: \${jsonErrorDetail((e as Error).message,text)}\`);
+      setStatus('invalid');
+    }
+    setCopied(false);
+  }
+
+  async function copy(){
+    if(!output)return;
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    window.setTimeout(()=>setCopied(false),1400);
+  }
+
+  return <div className="toolUi">
+    <textarea className="textArea codeArea" value={text} onChange={e=>{setText(e.target.value);setStatus('idle')}} placeholder={'{"name":"Toolmera","fast":true}'}/>
+    <div className="jsonControls">
+      <div className="buttonRow">
+        <button className="primaryButton" onClick={()=>run(false)}>Format JSON</button>
+        <button className="secondaryButton" onClick={()=>run(true)}>Minify</button>
+      </div>
+      <label>Indentation<select value={indent} onChange={e=>setIndent(e.target.value as '2'|'4'|'tab')}><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></label>
+    </div>
+    {status!=='idle'&&<div className={\`validationPill \${status}\`}>{status==='valid'?'Valid JSON':'Invalid JSON'}</div>}
+    <div className="outputWrap">
+      <textarea className="textArea output codeArea" readOnly value={output} placeholder="Formatted or minified JSON appears here…"/>
+      <button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button>
+    </div>
+  </div>;
+}
+
+function bytesToBase64(bytes:Uint8Array){
+  let binary='';
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(binary);
+}
+
+function base64ToBytes(value:string){
+  const normalized=value.replace(/\s+/g,'');
+  const binary=atob(normalized);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+
+function Base64Tool(){
+  const [text,setText]=useState('');
+  const [output,setOutput]=useState('');
+  const [mode,setMode]=useState<'standard'|'url'>('standard');
+  const [error,setError]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  function encode(){
+    try{
+      let encoded=bytesToBase64(new TextEncoder().encode(text));
+      if(mode==='url')encoded=encoded.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      setOutput(encoded);setError('');
+    }catch{setError('Could not encode this text.');setOutput('')}
+    setCopied(false);
+  }
+
+  function decode(){
+    try{
+      let input=text.trim();
+      if(mode==='url'){
+        input=input.replace(/-/g,'+').replace(/_/g,'/');
+        input+='='.repeat((4-input.length%4)%4);
+      }
+      const decoded=new TextDecoder('utf-8',{fatal:true}).decode(base64ToBytes(input));
+      setOutput(decoded);setError('');
+    }catch{setError('Invalid Base64 or the decoded bytes are not valid UTF-8 text.');setOutput('')}
+    setCopied(false);
+  }
+
+  async function copy(){
+    if(!output)return;
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    window.setTimeout(()=>setCopied(false),1400);
+  }
+
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs">
+      <button className={mode==='standard'?'active':''} onClick={()=>setMode('standard')}>Standard Base64</button>
+      <button className={mode==='url'?'active':''} onClick={()=>setMode('url')}>Base64URL</button>
+    </div>
+    <textarea className="textArea codeArea" value={text} onChange={e=>setText(e.target.value)} placeholder="Enter text or Base64…"/>
+    <div className="buttonRow">
+      <button className="primaryButton" onClick={encode}>Encode</button>
+      <button className="secondaryButton" onClick={decode}>Decode</button>
+    </div>
+    {error&&<div className="toolError">{error}</div>}
+    <div className="outputWrap">
+      <textarea className="textArea output codeArea" readOnly value={output} placeholder="Result…"/>
+      <button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button>
+    </div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Base64 is an encoding format, not encryption. Do not use it by itself to protect secrets or passwords.</span></div>
+  </div>;
+}
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else ui=<TextTool kind={tool.kind}/>;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><h2>{tool.name}</h2></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
