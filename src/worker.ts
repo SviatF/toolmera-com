@@ -218,23 +218,28 @@ async function ga4RunReport(
   metrics:string[],
   limit=100,
 ){
-  const response=await fetch(
-    `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-    {
-      method:'POST',
-      headers:{
-        authorization:`Bearer ${token}`,
-        'content-type':'application/json',
+  let response:Response;
+  try{
+    response=await fetch(
+      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+      {
+        method:'POST',
+        headers:{
+          authorization:`Bearer ${token}`,
+          'content-type':'application/json',
+        },
+        body:JSON.stringify({
+          dateRanges:[{startDate,endDate}],
+          dimensions:dimensions.map(name=>({name})),
+          metrics:metrics.map(name=>({name})),
+          limit,
+          keepEmptyRows:false,
+        }),
       },
-      body:JSON.stringify({
-        dateRanges:[{startDate,endDate}],
-        dimensions:dimensions.map(name=>({name})),
-        metrics:metrics.map(name=>({name})),
-        limit,
-        keepEmptyRows:false,
-      }),
-    },
-  );
+    );
+  }catch(error){
+    throw new Error(`GA4 network request failed for [${dimensions.join(',')||'summary'}]: ${error instanceof Error?error.message:'unknown fetch error'}`);
+  }
 
   if(!response.ok){
     const detail=await response.text();
@@ -284,27 +289,32 @@ async function handleGa4(request:Request,env:Env){
   const token=await googleAccessToken(env,['https://www.googleapis.com/auth/analytics.readonly']);
   const propertyId=env.GA4_PROPERTY_ID;
 
-  const [
-    summaryReport,
-    previousReport,
-    landingReport,
-    countryReport,
-    eventReport,
-    trendReport,
-  ]=await Promise.all([
-    ga4RunReport(token,propertyId,window.startDate,window.endDate,[],
-      ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1),
-    ga4RunReport(token,propertyId,window.previousStartDate,window.previousEndDate,[],
-      ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1),
-    ga4RunReport(token,propertyId,window.startDate,window.endDate,['landingPagePlusQueryString'],
-      ['sessions','totalUsers','screenPageViews','engagementRate'],100),
-    ga4RunReport(token,propertyId,window.startDate,window.endDate,['country'],
-      ['totalUsers','sessions','screenPageViews'],100),
-    ga4RunReport(token,propertyId,window.startDate,window.endDate,['eventName'],
-      ['eventCount','totalUsers'],100),
-    ga4RunReport(token,propertyId,window.startDate,window.endDate,['date'],
-      ['totalUsers','sessions','screenPageViews'],100),
-  ]);
+  // Keep GA4 requests sequential. Cloudflare Workers limit simultaneous
+  // outgoing connections, and sequential reads make runtime behavior deterministic.
+  const summaryReport=await ga4RunReport(
+    token,propertyId,window.startDate,window.endDate,[],
+    ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1
+  );
+  const previousReport=await ga4RunReport(
+    token,propertyId,window.previousStartDate,window.previousEndDate,[],
+    ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1
+  );
+  const landingReport=await ga4RunReport(
+    token,propertyId,window.startDate,window.endDate,['landingPagePlusQueryString'],
+    ['sessions','totalUsers','screenPageViews','engagementRate'],100
+  );
+  const countryReport=await ga4RunReport(
+    token,propertyId,window.startDate,window.endDate,['country'],
+    ['totalUsers','sessions','screenPageViews'],100
+  );
+  const eventReport=await ga4RunReport(
+    token,propertyId,window.startDate,window.endDate,['eventName'],
+    ['eventCount','totalUsers'],100
+  );
+  const trendReport=await ga4RunReport(
+    token,propertyId,window.startDate,window.endDate,['date'],
+    ['totalUsers','sessions','screenPageViews'],100
+  );
 
   const current=ga4Summary(summaryReport);
   const previous=ga4Summary(previousReport);
