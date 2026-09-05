@@ -7,13 +7,14 @@ import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
 import { categories, toolsForCategory } from '@/data/tools';
 import { categorySeoContent } from '@/data/seoContent';
+import { freeTitle } from '@/lib/seo';
 
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
   const {category}=await params;const cat=categories.find(c=>c.slug===category);if(!cat)return{};
   const seo=categorySeoContent[category];
   return{
-    title:seo?.title||cat.label,
+    title:freeTitle(seo?.title||cat.label),
     description:seo?.description||`${cat.description} Free, fast and private online tools from Toolmera.`,
     alternates:{canonical:`https://toolmera.com/${category}/`}
   }
