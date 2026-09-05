@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 type View='overview'|'indexing'|'opportunities'|'pages'|'queries'|'countries'|'errors'|'integrations'|'settings';
 type Status='Open'|'In progress'|'Done'|'Ignored';
 
-type IntegrationStatus={configured:boolean;siteUrl?:string|null;propertyId?:string|null};
+type IntegrationStatus={configured:boolean;siteUrl?:string|null;propertyId?:string|null;missing?:string[]};
 type AdminStatus={
   mode:string;
   domain:string;
@@ -48,6 +48,28 @@ type GscData={
   countries:CountryRow[];
   trend:TrendRow[];
   queryPages:QueryPageRow[];
+  fetchedAt:string;
+};
+
+type Ga4Data={
+  connected:true;
+  source:string;
+  propertyId:string;
+  range:string;
+  window:{startDate:string;endDate:string;previousStartDate:string;previousEndDate:string};
+  summary:{
+    users:number;
+    sessions:number;
+    pageViews:number;
+    engagedSessions:number;
+    engagementRate:number;
+    averageSessionDuration:number;
+    changes:{users:number;sessions:number;pageViews:number;engagementRate:number};
+  };
+  landingPages:{page:string;sessions:number;users:number;pageViews:number;engagementRate:number}[];
+  countries:{country:string;users:number;sessions:number;pageViews:number}[];
+  events:{event:string;count:number;users:number}[];
+  trend:{date:string;users:number;sessions:number;pageViews:number}[];
   fetchedAt:string;
 };
 
@@ -142,8 +164,10 @@ export function AdminDashboard(){
   const [range,setRange]=useState('28d');
   const [status,setStatus]=useState<AdminStatus|null>(null);
   const [gsc,setGsc]=useState<GscData|null>(null);
+  const [ga4,setGa4]=useState<Ga4Data|null>(null);
   const [loading,setLoading]=useState(true);
   const [gscLoading,setGscLoading]=useState(false);
+  const [ga4Loading,setGa4Loading]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState('');
   const [selected,setSelected]=useState<Opportunity|null>(null);
@@ -185,17 +209,36 @@ export function AdminDashboard(){
     }finally{setGscLoading(false)}
   },[range]);
 
+  const loadGa4=useCallback(async(nextRange=range)=>{
+    setGa4Loading(true);
+    try{
+      const response=await fetch('/api/admin/ga4?range='+encodeURIComponent(nextRange),{cache:'no-store'});
+      if(response.status===503){setGa4(null);return}
+      const data=await response.json() as Ga4Data|{detail?:string;message?:string};
+      if(!response.ok)throw new Error('detail' in data&&data.detail?data.detail:'Could not load Google Analytics data.');
+      setGa4(data as Ga4Data);setError('');
+    }catch(e){
+      setGa4(null);setError(e instanceof Error?e.message:'Could not load Google Analytics data.');
+    }finally{setGa4Loading(false)}
+  },[range]);
+
   useEffect(()=>{
     (async()=>{
       const s=await loadStatus();
-      if(s?.integrations.gsc.configured)await loadGsc(range);
+      const jobs:Promise<unknown>[]=[];
+      if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
+      if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
+      await Promise.all(jobs);
     })();
-  },[loadStatus,loadGsc,range]);
+  },[loadStatus,loadGsc,loadGa4,range]);
 
   const refresh=async()=>{
     setError('');
     const s=await loadStatus();
-    if(s?.integrations.gsc.configured)await loadGsc(range);
+    const jobs:Promise<unknown>[]=[];
+    if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
+    if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
+    await Promise.all(jobs);
   };
 
   const opportunities=useMemo(()=>gsc?.queryPages.map(opportunityFor).filter(Boolean).sort((a,b)=>(b?.score||0)-(a?.score||0)).slice(0,50) as Opportunity[]||[],[gsc]);
@@ -206,6 +249,7 @@ export function AdminDashboard(){
   const sourceState=(key:keyof AdminStatus['integrations'])=>{
     const configured=status?.integrations[key]?.configured;
     if(key==='gsc'&&gsc)return <Pill tone="green">Live</Pill>;
+    if(key==='ga4'&&ga4)return <Pill tone="green">Live</Pill>;
     return configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>;
   };
 
@@ -230,8 +274,8 @@ export function AdminDashboard(){
         <div><span className="adminKicker">TOOLMERA.COM</span><h1>{nav.find(n=>n.id===view)?.label}</h1></div>
         <div className="adminTopActions">
           <div className={gsc?'adminSourceStatus live':'adminSourceStatus'}><span></span>{gsc?'GSC live':status?.integrations.gsc.configured?'GSC configured':'Waiting for GSC'}</div>
-          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
-          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||loading}><RefreshCw size={14} className={gscLoading?'spinIcon':''}/> Refresh</button>
+          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
+          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading)?'spinIcon':''}/> Refresh</button>
           <a href="https://toolmera.com/" target="_blank" rel="noreferrer">Open site <ExternalLink size={14}/></a>
         </div>
       </header>
@@ -244,8 +288,8 @@ export function AdminDashboard(){
           <Metric label="Impressions" value={summary?number(summary.impressions):'—'} change={summary?.changes.impressions} icon={BarChart3}/>
           <Metric label="CTR" value={summary?pct(summary.ctr):'—'} change={summary?.changes.ctr} icon={Gauge}/>
           <Metric label="Avg position" value={summary?pos(summary.position):'—'} icon={TrendingUp} sub={gsc?'Final GSC data':'Connect Search Console'}/>
-          <Metric label="Organic users" value="—" icon={UsersRound} sub="Connect GA4"/>
-          <Metric label="Sessions" value="—" icon={Activity} sub="Connect GA4"/>
+          <Metric label="Users" value={ga4?number(ga4.summary.users):'—'} change={ga4?.summary.changes.users} icon={UsersRound} sub={status?.integrations.ga4.configured?'Waiting for GA4 data':'Connect GA4'}/>
+          <Metric label="Sessions" value={ga4?number(ga4.summary.sessions):'—'} change={ga4?.summary.changes.sessions} icon={Activity} sub={status?.integrations.ga4.configured?'Waiting for GA4 data':'Connect GA4'}/>
           <Metric label="Sitemap URLs" value={status?.sitemapUrls!=null?number(status.sitemapUrls):'—'} icon={FileSearch} sub="Live sitemap count"/>
           <Metric label="Indexed URLs" value="—" icon={Link2} sub="URL Inspection integration"/>
         </section>
@@ -260,6 +304,21 @@ export function AdminDashboard(){
             <div className="adminPanelHead"><div><span>SOURCES</span><h2>Integration status</h2></div></div>
             <div className="sourceList">{sourceCards.map(([name,,key])=><div key={key}><span>{status?.integrations[key]?.configured?<Cloud size={15}/>:<Unplug size={15}/>} {name}</span>{sourceState(key)}</div>)}</div>
             <button className="adminSecondary" onClick={()=>setView('integrations')}>Configure integrations <ChevronRight size={15}/></button>
+          </div>
+        </section>
+
+        <section className="adminGrid adminGridMain">
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>GOOGLE ANALYTICS 4</span><h2>Traffic & engagement</h2></div>{ga4?<Pill tone="green">Live</Pill>:status?.integrations.ga4.configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>}</div>
+            {ga4?<div className="compactTable">
+              <div><span>Page views</span><strong>{number(ga4.summary.pageViews)}</strong><span>{(ga4.summary.engagementRate*100).toFixed(1)}% engagement</span></div>
+              <div><span>Engaged sessions</span><strong>{number(ga4.summary.engagedSessions)}</strong><span>{Math.round(ga4.summary.averageSessionDuration)}s avg session</span></div>
+              {ga4.events.filter(e=>['tool_action','file_download','copy_result','search_used'].includes(e.event)).slice(0,4).map(e=><div key={e.event}><span>{e.event}</span><strong>{number(e.count)}</strong><span>{number(e.users)} users</span></div>)}
+            </div>:<EmptyState title="Waiting for GA4" body="Once the GA4 Data API is available to the service account, users, sessions, landing pages and Toolmera events appear here automatically."/>}
+          </div>
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>GA4 LANDING PAGES</span><h2>Top user entry pages</h2></div>{ga4?<Pill tone="green">Live</Pill>:<Pill>Pending</Pill>}</div>
+            {ga4&&ga4.landingPages.length?<div className="compactTable">{ga4.landingPages.slice(0,8).map(p=><div key={p.page}><span>{p.page}</span><strong>{number(p.sessions)} sessions</strong><span>{number(p.users)} users</span></div>)}</div>:<EmptyState title="No landing-page data yet" body="This site is new, so the table can remain empty until Analytics has collected traffic."/>}
           </div>
         </section>
 
@@ -303,20 +362,25 @@ export function AdminDashboard(){
       {view==='countries'&&<section className="adminPanel">
         <div className="adminPanelHead"><div><span>GOOGLE SEARCH CONSOLE</span><h2>Countries</h2></div>{gsc?<Pill tone="green">Live</Pill>:<Pill>Not connected</Pill>}</div>
         {gsc&&gsc.countries.length?<div className="countryList">{gsc.countries.map((c,i)=><div key={c.country}><b>{i+1}</b><span><strong>{c.country.toUpperCase()}</strong><small>{number(c.impressions)} impressions</small></span><span>{number(c.clicks)} clicks</span><span>{pct(c.ctr)}</span></div>)}</div>:<EmptyState title="No country data yet" body="Country-level search metrics will come directly from GSC. GA4 user/session geography will be added separately after GA4 is connected."/>}
+      </section>
+      {ga4&&<section className="adminPanel" style={{marginTop:14}}>
+        <div className="adminPanelHead"><div><span>GOOGLE ANALYTICS 4</span><h2>User geography</h2></div><Pill tone="green">Live</Pill></div>
+        {ga4.countries.length?<div className="countryList">{ga4.countries.map((c,i)=><div key={c.country}><b>{i+1}</b><span><strong>{c.country}</strong><small>{number(c.pageViews)} page views</small></span><span>{number(c.users)} users</span><span>{number(c.sessions)} sessions</span></div>)}</div>:<EmptyState title="No GA4 country data yet" body="Analytics has not collected enough traffic for country-level rows yet."/>}
       </section>}
+      </>}
 
       {view==='errors'&&<section className="adminPanel">
         <div className="adminPanelHead"><div><span>INTEGRATION HEALTH</span><h2>Errors & warnings</h2></div></div>
         <div className="errorList">
-          {!status?.integrations.gsc.configured&&<div><Pill tone="amber">Setup</Pill><span><strong>Google Search Console not connected</strong><small>Finish GSC verification and add the Google service-account secrets to Cloudflare.</small></span></div>}
-          {!status?.integrations.ga4.configured&&<div><Pill>Pending</Pill><span><strong>GA4 Data API not connected</strong><small>GTM collection can work while the admin API remains unconnected. GA4 Property ID and API access are still needed.</small></span></div>}
+          {!status?.integrations.gsc.configured&&<div><Pill tone="amber">Setup</Pill><span><strong>Google Search Console not connected</strong><small>Missing runtime configuration: {status?.integrations.gsc.missing?.join(', ')||'Google service-account configuration'}.</small></span></div>}
+          {!status?.integrations.ga4.configured&&<div><Pill>Pending</Pill><span><strong>GA4 Data API not connected</strong><small>Missing runtime configuration: {status?.integrations.ga4.missing?.join(', ')||'GA4 service-account configuration'}.</small></span></div>}
           {!status?.integrations.cloudflare.configured&&<div><Pill>Pending</Pill><span><strong>Cloudflare Analytics API not connected</strong><small>Add a read-only Cloudflare API token and Zone ID later.</small></span></div>}
           {!error&&status?.integrations.gsc.configured&&<div><Pill tone="green">Healthy</Pill><span><strong>Admin API reachable</strong><small>{gsc?'GSC data loaded successfully.':'GSC credentials are present; waiting for data or access.'}</small></span></div>}
           {error&&<div><Pill tone="red">Error</Pill><span><strong>Admin API / source error</strong><small>{error}</small></span></div>}
         </div>
       </section>}
 
-      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?'Requires numeric GA4 Property ID':key==='cloudflare'?'Requires read-only Zone API token':'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
+      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?'Requires read-only Zone API token':'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
 
       {view==='settings'&&<section className="adminGrid adminGridMain">
         <div className="adminPanel settingsPanel"><div className="adminPanelHead"><div><span>PROJECT</span><h2>Live configuration</h2></div></div><label>Tracked domain<input value="toolmera.com" readOnly/></label><label>GSC property<input value={status?.integrations.gsc.siteUrl||'Not connected'} readOnly/></label><label>Sitemap<input value="https://toolmera.com/sitemap.xml" readOnly/></label><label>Default report<select value={range} onChange={e=>setRange(e.target.value)}><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select></label></div>
