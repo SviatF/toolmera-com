@@ -26,7 +26,7 @@ export function Footer() {
 
         <div className="footerColumn">
           <strong>Company</strong>
-          <Link href="/about/">About</Link>
+          <Link href="/about/">About</Link>\n          <Link href="/methodology/">Methodology</Link>
           <Link href="/contact/">Contact</Link>
           <Link href="/privacy/">Privacy</Link>
           <Link href="/terms/">Terms</Link>
