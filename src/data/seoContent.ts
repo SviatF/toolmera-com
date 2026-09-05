@@ -894,7 +894,7 @@ export const categorySeoContent: Record<string, {
       }
     ]
   },
-,
+
   converters: {
     title: 'Online Unit Converters — Length & Temperature',
     description: 'Convert common length units and temperature scales instantly with clear formulas, references and browser-side calculations.',
