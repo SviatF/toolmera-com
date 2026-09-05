@@ -219,11 +219,11 @@ async function ga4RunReport(
   limit=100,
 ){
   const response=await fetch(
-    \`https://analyticsdata.googleapis.com/v1beta/properties/\${propertyId}:runReport\`,
+    `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
     {
       method:'POST',
       headers:{
-        authorization:\`Bearer \${token}\`,
+        authorization:`Bearer ${token}`,
         'content-type':'application/json',
       },
       body:JSON.stringify({
@@ -238,7 +238,7 @@ async function ga4RunReport(
 
   if(!response.ok){
     const detail=await response.text();
-    throw new Error(\`GA4 Data API failed: \${response.status} \${detail.slice(0,700)}\`);
+    throw new Error(`GA4 Data API failed: ${response.status} ${detail.slice(0,700)}`);
   }
   return await response.json() as Ga4Report;
 }
