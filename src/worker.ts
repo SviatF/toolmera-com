@@ -316,6 +316,12 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // Canonical host enforcement. Once www.toolmera.com is bound to this Worker,
+    // every path and query is permanently redirected to the apex hostname.
+    if (url.hostname === 'www.toolmera.com') {
+      return Response.redirect(`https://toolmera.com${url.pathname}${url.search}`, 301);
+    }
+
     if (url.pathname.startsWith('/api/admin/')) {
       if (!hasAccess(request, env)) {
         return json({ error: 'Unauthorized' }, 401);
