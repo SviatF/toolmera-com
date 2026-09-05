@@ -1110,6 +1110,315 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     related: [
       { id: 'percentage', anchor: 'calculate percentages from your results' }
     ]
+  },
+  'webp-jpg': {
+    title: 'Free WebP to JPG Converter — Convert Images Online',
+    description: 'Convert static WebP images to JPG in your browser with adjustable quality and a selectable background color for transparent areas.',
+    intro: 'Convert WebP images to widely compatible JPG files locally, with control over JPEG quality and the color used behind transparent pixels.',
+    sections: [
+      {
+        title: 'Why convert WebP to JPG',
+        paragraphs: [
+          'WebP is efficient for modern web delivery, but some editors, upload forms and legacy applications still work more reliably with JPG. Converting changes the file format without changing the pixel dimensions.',
+          'Toolmera decodes the static WebP in the browser, draws it to Canvas and exports a new JPEG file.'
+        ]
+      },
+      {
+        title: 'What happens to transparency',
+        paragraphs: [
+          'JPG does not support an alpha channel. If the source WebP contains transparent pixels, Toolmera fills the Canvas with your selected background color before drawing the image.',
+          'White is the default, but you can choose another color and reconvert before downloading.'
+        ]
+      },
+      {
+        title: 'Quality and metadata tradeoffs',
+        paragraphs: [
+          'JPEG is lossy, so lowering quality can reduce file size while also removing detail. The current slider lets you choose the balance and shows the actual before-and-after size.',
+          'Because Canvas creates a fresh image file from decoded pixels, source EXIF or GPS metadata is not copied into the JPG output.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can JPG keep WebP transparency?', a: 'No. JPG has no alpha channel, so Toolmera replaces transparent areas with the background color you choose.' },
+      { q: 'Does WebP to JPG reduce quality?', a: 'JPG uses lossy compression. Higher quality settings retain more detail; lower settings can reduce file size more aggressively.' },
+      { q: 'Can I convert several WebP files at once?', a: 'Not yet. The current converter processes one WebP image at a time.' },
+      { q: 'Does the JPG keep WebP metadata?', a: 'No. The current Canvas-based conversion creates a fresh image from pixels and does not copy source EXIF or GPS metadata.' }
+    ],
+    related: [
+      { id: 'webp-png', anchor: 'convert WebP to PNG and keep transparency' },
+      { id: 'png-jpg', anchor: 'convert PNG to JPG with a background color' },
+      { id: 'compress-jpg', anchor: 'compress the JPG after conversion' }
+    ]
+  },
+
+  'heic-jpg': {
+    title: 'Free HEIC to JPG Converter — Convert iPhone Photos Online',
+    description: 'Convert HEIC and HEIF photos to JPG or PNG locally in your browser with adjustable JPG quality and no Toolmera file upload.',
+    intro: 'Decode HEIC or HEIF photos in your browser, choose JPG or PNG output, and download a new image file.',
+    sections: [
+      {
+        title: 'Why HEIC photos sometimes need conversion',
+        paragraphs: [
+          'HEIC and HEIF are efficient image containers commonly produced by Apple devices, but some websites, desktop apps and older workflows still expect JPG or PNG.',
+          'Toolmera loads a dedicated browser decoder only when this tool is used, then creates a standard image file from the decoded photo.'
+        ]
+      },
+      {
+        title: 'Choose JPG or PNG output',
+        paragraphs: [
+          'Choose JPG when broad photo compatibility and smaller photographic files matter. Choose PNG when your downstream workflow specifically requires PNG.',
+          'JPG quality is adjustable. PNG output does not use the same lossy quality control.'
+        ]
+      },
+      {
+        title: 'Metadata and memory limits',
+        paragraphs: [
+          'The converted output is a fresh image and does not preserve the original HEIC metadata. Bursts, Live Photo metadata and other container-level information are not a supported preservation workflow.',
+          'High-resolution phone photos can require substantial browser memory while decoding, so very large files may be limited by the device running the browser.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can Toolmera convert HEIF as well as HEIC?', a: 'Yes. The current upload accepts HEIC and HEIF image files supported by the browser-side decoder.' },
+      { q: 'Can I output PNG instead of JPG?', a: 'Yes. Use the output toggle to choose JPG or PNG before reconverting.' },
+      { q: 'Does conversion keep camera metadata?', a: 'No. The current browser conversion creates a new image file and does not preserve the original HEIC metadata.' },
+      { q: 'Can I batch-convert many HEIC photos?', a: 'Not yet. The current Toolmera interface converts one HEIC or HEIF file at a time.' }
+    ],
+    related: [
+      { id: 'compress-jpg', anchor: 'compress the converted JPG' },
+      { id: 'jpg-png', anchor: 'convert an existing JPG to PNG' },
+      { id: 'resize-image', anchor: 'resize a converted photo' }
+    ]
+  },
+
+  'compress-jpg': {
+    title: 'Free Compress JPG — Reduce JPEG File Size Online',
+    description: 'Compress JPG and JPEG images in your browser with an adjustable quality slider and a real before-and-after size comparison.',
+    intro: 'Reduce JPG file size while keeping JPG output and checking the actual size result before download.',
+    sections: [
+      {
+        title: 'How JPG compression works here',
+        paragraphs: [
+          'Toolmera decodes the source JPG, draws the pixels to Canvas and exports a fresh JPEG at the quality level you choose. Lower settings generally reduce file size more but can introduce softness or compression artifacts.',
+          'There is no universal percentage saving because the result depends on how the source file was originally encoded and how much visual detail it contains.'
+        ]
+      },
+      {
+        title: 'Why the result may not always be smaller',
+        paragraphs: [
+          'A JPG that was already heavily optimized can sometimes become larger when re-encoded at a new setting. Toolmera compares the bytes and keeps the original file when the new JPEG would be larger.',
+          'The displayed before-and-after size is the useful measure for your specific image.'
+        ]
+      },
+      {
+        title: 'Resize, compress or convert?',
+        paragraphs: [
+          'Resize Image changes pixel dimensions. Compress JPG keeps JPG but changes encoding quality. JPG to WebP changes the image codec entirely.',
+          'If a photo is far larger than its display size, resizing first and then compressing is often the more effective workflow.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Will compression change my JPG dimensions?', a: 'No. Compress JPG keeps the current pixel width and height.' },
+      { q: 'What happens if the compressed version is larger?', a: 'Toolmera keeps the original JPG bytes instead of giving you a larger re-encoded file.' },
+      { q: 'Does the tool preserve EXIF metadata?', a: 'No. Canvas re-encoding creates a fresh JPEG from pixels and does not copy the original EXIF metadata.' },
+      { q: 'Can I compress several JPGs at once?', a: 'Not yet. The current interface processes one JPG or JPEG at a time.' }
+    ],
+    related: [
+      { id: 'compress-image', anchor: 'use the multi-format image compressor' },
+      { id: 'resize-image', anchor: 'resize the JPG before compression' },
+      { id: 'jpg-webp', anchor: 'convert the JPG to WebP instead' }
+    ]
+  },
+
+  'compress-png': {
+    title: 'Free Compress PNG — Reduce PNG File Size Online',
+    description: 'Compress PNG images with browser-side palette quantization while keeping PNG output and transparency data in the image pipeline.',
+    intro: 'Reduce PNG size with color-palette quantization and keep the output as a genuine PNG file.',
+    sections: [
+      {
+        title: 'How PNG quantization reduces size',
+        paragraphs: [
+          'PNG does not expose a JPEG-style quality slider in the browser. Toolmera instead uses palette quantization: the decoded RGBA pixels are re-encoded with a limited color palette.',
+          'You can choose 256, 128 or 64 colors. Fewer colors can reduce size more, but gradients and detailed artwork may show stronger color simplification.'
+        ]
+      },
+      {
+        title: 'PNG output stays PNG',
+        paragraphs: [
+          'Unlike Toolmera’s general Compress Image page, this dedicated tool does not convert PNG input to WebP. The output remains a PNG blob.',
+          'The encoder receives RGBA pixel data, so transparency is part of the source used during the PNG re-encode. Always inspect important assets before replacing originals.'
+        ]
+      },
+      {
+        title: 'When to use PNG compression instead of WebP',
+        paragraphs: [
+          'Use this tool when a destination specifically requires PNG or when you need to stay within a PNG-based workflow. If format flexibility is available, PNG to WebP may produce a smaller web-delivery file.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does this tool convert PNG to WebP?', a: 'No. Compress PNG produces a PNG output file.' },
+      { q: 'What does the color setting change?', a: 'It limits the palette used by the PNG encoder. Lower palette counts can reduce file size but may simplify colors more visibly.' },
+      { q: 'Can PNG transparency be used in the output?', a: 'The compressor encodes from RGBA pixel data, including alpha information from the decoded source. Check the output visually for critical transparent assets.' },
+      { q: 'Is this lossless compression?', a: 'No. Palette quantization can reduce color precision, so the dedicated compressor should be treated as a lossy PNG optimization workflow.' }
+    ],
+    related: [
+      { id: 'png-webp', anchor: 'convert PNG to WebP for web delivery' },
+      { id: 'compress-image', anchor: 'use the general image compressor' },
+      { id: 'resize-image', anchor: 'resize the PNG before optimization' }
+    ]
+  },
+
+  'crop-image': {
+    title: 'Free Crop Image Tool — Crop Photos Online',
+    description: 'Crop static JPG, PNG and WebP images in your browser with visual drag selection, aspect-ratio presets and exact crop coordinates.',
+    intro: 'Draw a crop area on your image, choose a common aspect ratio, fine-tune the pixel coordinates, and export the selected region locally.',
+    sections: [
+      {
+        title: 'How the visual crop selection works',
+        paragraphs: [
+          'Upload a static JPG, PNG or WebP and drag across the preview to create a crop rectangle. Toolmera shows only the selected area at full brightness while dimming the pixels that will be removed.',
+          'You can also edit X, Y, width and height numerically when an exact pixel region matters.'
+        ]
+      },
+      {
+        title: 'Aspect ratios for common layouts',
+        paragraphs: [
+          'Free crop follows the rectangle you draw. Presets for 1:1, 4:3, 16:9 and 9:16 create centered selections with those proportions, which can help prepare assets for square, landscape or vertical layouts.',
+          'Cropping changes which pixels are kept; it is different from resizing, which changes the dimensions of the retained image.'
+        ]
+      },
+      {
+        title: 'What happens during export',
+        paragraphs: [
+          'The selected pixels are drawn to a new Canvas and exported in the source image format when that format is JPG, PNG or WebP.',
+          'JPEG and WebP outputs are re-encoded, while PNG uses PNG export. Source metadata is not copied into the new cropped file.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I crop to a square?', a: 'Yes. Choose the 1:1 preset and then drag or fine-tune the crop area.' },
+      { q: 'Can I enter exact crop dimensions?', a: 'Yes. The current tool exposes X, Y, width and height fields in source-image pixels.' },
+      { q: 'Does cropping resize the selected area?', a: 'No. The exported crop uses the selected pixel width and height. Use Resize Image afterward if you need different output dimensions.' },
+      { q: 'Does the cropper support animation?', a: 'The current crop workflow is intended for static JPG, PNG and WebP images.' }
+    ],
+    related: [
+      { id: 'resize-image', anchor: 'resize the cropped image' },
+      { id: 'compress-image', anchor: 'compress the cropped image' },
+      { id: 'compress-jpg', anchor: 'compress a cropped JPG' }
+    ]
+  },
+
+  'pdf-jpg': {
+    title: 'Free PDF to JPG Converter — Convert PDF Pages to Images',
+    description: 'Convert selected PDF pages to JPG or PNG in your browser, choose render scale, and download multiple pages as a ZIP.',
+    intro: 'Render PDF pages locally as JPG or PNG images with page-range selection and sequential processing for better memory control.',
+    sections: [
+      {
+        title: 'How PDF pages become images',
+        paragraphs: [
+          'A PDF page is not simply an image file. Toolmera uses a PDF rendering engine in the browser to paint the selected page onto Canvas, then exports those rendered pixels as JPG or PNG.',
+          'Choose JPG for compact photographic-style output or PNG when you want a lossless image encoding of the rendered page.'
+        ]
+      },
+      {
+        title: 'Page selection and render scale',
+        paragraphs: [
+          'Enter all to render every page, or use page syntax such as 1-3, 5. The render-scale control changes the pixel dimensions produced from the PDF viewport.',
+          'Higher scale gives more pixels and sharper small text, but it also increases output size, rendering time and browser memory use.'
+        ]
+      },
+      {
+        title: 'Multi-page downloads and limitations',
+        paragraphs: [
+          'A single selected page downloads as one image. Multiple selected pages are processed sequentially and bundled into a ZIP file.',
+          'Password-protected PDFs are not supported in the current version. Very large or complex PDFs can also be limited by available browser memory.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I convert only selected PDF pages?', a: 'Yes. Enter all or a mixed selection such as 1-3, 5.' },
+      { q: 'Can I output PNG instead of JPG?', a: 'Yes. The same PDF renderer includes a JPG / PNG output toggle.' },
+      { q: 'How are multiple image pages downloaded?', a: 'When more than one page is selected, Toolmera packages the rendered images into a ZIP file.' },
+      { q: 'Can Toolmera convert a password-protected PDF?', a: 'Not in the current version. Use an unencrypted PDF that the browser can parse without a password prompt.' }
+    ],
+    related: [
+      { id: 'jpg-pdf', anchor: 'convert JPG images back to PDF' },
+      { id: 'rotate-pdf', anchor: 'rotate PDF pages before rendering' },
+      { id: 'remove-pdf-pages', anchor: 'remove unwanted pages first' }
+    ]
+  },
+
+  'rotate-pdf': {
+    title: 'Free Rotate PDF Tool — Rotate PDF Pages Online',
+    description: 'Rotate all, odd, even or custom PDF pages by 90 degrees clockwise, counter-clockwise or 180 degrees directly in your browser.',
+    intro: 'Fix sideways or upside-down PDF pages and save the rotation into a new PDF file locally.',
+    sections: [
+      {
+        title: 'Rotate all pages or only selected pages',
+        paragraphs: [
+          'Use All pages when the whole document has the wrong orientation, Odd or Even for alternating scan problems, or Custom pages for syntax such as 2, 5-8.',
+          'Toolmera validates custom page numbers against the actual PDF page count before saving.'
+        ]
+      },
+      {
+        title: 'How permanent PDF rotation works',
+        paragraphs: [
+          'Toolmera reads each selected page’s current rotation angle and adds 90 degrees clockwise, 90 degrees counter-clockwise or 180 degrees.',
+          'The page content is not rasterized into screenshots during this operation; the updated document is saved as a new PDF.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I rotate one PDF page without rotating the rest?', a: 'Yes. Choose Custom pages and enter a page number or range.' },
+      { q: 'What if a page already has a rotation value?', a: 'Toolmera adds your selected rotation to the page’s current angle instead of blindly replacing it.' },
+      { q: 'Does rotating a PDF turn the page into an image?', a: 'No. The operation updates page rotation structurally and saves a new PDF.' },
+      { q: 'Does Toolmera modify the original PDF on my device?', a: 'No. It creates a separate rotated PDF for download.' }
+    ],
+    related: [
+      { id: 'remove-pdf-pages', anchor: 'remove unwanted PDF pages' },
+      { id: 'merge-pdf', anchor: 'merge rotated PDF files' },
+      { id: 'pdf-jpg', anchor: 'convert rotated pages to images' }
+    ]
+  },
+
+  'remove-pdf-pages': {
+    title: 'Free Remove PDF Pages — Delete Pages from PDF Online',
+    description: 'Delete individual page numbers or ranges from a PDF in your browser and download a new document with the remaining pages.',
+    intro: 'Enter pages such as 2, 5-9, 12, see how many pages will remain, and export a cleaned PDF locally.',
+    sections: [
+      {
+        title: 'Page range syntax',
+        paragraphs: [
+          'Enter single page numbers separated by commas, ranges with a hyphen, or combine both forms. For example: 2, 5-9, 12.',
+          'Toolmera checks every number against the actual document page count and prevents a selection that would remove every page.'
+        ],
+        facts: [
+          { label: 'Single pages', value: '2, 5, 12' },
+          { label: 'Page range', value: '5-9' },
+          { label: 'Combined', value: '2, 5-9, 12' }
+        ]
+      },
+      {
+        title: 'What happens to the remaining pages',
+        paragraphs: [
+          'The selected page indices are excluded and the remaining pages are copied into a new PDF in their original order.',
+          'The original source file is not overwritten. The tool creates a separate download so you can keep the original document unchanged.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I remove several page ranges at once?', a: 'Yes. Combine single pages and ranges in one field, for example 2, 5-9, 12.' },
+      { q: 'Can I remove every page from the PDF?', a: 'No. Toolmera requires at least one page to remain in the output document.' },
+      { q: 'Can I see how many pages will remain?', a: 'Yes. After a valid PDF is loaded, the interface shows the selected removal count and remaining page count.' },
+      { q: 'Is the original PDF changed?', a: 'No. Toolmera creates a new PDF without the selected pages.' }
+    ],
+    related: [
+      { id: 'split-pdf', anchor: 'extract one continuous PDF range instead' },
+      { id: 'merge-pdf', anchor: 'merge the cleaned PDF with another file' },
+      { id: 'rotate-pdf', anchor: 'rotate remaining pages' }
+    ]
   }
 };
 
@@ -1120,22 +1429,22 @@ export const categorySeoContent: Record<string, {
   sections: ToolSeoSection[];
 }> = {
   image: {
-    title: 'Image Tools — Convert, Compress & Resize Online',
-    description: 'Free browser-based image tools for converting PNG, JPG and WebP, reducing file size and resizing to exact dimensions.',
-    intro: 'Convert, compress and resize images with focused browser-based tools built around one clear task at a time.',
+    title: 'Free Image Tools — Convert, Compress, Crop & Resize Online',
+    description: 'Free browser-based image tools for PNG, JPG, WebP and HEIC conversion, dedicated JPG/PNG compression, cropping and resizing.',
+    intro: 'Convert, compress, crop and resize images with focused browser tools built around specific file-format and editing tasks.',
     sections: [
       {
         title: 'Which image tool do you need?',
         paragraphs: [
-          'Use Compress Image when the goal is a smaller file. Use a format converter when a destination requires PNG, JPG or WebP, or when you want WebP for more efficient web delivery. Use Resize Image when the real requirement is a specific pixel size.',
-          'Many workflows combine two steps: resize first, then compress; or convert to WebP, then check whether further compression is worthwhile.'
+          'Use a format converter when a destination requires JPG, PNG or WebP, including HEIC-to-image workflows. Use dedicated JPG or PNG compression when the output format itself must stay unchanged, and use Crop or Resize when the real requirement is image geometry.',
+          'Many workflows combine steps: crop to the right composition, resize to the display dimensions, then compress; or convert to a compatible format before optimizing the result.'
         ]
       },
       {
         title: 'Image tools that solve one task each',
         paragraphs: [
-          'Toolmera avoids a bloated all-in-one editor. Each page is designed around the one decision that matters for that job: output quality, transparency, background color, compatibility or pixel dimensions.',
-          'Image processing happens in the browser for these tools, so your files do not need to be sent to a Toolmera server just to convert, compress or resize them.'
+          'Toolmera keeps each image page focused on a real task: format compatibility, output quality, transparency, palette reduction, crop geometry or pixel dimensions.'
+          'Current image workflows in this category process locally in the browser. Heavier decoders and encoders are loaded only when the relevant tool is opened.'
         ]
       }
     ]
@@ -1143,21 +1452,21 @@ export const categorySeoContent: Record<string, {
 
   pdf: {
     title: 'Free PDF Tools — Merge, Split & Convert Online',
-    description: 'Free browser-based PDF tools to merge PDFs, extract page ranges, and convert JPG or PNG images into PDF files.',
-    intro: 'Merge, split and create PDF files for free with focused tools that run directly in your browser.',
+    description: 'Free browser-based PDF tools to merge, split, rotate and remove pages, convert images to PDF, or render PDF pages as JPG or PNG.',
+    intro: 'Organize PDF pages, create PDFs from images, or render PDF pages back to images with focused browser-based tools.'
     sections: [
       {
         title: 'Which PDF tool do you need?',
         paragraphs: [
-          'Use Merge PDF when several existing PDF files should become one document. If an image needs to join that workflow, convert it first with JPG to PDF or PNG to PDF, then add the resulting PDF to the merge queue.',
-          'Use Split PDF when you have one PDF and only need one continuous range of pages. Use JPG to PDF or PNG to PDF when your source material is a set of photos, scans, screenshots or diagrams rather than an existing PDF.'
+          'Use Merge PDF to combine documents, Split PDF to extract one continuous range, Rotate PDF to fix page orientation, and Remove PDF Pages to delete mixed page selections.'
+          'Use JPG to PDF or PNG to PDF when images need to become a document. Use PDF to JPG when document pages need to become JPG or PNG images again.'
         ]
       },
       {
         title: 'PDF tools that solve one task each',
         paragraphs: [
-          'Each Toolmera PDF utility focuses on one job: file order for merging, a clear page range for splitting, and page order plus image-to-page sizing for JPG and PNG conversion.',
-          'These PDF operations run in the browser, so documents and images do not need to be uploaded to a Toolmera server just to be combined, extracted or turned into a PDF.'
+          'Each Toolmera PDF utility focuses on one operation with explicit page controls: ordering, range selection, rotation, deletion or page rendering.'
+          'The current PDF tools execute in the browser. Structural operations use pdf-lib, while PDF-to-image rendering loads a dedicated client-side renderer only when needed.'
         ]
       }
     ]
