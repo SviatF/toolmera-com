@@ -1419,6 +1419,299 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'merge-pdf', anchor: 'merge the cleaned PDF with another file' },
       { id: 'rotate-pdf', anchor: 'rotate remaining pages' }
     ]
+  },
+  'qr-code': {
+    title: 'Free QR Code Generator — Create Custom QR Codes Online',
+    description: 'Generate static QR codes for URLs or text with custom colors, error correction, quiet-zone control, PNG and SVG downloads.',
+    intro: 'Create a static QR code directly in your browser, customize its appearance and download PNG or SVG output.',
+    sections: [
+      {
+        title: 'How a static QR code works',
+        paragraphs: [
+          'A static QR code stores the text or URL directly in the matrix. Toolmera does not create a redirect URL or a managed short link for this generator.',
+          'That means the QR image itself has no subscription or account dependency. If it contains a website URL, the destination still needs to remain available for the link to work.'
+        ]
+      },
+      {
+        title: 'Error correction and quiet zones',
+        paragraphs: [
+          'QR error-correction levels trade data capacity for resilience. Higher levels add more recovery information, which can help a code remain readable after limited damage or obstruction but can also make the matrix denser.',
+          'The quiet zone is the empty border around the symbol. Keeping a clear margin and strong foreground-to-background contrast improves scan reliability.'
+        ],
+        facts: [
+          { label: 'L', value: 'Low error correction' },
+          { label: 'M', value: 'Medium error correction' },
+          { label: 'Q', value: 'Quartile error correction' },
+          { label: 'H', value: 'High error correction' }
+        ]
+      },
+      {
+        title: 'PNG vs. SVG download',
+        paragraphs: [
+          'PNG is convenient for documents, social graphics and general image workflows. SVG is vector-based and can scale cleanly for print or design software.',
+          'Always test the final QR code with the actual size, colors and destination where it will be used before printing a large batch.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Are Toolmera QR codes static or dynamic?', a: 'They are static. The entered text or URL is encoded directly into the QR matrix without a Toolmera redirect service.' },
+      { q: 'Do static QR codes expire?', a: 'The QR image has no built-in expiration. A linked website can still stop working if the destination URL changes or goes offline.' },
+      { q: 'Can I download an SVG QR code?', a: 'Yes. The current generator provides both PNG and SVG downloads.' },
+      { q: 'Can I customize QR colors?', a: 'Yes. Choose foreground and background colors, but keep enough contrast for reliable scanning.' }
+    ],
+    related: [
+      { id: 'base64', anchor: 'encode text as Base64 before sharing it' },
+      { id: 'case-converter', anchor: 'clean up text before encoding it' }
+    ]
+  },
+
+  'uuid': {
+    title: 'Free UUID Generator — Generate UUID v4 & GUID Values',
+    description: 'Generate one or many random UUID version 4 identifiers with case, hyphen and wrapping controls, then copy or download them.',
+    intro: 'Create UUID v4 identifiers locally with the browser cryptographic API and practical bulk-formatting controls.',
+    sections: [
+      {
+        title: 'What a UUID v4 is',
+        paragraphs: [
+          'A UUID is a 128-bit identifier commonly used for database records, distributed systems, API objects and other resources that need identifiers without a central counter.',
+          'Version 4 UUIDs are random identifiers with specific version and variant bits. Toolmera uses crypto.randomUUID() when available and a Web Crypto byte fallback when needed.'
+        ]
+      },
+      {
+        title: 'Bulk formatting options',
+        paragraphs: [
+          'Generate up to 1,000 values per batch, keep or remove standard hyphens, switch letter case and wrap the output as plain lines, quoted values, braces or a JSON array.',
+          'Formatting changes only the text representation; the underlying generated UUID values stay the same until you generate a new batch.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Which UUID version does this tool generate?', a: 'Toolmera generates random UUID version 4 identifiers only.' },
+      { q: 'Can I generate multiple UUIDs at once?', a: 'Yes. The current batch control supports from 1 to 1,000 UUIDs.' },
+      { q: 'Can I remove UUID hyphens?', a: 'Yes. Toggle standard hyphens off if your target system expects a compact hexadecimal representation.' },
+      { q: 'Are generated UUIDs sent to a Toolmera server?', a: 'No. UUID generation in this tool runs in the browser with the Web Crypto API.' }
+    ],
+    related: [
+      { id: 'json', anchor: 'format JSON containing generated UUIDs' },
+      { id: 'base64', anchor: 'encode identifier text as Base64' }
+    ]
+  },
+
+  'password': {
+    title: 'Free Password Generator — Create Strong Random Passwords',
+    description: 'Generate random passwords locally with configurable length, uppercase, lowercase, digits, symbols and ambiguous-character exclusion.',
+    intro: 'Create a random password in your browser using the character sets and length you choose.',
+    sections: [
+      {
+        title: 'How Toolmera generates password characters',
+        paragraphs: [
+          'Toolmera draws random choices from the browser Web Crypto API instead of Math.random(). The generator ensures that every selected character group contributes at least one character, then securely shuffles the result.',
+          'You can include uppercase letters, lowercase letters, digits and symbols, and optionally remove visually ambiguous characters such as I, l, 1, O and 0.'
+        ]
+      },
+      {
+        title: 'Length and search-space estimates',
+        paragraphs: [
+          'Longer random passwords generally create a much larger possible search space. Toolmera displays a character-space entropy estimate based on the selected pool size and password length.',
+          'That number is a mathematical estimate, not a guarantee that an account is secure. Rate limits, password reuse, phishing, credential theft and the security of the service itself also matter.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What randomness source does the generator use?', a: 'Toolmera uses the browser Web Crypto API for random character selection.' },
+      { q: 'Can I exclude confusing characters?', a: 'Yes. Enable the ambiguity filter to remove I, l, 1, O and 0 from the active character pools.' },
+      { q: 'Does selecting a character type guarantee it appears?', a: 'Yes. The current generator places at least one character from every selected group before filling and shuffling the rest.' },
+      { q: 'Is the entropy badge a security guarantee?', a: 'No. It is a search-space estimate based on length and the available character pool, not a guarantee about an account or system.' }
+    ],
+    related: [
+      { id: 'uuid', anchor: 'generate UUID v4 identifiers' },
+      { id: 'base64', anchor: 'encode non-secret text as Base64' }
+    ]
+  },
+
+  'random-number': {
+    title: 'Free Random Number Generator — Pick Numbers Online',
+    description: 'Generate random integers or decimals with custom min and max values, quantity, precision, unique-value and sorting controls.',
+    intro: 'Pick one random value or generate a list across a custom numeric range with Web Crypto-backed sampling.',
+    sections: [
+      {
+        title: 'Integer and decimal generation',
+        paragraphs: [
+          'Integer mode draws whole numbers between the inclusive minimum and maximum. Decimal mode converts the requested precision into discrete numeric steps and draws from that finite range.',
+          'The generator supports up to six decimal places and can return one value or a larger list.'
+        ]
+      },
+      {
+        title: 'Unique values and sorting',
+        paragraphs: [
+          'Enable Unique values only when duplicates are not acceptable. Toolmera checks that the requested quantity can fit inside the selected discrete range before generating.',
+          'Results can remain in random order or be sorted ascending or descending after generation.'
+        ]
+      },
+      {
+        title: 'How bounded random values are sampled',
+        paragraphs: [
+          'Toolmera draws browser Web Crypto values and uses rejection sampling for bounded integer selection instead of a naive modulo operation.',
+          'This is a general-purpose utility and is not presented as a certified lottery, gaming or regulated drawing system.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I generate unique numbers only?', a: 'Yes. Enable Unique values only; the tool validates whether enough distinct values exist in the selected range.' },
+      { q: 'Can the tool generate decimals?', a: 'Yes. Decimal mode supports one to six decimal places.' },
+      { q: 'What is the maximum batch size?', a: 'The current interface accepts up to 10,000 generated values per run.' },
+      { q: 'Does the tool use Math.random()?', a: 'No. The current implementation derives bounded values from the browser Web Crypto API.' }
+    ],
+    related: [
+      { id: 'average', anchor: 'calculate statistics for a generated dataset' },
+      { id: 'password', anchor: 'generate random passwords instead' }
+    ]
+  },
+
+  'unix-timestamp': {
+    title: 'Free Unix Timestamp Converter — Epoch Time to Date',
+    description: 'Convert Unix timestamps in seconds or milliseconds to UTC, local and ISO dates, or convert a date-time back into epoch values.',
+    intro: 'Convert Unix epoch values to readable dates and turn local or UTC date-time values back into timestamps.',
+    sections: [
+      {
+        title: 'What Unix time represents',
+        paragraphs: [
+          'Unix time represents an instant as elapsed time relative to 1970-01-01T00:00:00Z. It is widely used in operating systems, application logs, databases and APIs because the numeric value itself is not a local wall-clock timezone.',
+          'Toolmera shows the same parsed instant as UTC, your browser-local time and ISO 8601.'
+        ]
+      },
+      {
+        title: 'Seconds vs. milliseconds',
+        paragraphs: [
+          'Many systems store Unix timestamps in seconds, while JavaScript Date.now() returns milliseconds. Toolmera can auto-detect the likely unit by numeric magnitude, and a manual selector is available when you already know the source format.',
+          'Both seconds and milliseconds are also shown when converting a calendar date back to epoch time.'
+        ]
+      },
+      {
+        title: 'Local time and UTC mode',
+        paragraphs: [
+          'Local mode interprets the date-time picker using the browser’s current timezone rules. UTC mode treats the entered calendar fields as UTC.',
+          'Daylight-saving behavior for local mode follows the timezone information available to the browser and operating system.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What date does Unix time start from?', a: 'The Unix epoch starts at 1970-01-01 00:00:00 UTC.' },
+      { q: 'How does Toolmera detect seconds or milliseconds?', a: 'Auto mode uses the numeric magnitude as a practical heuristic, and you can override it with an explicit Seconds or Milliseconds selection.' },
+      { q: 'Can I see both UTC and local time?', a: 'Yes. Timestamp-to-date output shows UTC, browser-local and ISO 8601 representations.' },
+      { q: 'Can I convert a date back to Unix time?', a: 'Yes. Enter a date-time, choose Local time or UTC interpretation, and Toolmera returns seconds and milliseconds.' }
+    ],
+    related: [
+      { id: 'date-difference', anchor: 'calculate the duration between calendar dates' },
+      { id: 'age', anchor: 'calculate age from a birth date' }
+    ]
+  },
+
+  'weight': {
+    title: 'Free Weight Converter — Convert Kg, Lb, Oz, Grams & Stone',
+    description: 'Convert kilograms, grams, milligrams, pounds, ounces, stone and metric tonnes with a live all-unit comparison matrix.',
+    intro: 'Convert weight and mass measurements between common metric and imperial units.',
+    sections: [
+      {
+        title: 'Common mass conversion relationships',
+        paragraphs: [
+          'Toolmera converts every supported unit through kilograms as a shared base, then calculates the selected target and the full comparison matrix.',
+          'The pound and ounce entries use international avoirdupois definitions; troy ounces for precious metals are intentionally not mixed into this general weight converter.'
+        ],
+        facts: [
+          { label: '1 pound', value: '0.45359237 kg' },
+          { label: '1 kilogram', value: '1000 g' },
+          { label: '1 stone', value: '14 lb' },
+          { label: '1 metric tonne', value: '1000 kg' }
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How many kilograms are in one pound?', a: 'One international avoirdupois pound is exactly 0.45359237 kilograms.' },
+      { q: 'How many pounds are in one stone?', a: 'One stone equals 14 pounds.' },
+      { q: 'Does this converter use troy ounces?', a: 'No. Ounce means the standard avoirdupois ounce used for general mass, not the troy ounce used for precious metals.' },
+      { q: 'Can I compare all supported units at once?', a: 'Yes. The output matrix updates every supported weight unit from the same source value.' }
+    ],
+    related: [
+      { id: 'length', anchor: 'convert length and distance units' },
+      { id: 'volume', anchor: 'convert liquid and volume units' }
+    ]
+  },
+
+  'volume': {
+    title: 'Free Volume Converter — Liters, Gallons, Cups, ML & Oz',
+    description: 'Convert metric, US customary and UK Imperial volume units with clearly labeled gallons, fluid ounces, cups, pints and quarts.',
+    intro: 'Convert liquid and volume measurements without confusing US customary and UK Imperial unit definitions.',
+    sections: [
+      {
+        title: 'US customary and Imperial units are different',
+        paragraphs: [
+          'A US liquid gallon and an Imperial gallon are not the same size. The same distinction applies to fluid ounces, pints and quarts, so Toolmera labels those systems directly in each unit name.',
+          'Metric units use liters as the common base while US and Imperial definitions are converted to their exact or standardized liter equivalents.'
+        ],
+        facts: [
+          { label: 'US liquid gallon', value: '3.785411784 L' },
+          { label: 'Imperial gallon', value: '4.54609 L' },
+          { label: 'US fluid ounce', value: '29.5735295625 mL' },
+          { label: 'Imperial fluid ounce', value: '28.4130625 mL' }
+        ]
+      },
+      {
+        title: 'Recipe conversions need the right cup definition',
+        paragraphs: [
+          'Toolmera labels the included cup as US customary cup. Recipe standards can vary by country, publisher and measuring set, so check the source recipe when exact culinary volume matters.',
+          'The conversion matrix keeps every unit label visible to reduce accidental mixing between measurement systems.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Are US and Imperial gallons the same?', a: 'No. A US liquid gallon is 3.785411784 liters, while an Imperial gallon is 4.54609 liters.' },
+      { q: 'Which cup does Toolmera use?', a: 'The current cup entry is the US customary cup, approximately 236.5882365 mL.' },
+      { q: 'Can I convert cubic meters to liters?', a: 'Yes. One cubic meter equals exactly 1,000 liters.' },
+      { q: 'Why are there two fluid-ounce options?', a: 'US customary and UK Imperial fluid ounces have different volumes, so Toolmera lists them separately.' }
+    ],
+    related: [
+      { id: 'weight', anchor: 'convert mass and weight units' },
+      { id: 'area', anchor: 'convert surface and land area units' }
+    ]
+  },
+
+  'area': {
+    title: 'Free Area Converter — Acres, Sq Ft, Hectares & Sq Meters',
+    description: 'Convert square meters, square kilometers, square feet, square yards, square miles, acres, hectares and square centimeters.',
+    intro: 'Convert land and surface area measurements across metric and customary square units.',
+    sections: [
+      {
+        title: 'Area conversion uses squared unit relationships',
+        paragraphs: [
+          'Area measures two-dimensional surface rather than linear distance. Toolmera converts the selected area through square meters, then shows the target value and all supported equivalents.',
+          'This is why a linear value in meters cannot be converted directly into square meters without another dimension.'
+        ],
+        facts: [
+          { label: '1 acre', value: '43,560 ft²' },
+          { label: '1 hectare', value: '10,000 m²' },
+          { label: '1 square mile', value: '640 acres' },
+          { label: '1 m²', value: '10.7639104167 ft²' }
+        ]
+      },
+      {
+        title: 'Land units vs. general surface units',
+        paragraphs: [
+          'Acres and hectares are common for land, while square feet, square meters and square yards are common for rooms, buildings and smaller surfaces.',
+          'The all-unit matrix lets you compare land and construction measurements without changing the source value repeatedly.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How many square feet are in one acre?', a: 'One international acre equals exactly 43,560 square feet.' },
+      { q: 'How many square meters are in a hectare?', a: 'One hectare equals exactly 10,000 square meters.' },
+      { q: 'Can I convert meters directly to square meters?', a: 'No. Meters measure length and square meters measure area; you need two-dimensional information to calculate area.' },
+      { q: 'Can I see all area equivalents together?', a: 'Yes. The conversion matrix updates all supported area units from the current source value.' }
+    ],
+    related: [
+      { id: 'length', anchor: 'convert linear length measurements' },
+      { id: 'volume', anchor: 'convert volume and capacity units' }
+    ]
   }
 };
 
@@ -1495,21 +1788,21 @@ export const categorySeoContent: Record<string, {
   },
 
   converters: {
-    title: 'Online Unit Converters — Length & Temperature',
-    description: 'Convert common length units and temperature scales instantly with clear formulas, references and browser-side calculations.',
-    intro: 'Convert length and temperature values instantly with focused utilities and transparent conversion relationships.',
+    title: 'Free Unit Converters — Length, Weight, Volume, Area & Temperature',
+    description: 'Free online converters for length, weight, volume, area and temperature with clearly labeled units and browser-side calculations.',
+    intro: 'Convert physical measurements across metric, customary and Imperial units with focused tools and transparent unit definitions.'
     sections: [
       {
         title: 'Which converter do you need?',
         paragraphs: [
-          'Use Length Converter for meters, kilometers, centimeters, millimeters, feet, inches, yards and miles. Use Temperature Converter for Celsius, Fahrenheit and Kelvin.',
-          'Both tools update in the browser and expose the relationships behind the result instead of hiding the calculation behind a generic output.'
+          'Use Length for distance, Weight for mass, Volume for liquid and capacity units, Area for surface or land measurements, and Temperature for Celsius, Fahrenheit or Kelvin.'
+          'Each converter updates in the browser and exposes clear unit labels, especially where similar names such as US and Imperial gallons represent different quantities.'
         ]
       },
       {
         title: 'Focused conversion tools, not a giant unit menu',
         paragraphs: [
-          'Toolmera currently keeps this category deliberately narrow: one tool for common length units and one for the three major temperature scales. This makes each workflow faster to scan and easier to verify.',
+          'Toolmera keeps each measurement domain on its own page so the unit list, reference factors and internal links stay specific to the task.'
           'As new converters are added, they will live on their own task-specific pages rather than being mixed into one oversized control.'
         ]
       }
@@ -1555,6 +1848,43 @@ export const categorySeoContent: Record<string, {
         paragraphs: [
           'Both current developer utilities execute their core transformations in the browser. JSON uses native parsing and serialization, while Base64 uses browser byte and text encoding APIs.',
           'Local execution reduces the need to send pasted payloads to a Toolmera processing endpoint, but Base64 itself should never be confused with encryption or secret storage.'
+        ]
+      }
+    ]
+  },
+,
+  generators: {
+    title: 'Free Online Generators — QR Codes, UUIDs, Passwords & Random Numbers',
+    description: 'Free browser-based generators for static QR codes, UUID v4 identifiers, random passwords and random number sets.',
+    intro: 'Generate reusable codes, identifiers, passwords and numeric values with focused browser-based utilities.',
+    sections: [
+      {
+        title: 'Choose the generator for the job',
+        paragraphs: [
+          'Use QR Code Generator for scannable text or URL matrices, UUID Generator for application identifiers, Password Generator for random credential strings, and Random Number Generator for numeric sampling.',
+          'Each tool exposes the controls relevant to its output instead of combining unrelated generation tasks into one page.'
+        ]
+      },
+      {
+        title: 'Browser-native randomness where it matters',
+        paragraphs: [
+          'UUID, password and random-number generation use browser cryptographic APIs rather than Math.random(). QR rendering loads a dedicated client-side QR library only on the QR page.',
+          'These tools create outputs locally and do not require an account or persistent Toolmera storage.'
+        ]
+      }
+    ]
+  },
+
+  time: {
+    title: 'Free Time & Date Tools — Unix Timestamp Converter',
+    description: 'Free browser-based time utilities for converting Unix epoch timestamps to readable UTC and local dates and back.',
+    intro: 'Work with Unix epoch values and human-readable date-time formats without server round trips.',
+    sections: [
+      {
+        title: 'Unix time for developer and admin workflows',
+        paragraphs: [
+          'Unix timestamps are common in APIs, logs, databases and infrastructure tools. The converter handles seconds and milliseconds and shows the same instant in UTC, local and ISO forms.',
+          'The Time & Date category will remain focused on utilities where timezone or timestamp semantics materially affect the result.'
         ]
       }
     ]
