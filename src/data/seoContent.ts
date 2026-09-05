@@ -1165,7 +1165,7 @@ export const categorySeoContent: Record<string, {
 
   calculators: {
     title: 'Free Online Calculators — Math, Finance, Dates & Health',
-    description: 'Free online calculators for loans, ROI, discounts, interest, dates, averages, percentages, CAGR, BMI and compound growth.'
+    description: 'Free online calculators for loans, ROI, discounts, interest, dates, averages, percentages, CAGR, BMI and compound growth.',
     intro: 'Math, health and everyday calculators built around clear inputs, transparent formulas and useful results.',
     sections: [
       {
