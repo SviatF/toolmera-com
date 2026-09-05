@@ -185,3 +185,38 @@
   .calcModeTabs{display:grid;grid-template-columns:1fr 1fr}
   .formulaNote{align-items:flex-start;flex-direction:column}
 }
+
+
+/* Batch 4 — converters, text and developer tools */
+.quickPills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.quickPills button{border:1px solid var(--line);background:rgba(255,255,255,.025);color:#91a0af;border-radius:999px;padding:8px 11px;font-size:10px;cursor:pointer}
+.quickPills button:hover{color:#fff;border-color:color-mix(in srgb,var(--accent) 28%,var(--line));background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.textMetricGrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.caseButtons{gap:8px}
+.outputWrap{position:relative}
+.outputWrap .textArea.output{padding-right:105px}
+.copyButton{position:absolute;right:10px;top:24px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#0d151e;color:#aeb9c4;border-radius:9px;padding:8px 10px;font-size:10px;cursor:pointer}
+.copyButton:hover:not(:disabled){color:#fff;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.copyButton:disabled{opacity:.35;cursor:default}
+.codeArea{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px}
+.jsonControls{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-top:14px}
+.jsonControls .buttonRow{margin-top:0}
+.jsonControls label{display:flex;flex-direction:column;gap:7px;font-size:10px;color:#8391a0}
+.jsonControls select{height:40px;border:1px solid var(--line);border-radius:10px;background:#0b121a;color:#fff;padding:0 12px}
+.validationPill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;font-size:10px;margin-top:12px}
+.validationPill.valid{border:1px solid rgba(37,215,157,.2);background:rgba(37,215,157,.06);color:#79e4bf}
+.validationPill.invalid{border:1px solid rgba(255,91,110,.22);background:rgba(255,91,110,.06);color:#ff9caa}
+.referenceFacts{display:grid;gap:0;margin-top:20px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.referenceFacts>div{display:grid;grid-template-columns:minmax(130px,.8fr) 1.2fr;gap:16px;padding:11px 13px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.018)}
+.referenceFacts>div:last-child{border-bottom:0}
+.referenceFacts span{font-size:10px;color:#798795}
+.referenceFacts strong{font-size:11px;color:#d3dce5;font-weight:600}
+@media(max-width:1100px){
+  .textMetricGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .textMetricGrid{grid-template-columns:1fr 1fr}
+  .jsonControls{align-items:stretch;flex-direction:column}
+  .referenceFacts>div{grid-template-columns:1fr;gap:4px}
+  .copyButton{top:22px}
+}
