@@ -150,3 +150,38 @@
   .queueHead>small{text-align:left}
   .fileQueueItem strong{max-width:190px}
 }
+
+
+/* Calculator product + SEO upgrades */
+.calcModeTabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.calcModeTabs button{border:1px solid var(--line);background:#0b121a;color:#8f9cab;border-radius:10px;padding:10px 12px;font-size:11px;cursor:pointer;transition:border-color .2s ease,background .2s ease,color .2s ease}
+.calcModeTabs button:hover{color:#dce5ed;border-color:rgba(255,255,255,.14)}
+.calcModeTabs button.active{color:#fff;border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:color-mix(in srgb,var(--accent) 10%,#0b121a);box-shadow:0 0 20px var(--accentGlow)}
+.unitTabs{margin-bottom:20px}
+.calculatorTwoFields{grid-template-columns:repeat(2,minmax(0,1fr))}
+.compoundFields{grid-template-columns:repeat(5,minmax(0,1fr))}
+.compactMetrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.formulaNote{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);margin-top:18px;padding-top:15px}
+.formulaNote span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6f7d8b}
+.formulaNote code{font-size:12px;color:#c9d3dd;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.healthNote{border-color:rgba(37,215,157,.18);background:rgba(37,215,157,.045)}
+.growthTableWrap{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:14px}
+.growthTable{width:100%;border-collapse:collapse;min-width:620px}
+.growthTable th,.growthTable td{text-align:right;padding:11px 14px;border-bottom:1px solid var(--line);font-size:11px}
+.growthTable th:first-child,.growthTable td:first-child{text-align:left}
+.growthTable th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#718091;background:#0a1017}
+.growthTable td{color:#aeb9c5}
+.growthTable tr:last-child td{border-bottom:0}
+.sourcePanel{margin-top:34px;border:1px solid var(--line);border-radius:16px;padding:20px 22px;background:rgba(255,255,255,.018)}
+.sourcePanel>p{font-size:12px;color:#7f8d9b;margin:7px 0 12px}
+.sourcePanel>div{display:flex;flex-wrap:wrap;gap:9px}
+.sourcePanel a{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:#8ec9ff;border:1px solid rgba(76,170,255,.16);border-radius:999px;padding:8px 11px;background:rgba(76,170,255,.04)}
+.sourcePanel a:hover{border-color:rgba(76,170,255,.3)}
+@media(max-width:1100px){
+  .compoundFields{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .calculatorTwoFields,.compoundFields,.compactMetrics,.ageFields{grid-template-columns:1fr}
+  .calcModeTabs{display:grid;grid-template-columns:1fr 1fr}
+  .formulaNote{align-items:flex-start;flex-direction:column}
+}
