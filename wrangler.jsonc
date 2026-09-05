@@ -3,6 +3,13 @@
   "name": "toolmera-com",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-05",
+  "keep_vars": true,
+  "secrets": {
+    "required": [
+      "GOOGLE_CLIENT_EMAIL",
+      "GOOGLE_PRIVATE_KEY"
+    ]
+  },
   "vars": {
     "GSC_SITE_URL": "sc-domain:toolmera.com",
     "GA4_PROPERTY_ID": "552958073"
