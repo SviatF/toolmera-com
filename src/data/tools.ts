@@ -153,8 +153,8 @@ export const tools: Tool[] = [
     title: 'FD Calculator India', description: 'Estimate fixed deposit maturity value and interest earned.', intro: 'Calculate potential FD maturity based on deposit, interest rate and term.', benefits: ['Maturity estimate', 'Interest earned', 'Simple compounding'], faq: commonFaq,
   },
   {
-    id: 'cagr-in', name: 'CAGR Calculator', short: 'Calculate compound annual growth rate.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'cagr-calculator', kind: 'cagr', accent: 'green',
-    title: 'CAGR Calculator India', description: 'Calculate compound annual growth rate from beginning value, ending value and duration.', intro: 'Measure annualized growth across a multi-year period.', benefits: ['Annualized growth', 'Simple inputs', 'Instant result'], faq: commonFaq,
+    id: 'cagr', name: 'CAGR Calculator', short: 'Calculate compound annual growth rate.', category: 'calculators', categoryLabel: 'Calculators', slug: 'cagr-calculator', kind: 'cagr', accent: 'green',
+    title: 'CAGR Calculator — Compound Annual Growth Rate', description: 'Calculate compound annual growth rate from a beginning value, ending value and time period.', intro: 'Measure the annualized growth rate between a beginning value and an ending value over multiple years.', benefits: ['Annualized growth rate', 'Transparent formula', 'Instant result'], faq: commonFaq,
   },
   {
     id: 'gst-in', name: 'GST Calculator', short: 'Add or remove GST from an amount.', category: 'tax', categoryLabel: 'India Tax', country: 'in', slug: 'gst-calculator', kind: 'gst', accent: 'pink', badge: 'India',
