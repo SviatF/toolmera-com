@@ -93,20 +93,20 @@ export const tools: Tool[] = [
     title: 'PNG to PDF Converter', description: 'Convert PNG images into a PDF in your browser.', intro: 'Build a PDF from PNG screenshots, designs or scans without uploading files.', benefits: ['Multiple PNG files', 'Simple ordering', 'Local processing'], faq: commonFaq,
   },
   {
-    id: 'age', name: 'Age Calculator', short: 'Find your exact age in years, months and days.', category: 'calculators', categoryLabel: 'Calculators', slug: 'age-calculator', kind: 'age', accent: 'pink', badge: 'Popular',
-    title: 'Age Calculator — Exact Age in Years, Months & Days', description: 'Calculate exact age from date of birth instantly.', intro: 'Enter a date of birth to calculate an exact age breakdown.', benefits: ['Exact breakdown', 'Total days estimate', 'Instant result'], faq: commonFaq,
+    id: 'age', name: 'Age Calculator', short: 'Calculate calendar age between two dates.', category: 'calculators', categoryLabel: 'Calculators', slug: 'age-calculator', kind: 'age', accent: 'pink', badge: 'Popular',
+    title: 'Age Calculator — Years, Months & Days', description: 'Calculate calendar age between a date of birth and any comparison date.', intro: 'Enter a date of birth and an as-of date to calculate calendar age, total days and the next birthday.', benefits: ['Calendar years, months & days', 'Choose an as-of date', 'Birthday countdown'], faq: commonFaq,
   },
   {
-    id: 'percentage', name: 'Percentage Calculator', short: 'Calculate percentages and percentage change.', category: 'calculators', categoryLabel: 'Calculators', slug: 'percentage-calculator', kind: 'percentage', accent: 'amber',
-    title: 'Percentage Calculator', description: 'Calculate what percentage one number is of another.', intro: 'Quickly solve everyday percentage questions.', benefits: ['Fast calculation', 'Clear formula', 'No sign-up'], faq: commonFaq,
+    id: 'percentage', name: 'Percentage Calculator', short: 'Solve four common percentage calculations.', category: 'calculators', categoryLabel: 'Calculators', slug: 'percentage-calculator', kind: 'percentage', accent: 'amber',
+    title: 'Percentage Calculator', description: 'Calculate percentages, percentage change, percentage difference and percent-of-number results.', intro: 'Choose the percentage question you need and get the result with the formula shown.', benefits: ['4 calculation modes', 'Formula shown', 'Instant results'], faq: commonFaq,
   },
   {
-    id: 'bmi', name: 'BMI Calculator', short: 'Calculate body mass index from height and weight.', category: 'calculators', categoryLabel: 'Calculators', slug: 'bmi-calculator', kind: 'bmi', accent: 'green',
-    title: 'BMI Calculator', description: 'Calculate BMI from weight and height for general informational use.', intro: 'Get a quick BMI estimate from metric measurements.', benefits: ['Metric inputs', 'Instant BMI', 'Simple interpretation'], faq: commonFaq,
+    id: 'bmi', name: 'BMI Calculator', short: 'Calculate adult BMI with metric or imperial units.', category: 'calculators', categoryLabel: 'Calculators', slug: 'bmi-calculator', kind: 'bmi', accent: 'green',
+    title: 'BMI Calculator', description: 'Calculate adult BMI from height and weight using metric or imperial units for general screening information.', intro: 'Get an adult BMI screening estimate from kg/cm or lb/in measurements.', benefits: ['Metric & imperial', 'Adult BMI categories', 'Screening estimate'], faq: commonFaq,
   },
   {
-    id: 'compound', name: 'Compound Interest', short: 'Estimate growth with compound interest.', category: 'calculators', categoryLabel: 'Calculators', slug: 'compound-interest-calculator', kind: 'interest', accent: 'amber',
-    title: 'Compound Interest Calculator', description: 'Estimate future value with compound interest.', intro: 'See how principal, interest rate and time can compound into future value.', benefits: ['Future value', 'Interest earned', 'Annual compounding'], faq: commonFaq,
+    id: 'compound', name: 'Compound Interest Calculator', short: 'Model compound growth with frequency and contributions.', category: 'calculators', categoryLabel: 'Calculators', slug: 'compound-interest-calculator', kind: 'interest', accent: 'amber',
+    title: 'Compound Interest Calculator', description: 'Estimate future value with selectable compounding frequency and optional monthly contributions.', intro: 'Model how a starting amount can grow with compound interest, regular monthly contributions and different compounding frequencies.', benefits: ['Compounding frequency', 'Monthly contributions', 'Year-by-year growth'], faq: commonFaq,
   },
   {
     id: 'length', name: 'Length Converter', short: 'Convert meters, feet, miles, inches and more.', category: 'converters', categoryLabel: 'Converters', slug: 'length-converter', kind: 'unit-length', accent: 'cyan',
