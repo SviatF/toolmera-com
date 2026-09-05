@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronRight, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
@@ -34,15 +34,22 @@ export default async function IndiaCategory({params}:{params:Promise<{category:s
       <div className="categoryMeta"><span>{list.length} tools</span><span>India focused</span><span>Instant estimates</span></div>
     </section>
 
-    <section className="shell section">
-      <div className="toolGrid">{list.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
-    </section>
+    {category==='finance'?<section className="shell section calculatorGroups">
+      <div className="calculatorGroup">
+        <div className="calculatorGroupHead"><h3>Loans & EMI</h3><p>Compare repayment scenarios for general, home and car loans.</p></div>
+        <div className="toolGrid">{list.filter(t=>['emi-in','home-emi-in','car-emi-in'].includes(t.id)).map(t=><ToolCard key={t.id} tool={t}/>)}</div>
+      </div>
+      <div className="calculatorGroup">
+        <div className="calculatorGroupHead"><h3>Investing & deposits</h3><p>Model SIP growth assumptions and fixed-deposit maturity.</p></div>
+        <div className="toolGrid">{list.filter(t=>['sip-in','fd-in'].includes(t.id)).map(t=><ToolCard key={t.id} tool={t}/>)}</div>
+      </div>
+    </section>:<section className="shell section"><div className="toolGrid">{list.map(t=><ToolCard key={t.id} tool={t}/>)}</div></section>}
 
     <section className="shell seoPanel">
       <span className="sectionKicker">LOCAL UTILITIES</span>
       <h2>Clear tools for common India-specific calculations.</h2>
-      <p>These calculators are designed for fast estimates and planning. Results are informational and should be checked against current lender, tax or investment terms when making financial decisions.</p>
-      <Link className="inlineArrowLink" href="/in/">Explore all India tools <ArrowRight size={16}/></Link>
+      <p>These calculators are designed for transparent scenario planning. Finance and tax pages state their assumptions and link to official reference material where regulatory context matters.</p>
+      <div className="indiaHubActions"><Link className="inlineArrowLink" href="/in/">Explore all India tools <ArrowRight size={16}/></Link><Link className="inlineArrowLink" href="/methodology/"><ShieldCheck size={15}/> Accuracy methodology</Link></div>
     </section>
   </main>{categorySchemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>
 }
