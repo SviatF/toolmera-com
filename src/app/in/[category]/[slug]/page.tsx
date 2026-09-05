@@ -12,14 +12,23 @@ import { freeTitle } from '@/lib/seo';
 export function generateStaticParams(){return tools.filter(t=>t.country==='in').map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug,'in');if(!tool)return{};
-  return{title:freeTitle(tool.title),description:tool.description,alternates:{canonical:`https://toolmera.com/in/${category}/${slug}/`}}
+  const title=freeTitle(tool.title);const description=tool.description;const url=`https://toolmera.com/in/${category}/${slug}/`;
+  return{title,description,alternates:{canonical:url},openGraph:{title,description,url,siteName:'Toolmera',type:'website'},twitter:{card:'summary',title,description}}
 }
 
 export default async function IndiaTool({params}:{params:Promise<{category:string;slug:string}>}){
   const {category,slug}=await params;const tool=findTool(category,slug,'in');if(!tool)notFound();
   const related=toolsForCategory(category,'in').filter(t=>t.id!==tool.id).slice(0,4);
   const url=`https://toolmera.com/in/${category}/${slug}/`;
-  const schema={"@context":"https://schema.org","@type":"WebApplication",name:tool.name,applicationCategory:"FinanceApplication",operatingSystem:"Any",url,description:tool.description,offers:{"@type":"Offer",price:"0",priceCurrency:"INR"}};
+  const schemas=[
+    {"@context":"https://schema.org","@type":"WebApplication",name:tool.name,applicationCategory:"FinanceApplication",operatingSystem:"Any",url,description:tool.description,offers:{"@type":"Offer",price:"0",priceCurrency:"INR"}},
+    {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
+      {"@type":"ListItem",position:1,name:"Home",item:"https://toolmera.com/"},
+      {"@type":"ListItem",position:2,name:"India",item:"https://toolmera.com/in/"},
+      {"@type":"ListItem",position:3,name:tool.categoryLabel,item:`https://toolmera.com/in/${category}/`},
+      {"@type":"ListItem",position:4,name:tool.name,item:url}
+    ]}
+  ];
 
   return <><Header/><main className="subPage">
     <section className="shell toolHero compactToolHero">
@@ -52,6 +61,6 @@ export default async function IndiaTool({params}:{params:Promise<{category:strin
     {related.length>0&&<section className="shell section"><div className="sectionHead"><div><span className="sectionKicker">RELATED</span><h2>More India tools</h2></div></div><div className="toolGrid relatedGrid">{related.map(t=><ToolCard key={t.id} tool={t}/>)}</div></section>}
 
     <section className="shell faqSection"><span className="sectionKicker">FAQ</span><h2>Common questions</h2>{tool.faq.map(f=><details key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}</section>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>
+    {schemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}
   </main><Footer/></>
 }
