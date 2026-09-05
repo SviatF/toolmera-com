@@ -25,6 +25,14 @@ export type ToolKind =
   | 'average'
   | 'unit-length'
   | 'unit-temperature'
+  | 'unit-weight'
+  | 'unit-volume'
+  | 'unit-area'
+  | 'qr-generator'
+  | 'uuid-generator'
+  | 'password-generator'
+  | 'random-number-generator'
+  | 'unix-timestamp'
   | 'word-counter'
   | 'case-converter'
   | 'json-formatter'
@@ -178,6 +186,38 @@ export const tools: Tool[] = [
     title: 'Base64 Encode & Decode — UTF-8 & Base64URL', description: 'Encode UTF-8 text to Base64 or Base64URL and decode it back locally in your browser.', intro: 'Encode text to standard Base64 or Base64URL, decode UTF-8 text, and keep the operation in your browser.', benefits: ['UTF-8 text', 'Base64 & Base64URL', 'Browser-side processing'], faq: commonFaq,
   },
   {
+    id: 'qr-code', name: 'QR Code Generator', short: 'Create customizable static QR codes for URLs and text.', category: 'generators', categoryLabel: 'Generators', slug: 'qr-code-generator', kind: 'qr-generator', accent: 'blue', badge: 'Popular',
+    title: 'Free QR Code Generator — Create Custom QR Codes Online', description: 'Generate static QR codes for URLs or text with custom colors, error correction, PNG and SVG downloads.', intro: 'Create a static QR code directly in your browser, customize its appearance and download PNG or SVG output.', benefits: ['PNG & SVG downloads', 'Custom colors', 'Error correction controls'], faq: commonFaq,
+  },
+  {
+    id: 'uuid', name: 'UUID Generator', short: 'Generate one or many random UUID v4 identifiers.', category: 'generators', categoryLabel: 'Generators', slug: 'uuid-generator', kind: 'uuid-generator', accent: 'cyan',
+    title: 'Free UUID Generator — Generate UUID v4 & GUID Values', description: 'Generate random UUID version 4 identifiers in bulk with formatting controls, copy and TXT download.', intro: 'Create UUID v4 identifiers locally with native browser cryptographic randomness and practical formatting options.', benefits: ['UUID v4', 'Bulk generation', 'Copy & TXT export'], faq: commonFaq,
+  },
+  {
+    id: 'password', name: 'Password Generator', short: 'Generate customizable random passwords with Web Crypto.', category: 'generators', categoryLabel: 'Generators', slug: 'password-generator', kind: 'password-generator', accent: 'green', badge: 'Popular',
+    title: 'Free Password Generator — Create Strong Random Passwords', description: 'Generate random passwords with configurable length, character sets and ambiguity controls using browser Web Crypto.', intro: 'Create a random password locally with the character types and length you choose.', benefits: ['Web Crypto randomness', 'Custom character sets', 'Copy in one click'], faq: commonFaq,
+  },
+  {
+    id: 'random-number', name: 'Random Number Generator', short: 'Generate random integers or decimal values in a custom range.', category: 'generators', categoryLabel: 'Generators', slug: 'random-number-generator', kind: 'random-number-generator', accent: 'violet',
+    title: 'Free Random Number Generator — Pick Numbers Online', description: 'Generate random integers or decimals across a custom range with unique-value and sorting options.', intro: 'Pick one number or generate a list with custom bounds, precision, uniqueness and sort order.', benefits: ['Integer & decimal modes', 'Unique values option', 'Cryptographic source'], faq: commonFaq,
+  },
+  {
+    id: 'unix-timestamp', name: 'Unix Timestamp Converter', short: 'Convert Unix epoch timestamps to dates and back.', category: 'time', categoryLabel: 'Time & Date', slug: 'unix-timestamp-converter', kind: 'unix-timestamp', accent: 'pink', badge: 'Popular',
+    title: 'Free Unix Timestamp Converter — Epoch Time to Date', description: 'Convert Unix timestamps in seconds or milliseconds to UTC and local dates, or convert dates back to epoch time.', intro: 'Convert Unix epoch values to readable dates and turn local or UTC date-time values back into timestamps.', benefits: ['Seconds & milliseconds', 'UTC & local output', 'Date to epoch'], faq: commonFaq,
+  },
+  {
+    id: 'weight', name: 'Weight Converter', short: 'Convert metric and imperial mass units instantly.', category: 'converters', categoryLabel: 'Converters', slug: 'weight-converter', kind: 'unit-weight', accent: 'cyan',
+    title: 'Free Weight Converter — Convert Kg, Lb, Oz, Grams & Stone', description: 'Convert kilograms, grams, milligrams, pounds, ounces, stone and metric tonnes with a live unit matrix.', intro: 'Convert weight and mass measurements between common metric and imperial units.', benefits: ['7 mass units', 'Swap units', 'All-unit matrix'], faq: commonFaq,
+  },
+  {
+    id: 'volume', name: 'Volume Converter', short: 'Convert metric, US customary and Imperial volume units.', category: 'converters', categoryLabel: 'Converters', slug: 'volume-converter', kind: 'unit-volume', accent: 'blue',
+    title: 'Free Volume Converter — Liters, Gallons, Cups, ML & Oz', description: 'Convert metric, US customary and UK Imperial volume units with clearly labeled gallons, fluid ounces, cups and more.', intro: 'Convert liquid and volume measurements without mixing US customary and UK Imperial definitions.', benefits: ['Metric, US & Imperial', 'Clearly labeled units', 'All-unit matrix'], faq: commonFaq,
+  },
+  {
+    id: 'area', name: 'Area Converter', short: 'Convert land and surface area units.', category: 'converters', categoryLabel: 'Converters', slug: 'area-converter', kind: 'unit-area', accent: 'green',
+    title: 'Free Area Converter — Acres, Sq Ft, Hectares & Sq Meters', description: 'Convert square meters, square feet, acres, hectares, square yards, square miles and other area units.', intro: 'Convert land and surface area measurements across metric and customary square units.', benefits: ['8 area units', 'Land measurement units', 'All-unit matrix'], faq: commonFaq,
+  },
+  {
     id: 'emi-in', name: 'EMI Calculator', short: 'Calculate monthly loan EMI, interest and repayment.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'emi-calculator', kind: 'emi', accent: 'blue', badge: 'India',
     title: 'EMI Calculator India — Loan EMI Calculator', description: 'Calculate monthly EMI, total interest and repayment for loans in India.', intro: 'Estimate your monthly EMI for personal, car or home loans with a clear repayment summary.', benefits: ['Monthly EMI', 'Total interest', 'Total repayment'], faq: commonFaq,
   },
@@ -236,6 +276,8 @@ export const categories = [
   { slug: 'pdf', label: 'PDF Tools', description: 'Merge, split and create PDF files.', accent: 'pink' as Accent },
   { slug: 'calculators', label: 'Calculators', description: 'Math, health and everyday calculations.', accent: 'amber' as Accent },
   { slug: 'converters', label: 'Converters', description: 'Convert units and formats instantly.', accent: 'cyan' as Accent },
+  { slug: 'generators', label: 'Generators', description: 'Generate QR codes, UUIDs, passwords and random values.', accent: 'blue' as Accent },
+  { slug: 'time', label: 'Time & Date', description: 'Convert timestamps and work with time values.', accent: 'pink' as Accent },
   { slug: 'text', label: 'Text Tools', description: 'Count, transform and clean text.', accent: 'violet' as Accent },
   { slug: 'developer', label: 'Developer Tools', description: 'Format, encode and inspect developer data.', accent: 'pink' as Accent },
 ];
