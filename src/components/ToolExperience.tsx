@@ -436,6 +436,317 @@ function CompoundInterestCalculator(){
   </div>;
 }
 
+
+function LoanCalculator(){
+  const [principal,setPrincipal]=useState(25000);
+  const [rate,setRate]=useState(7);
+  const [term,setTerm]=useState(5);
+  const [termUnit,setTermUnit]=useState<'years'|'months'>('years');
+  const [tableView,setTableView]=useState<'yearly'|'monthly'>('yearly');
+
+  const result=useMemo(()=>{
+    const n=termUnit==='years'?Math.round(term*12):Math.round(term);
+    if(principal<=0)return {error:'Enter a loan amount greater than zero.'} as const;
+    if(rate<0)return {error:'Interest rate cannot be negative.'} as const;
+    if(n<=0)return {error:'Loan term must be greater than zero.'} as const;
+    if(n>1200)return {error:'Choose a loan term of 100 years or less.'} as const;
+
+    const r=rate/12/100;
+    const payment=r===0?principal/n:principal*r*(1+r)**n/((1+r)**n-1);
+    let balance=principal;
+    const monthly:{period:number;payment:number;principal:number;interest:number;balance:number}[]=[];
+    for(let i=1;i<=n;i++){
+      const interest=balance*r;
+      const principalPaid=i===n?balance:Math.min(balance,payment-interest);
+      const actualPayment=principalPaid+interest;
+      balance=Math.max(0,balance-principalPaid);
+      monthly.push({period:i,payment:actualPayment,principal:principalPaid,interest,balance});
+    }
+    const totalRepayment=monthly.reduce((sum,row)=>sum+row.payment,0);
+    const totalInterest=monthly.reduce((sum,row)=>sum+row.interest,0);
+    const yearly=[];
+    for(let i=0;i<monthly.length;i+=12){
+      const chunk=monthly.slice(i,i+12);
+      yearly.push({
+        period:Math.floor(i/12)+1,
+        payment:chunk.reduce((s,row)=>s+row.payment,0),
+        principal:chunk.reduce((s,row)=>s+row.principal,0),
+        interest:chunk.reduce((s,row)=>s+row.interest,0),
+        balance:chunk[chunk.length-1].balance
+      });
+    }
+    return {payment,totalRepayment,totalInterest,monthly,yearly,n};
+  },[principal,rate,term,termUnit]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid batch5Fields">
+      <label>Loan amount<input type="number" min="0" step="100" value={principal} onChange={e=>setPrincipal(+e.target.value)}/></label>
+      <label>Annual interest rate (%)<input type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(+e.target.value)}/></label>
+      <label>Loan term<input type="number" min="1" step="1" value={term} onChange={e=>setTerm(+e.target.value)}/></label>
+      <label>Term unit<select value={termUnit} onChange={e=>setTermUnit(e.target.value as 'years'|'months')}><option value="years">Years</option><option value="months">Months</option></select></label>
+    </div>
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="metricGrid compactMetrics">
+        <MetricCard label="Monthly payment" value={globalNumber(result.payment)}/>
+        <MetricCard label="Total interest" value={globalNumber(result.totalInterest)}/>
+        <MetricCard label="Total repayment" value={globalNumber(result.totalRepayment)}/>
+      </div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>Fixed-rate amortization model. The calculator excludes fees, insurance, taxes, prepayments and variable-rate changes.</span></div>
+      <div className="tableToolbar">
+        <div><strong>Amortization schedule</strong><small>{result.n} monthly payments</small></div>
+        <div className="calcModeTabs tableTabs">
+          <button className={tableView==='yearly'?'active':''} onClick={()=>setTableView('yearly')}>Yearly</button>
+          <button className={tableView==='monthly'?'active':''} onClick={()=>setTableView('monthly')}>Monthly</button>
+        </div>
+      </div>
+      <div className="growthTableWrap"><table className="growthTable"><thead><tr><th>{tableView==='yearly'?'Year':'Month'}</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>{(tableView==='yearly'?result.yearly:result.monthly).map(row=><tr key={row.period}><td>{row.period}</td><td>{globalNumber(row.payment)}</td><td>{globalNumber(row.principal)}</td><td>{globalNumber(row.interest)}</td><td>{globalNumber(row.balance)}</td></tr>)}</tbody></table></div>
+    </>}
+  </div>;
+}
+
+function RoiCalculator(){
+  const [invested,setInvested]=useState(10000);
+  const [returned,setReturned]=useState(13500);
+  const [years,setYears]=useState(3);
+
+  const result=useMemo(()=>{
+    if(invested<=0)return {error:'Initial investment must be greater than zero.'} as const;
+    const net=returned-invested;
+    const roi=net/invested*100;
+    const annualized=years>0&&returned>0?((returned/invested)**(1/years)-1)*100:null;
+    return {net,roi,annualized};
+  },[invested,returned,years]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid">
+      <label>Amount invested<input type="number" step="100" value={invested} onChange={e=>setInvested(+e.target.value)}/></label>
+      <label>Amount returned<input type="number" step="100" value={returned} onChange={e=>setReturned(+e.target.value)}/></label>
+      <label>Duration (years, optional)<input type="number" min="0" step="0.1" value={years} onChange={e=>setYears(+e.target.value)}/></label>
+    </div>
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="metricGrid compactMetrics">
+        <MetricCard label="Total ROI" value={result.roi.toFixed(2)+'%'}/>
+        <MetricCard label={result.net>=0?'Net gain':'Net loss'} value={globalNumber(Math.abs(result.net))}/>
+        <MetricCard label="Annualized ROI" value={result.annualized===null?'—':result.annualized.toFixed(2)+'%'}/>
+      </div>
+      <div className="formulaNote"><span>Formula</span><code>ROI = (Returned − Invested) ÷ Invested × 100</code></div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>Annualized ROI is shown only when duration is above zero and the ending value is positive. This is a mathematical scenario, not investment advice.</span></div>
+    </>}
+  </div>;
+}
+
+function DiscountCalculator(){
+  const [mode,setMode]=useState<'percent'|'fixed'>('percent');
+  const [price,setPrice]=useState(100);
+  const [primary,setPrimary]=useState(20);
+  const [secondary,setSecondary]=useState(10);
+
+  const result=useMemo(()=>{
+    if(price<=0)return {error:'Enter an original price greater than zero.'} as const;
+    const firstSavings=mode==='percent'
+      ? price*Math.min(100,Math.max(0,primary))/100
+      : Math.min(price,Math.max(0,primary));
+    const afterFirst=Math.max(0,price-firstSavings);
+    const secondPct=Math.min(100,Math.max(0,secondary));
+    const secondSavings=afterFirst*secondPct/100;
+    const savings=Math.min(price,firstSavings+secondSavings);
+    const finalPrice=Math.max(0,price-savings);
+    const effective=savings/price*100;
+    return {firstSavings,secondSavings,savings,finalPrice,effective};
+  },[mode,price,primary,secondary]);
+
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs">
+      <button className={mode==='percent'?'active':''} onClick={()=>setMode('percent')}>Percentage off</button>
+      <button className={mode==='fixed'?'active':''} onClick={()=>setMode('fixed')}>Fixed amount off</button>
+    </div>
+    <div className="fieldGrid">
+      <label>Original price<input type="number" min="0" step="0.01" value={price} onChange={e=>setPrice(+e.target.value)}/></label>
+      <label>{mode==='percent'?'Primary discount (%)':'Fixed discount amount'}<input type="number" min="0" step="0.01" value={primary} onChange={e=>setPrimary(+e.target.value)}/></label>
+      <label>Extra discount (%)<input type="number" min="0" max="100" step="0.01" value={secondary} onChange={e=>setSecondary(+e.target.value)}/></label>
+    </div>
+    {mode==='percent'&&<div className="quickPills">{[10,15,20,25,50].map(v=><button key={v} onClick={()=>setPrimary(v)}>{v}% off</button>)}</div>}
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="metricGrid compactMetrics">
+        <MetricCard label="Final price" value={globalNumber(result.finalPrice)}/>
+        <MetricCard label="Total savings" value={globalNumber(result.savings)}/>
+        <MetricCard label="Effective discount" value={result.effective.toFixed(2)+'%'}/>
+      </div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>The extra discount is applied sequentially to the already-reduced price. For example, 20% off plus 10% off is an effective 28% discount, not 30%.</span></div>
+    </>}
+  </div>;
+}
+
+function SimpleInterestCalculator(){
+  const [principal,setPrincipal]=useState(10000);
+  const [rate,setRate]=useState(5);
+  const [time,setTime]=useState(2);
+  const [unit,setUnit]=useState<'years'|'months'|'days'>('years');
+  const [dayBasis,setDayBasis]=useState<365|360>(365);
+
+  const result=useMemo(()=>{
+    if(principal<=0)return {error:'Principal must be greater than zero.'} as const;
+    if(rate<0)return {error:'Interest rate cannot be negative.'} as const;
+    if(time<=0)return {error:'Time period must be greater than zero.'} as const;
+    const years=unit==='years'?time:unit==='months'?time/12:time/dayBasis;
+    const interest=principal*(rate/100)*years;
+    const total=principal+interest;
+    const annualInterest=principal*(rate/100);
+    return {years,interest,total,annualInterest,monthlyInterest:annualInterest/12,dailyInterest:annualInterest/dayBasis};
+  },[principal,rate,time,unit,dayBasis]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid batch5Fields">
+      <label>Principal amount<input type="number" min="0" step="100" value={principal} onChange={e=>setPrincipal(+e.target.value)}/></label>
+      <label>Annual interest rate (%)<input type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(+e.target.value)}/></label>
+      <label>Time period<input type="number" min="0" step="0.01" value={time} onChange={e=>setTime(+e.target.value)}/></label>
+      <label>Time unit<select value={unit} onChange={e=>setUnit(e.target.value as 'years'|'months'|'days')}><option value="years">Years</option><option value="months">Months</option><option value="days">Days</option></select></label>
+      {unit==='days'&&<label>Day-count basis<select value={dayBasis} onChange={e=>setDayBasis(Number(e.target.value) as 365|360)}><option value={365}>365-day year</option><option value={360}>360-day banking year</option></select></label>}
+    </div>
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="metricGrid compactMetrics">
+        <MetricCard label="Simple interest" value={globalNumber(result.interest)}/>
+        <MetricCard label="Total amount" value={globalNumber(result.total)}/>
+        <MetricCard label="Interest / month" value={globalNumber(result.monthlyInterest)}/>
+      </div>
+      <div className="formulaNote"><span>Formula</span><code>I = P × r × t</code></div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>Simple interest is calculated only on the original principal. Day calculations use the selected 365-day or 360-day basis.</span></div>
+    </>}
+  </div>;
+}
+
+function daysInMonth(year:number,month:number){return new Date(Date.UTC(year,month,0)).getUTCDate()}
+function addYearsClamped(p:DateParts,years:number):DateParts{
+  const y=p.y+years;
+  return {y,m:p.m,d:Math.min(p.d,daysInMonth(y,p.m))};
+}
+function addMonthsClamped(p:DateParts,months:number):DateParts{
+  const index=(p.m-1)+months;
+  const y=p.y+Math.floor(index/12);
+  const m=((index%12)+12)%12+1;
+  return {y,m,d:Math.min(p.d,daysInMonth(y,m))};
+}
+function datePartsFromSerial(serial:number):DateParts{
+  const d=new Date(serial*86400000);
+  return {y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate()};
+}
+function calendarDifference(start:DateParts,end:DateParts){
+  let years=end.y-start.y;
+  let yearAnchor=addYearsClamped(start,years);
+  if(dateSerial(yearAnchor)>dateSerial(end)){years--;yearAnchor=addYearsClamped(start,years)}
+  let months=(end.y-yearAnchor.y)*12+(end.m-yearAnchor.m);
+  let monthAnchor=addMonthsClamped(yearAnchor,months);
+  if(dateSerial(monthAnchor)>dateSerial(end)){months--;monthAnchor=addMonthsClamped(yearAnchor,months)}
+  const days=dateSerial(end)-dateSerial(monthAnchor);
+  return {years,months,days};
+}
+function businessDaysBetween(startSerial:number,endExclusive:number){
+  let count=0;
+  for(let s=startSerial;s<endExclusive;s++){
+    const day=new Date(s*86400000).getUTCDay();
+    if(day!==0&&day!==6)count++;
+  }
+  return count;
+}
+
+function DateDifferenceCalculator(){
+  const [startValue,setStartValue]=useState('2026-01-01');
+  const [endValue,setEndValue]=useState(localTodayValue);
+  const [includeEnd,setIncludeEnd]=useState(false);
+
+  const result=useMemo(()=>{
+    const start=parseDateParts(startValue),end=parseDateParts(endValue);
+    if(!start||!end)return {error:'Enter two valid dates.'} as const;
+    const startSerial=dateSerial(start),endSerial=dateSerial(end);
+    if(endSerial<startSerial)return {error:'End date must be on or after the start date.'} as const;
+    const endExclusive=endSerial+(includeEnd?1:0);
+    const effectiveEnd=datePartsFromSerial(endExclusive);
+    const duration=calendarDifference(start,effectiveEnd);
+    const totalDays=endExclusive-startSerial;
+    const fullWeeks=Math.floor(totalDays/7);
+    const remainingDays=totalDays%7;
+    const businessDays=businessDaysBetween(startSerial,endExclusive);
+    return {duration,totalDays,fullWeeks,remainingDays,businessDays,hours:totalDays*24,minutes:totalDays*1440};
+  },[startValue,endValue,includeEnd]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid calculatorTwoFields">
+      <label>Start date<input type="date" value={startValue} onChange={e=>setStartValue(e.target.value)}/></label>
+      <label>End date<input type="date" value={endValue} onChange={e=>setEndValue(e.target.value)}/></label>
+    </div>
+    <label className="checkControl"><input type="checkbox" checked={includeEnd} onChange={e=>setIncludeEnd(e.target.checked)}/><span>Include end date (+1 day)</span></label>
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="durationHero"><strong>{result.duration.years} years, {result.duration.months} months, {result.duration.days} days</strong><span>Calendar duration</span></div>
+      <div className="metricGrid dateMetricGrid">
+        <MetricCard label="Total days" value={globalNumber(result.totalDays)}/>
+        <MetricCard label="Weeks + days" value={result.fullWeeks+'w '+result.remainingDays+'d'}/>
+        <MetricCard label="Business days" value={globalNumber(result.businessDays)}/>
+        <MetricCard label="Total hours" value={globalNumber(result.hours)}/>
+      </div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>Business days exclude Saturdays and Sundays only. Public holidays vary by country and are not removed automatically.</span></div>
+    </>}
+  </div>;
+}
+
+const statNumber=(n:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(Number.isFinite(n)?n:0);
+
+function AverageCalculator(){
+  const [text,setText]=useState('12, 18, 18, 24, 30');
+  const [copied,setCopied]=useState(false);
+
+  const result=useMemo(()=>{
+    const trimmed=text.trim();
+    if(!trimmed)return {empty:true} as const;
+    const tokens=trimmed.split(/[\s,]+/).filter(Boolean);
+    const values=tokens.map(Number);
+    if(values.some(v=>!Number.isFinite(v)))return {error:'Enter numbers separated by spaces, commas or line breaks.'} as const;
+    const sorted=[...values].sort((a,b)=>a-b);
+    const count=values.length;
+    const sum=values.reduce((s,v)=>s+v,0);
+    const mean=sum/count;
+    const median=count%2?sorted[(count-1)/2]:(sorted[count/2-1]+sorted[count/2])/2;
+    const freq=new Map<number,number>();
+    values.forEach(v=>freq.set(v,(freq.get(v)||0)+1));
+    const maxFreq=Math.max(...freq.values());
+    const modes=maxFreq<=1?[]:[...freq.entries()].filter(([,f])=>f===maxFreq).map(([v])=>v).sort((a,b)=>a-b);
+    const min=sorted[0],max=sorted[sorted.length-1],range=max-min;
+    return {values,count,sum,mean,median,modes,min,max,range};
+  },[text]);
+
+  async function copySummary(){
+    if(!('mean' in result))return;
+    const summary=[
+      'Mean: '+statNumber(result.mean),
+      'Median: '+statNumber(result.median),
+      'Mode: '+(result.modes.length?result.modes.map(statNumber).join(', '):'No mode'),
+      'Range: '+statNumber(result.range),
+      'Count: '+result.count,
+      'Sum: '+statNumber(result.sum),
+      'Min: '+statNumber(result.min),
+      'Max: '+statNumber(result.max)
+    ].join('\n');
+    await navigator.clipboard.writeText(summary);
+    setCopied(true);window.setTimeout(()=>setCopied(false),1400);
+  }
+
+  return <div className="toolUi">
+    <textarea className="textArea statsInput" value={text} onChange={e=>{setText(e.target.value);setCopied(false)}} placeholder="Enter numbers separated by commas, spaces or line breaks…"/>
+    {'error' in result?<div className="toolError">{result.error}</div>:'empty' in result?<div className="toolNote"><ShieldCheck size={15}/><span>Enter at least one number to calculate the statistical summary.</span></div>:<>
+      <div className="metricGrid statMetricGrid">
+        <MetricCard label="Mean" value={statNumber(result.mean)}/>
+        <MetricCard label="Median" value={statNumber(result.median)}/>
+        <MetricCard label="Mode" value={result.modes.length?result.modes.map(statNumber).join(', '):'No mode'}/>
+        <MetricCard label="Range" value={statNumber(result.range)}/>
+        <MetricCard label="Count" value={result.count}/>
+        <MetricCard label="Sum" value={statNumber(result.sum)}/>
+        <MetricCard label="Minimum" value={statNumber(result.min)}/>
+        <MetricCard label="Maximum" value={statNumber(result.max)}/>
+      </div>
+      <button className="secondaryButton summaryCopy" onClick={copySummary}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy statistical summary'}</button>
+    </>}
+  </div>;
+}
+
 function UnitConverter({temperature=false}:{temperature?:boolean}){
   const [v,setV]=useState(1);
   const [from,setFrom]=useState(temperature?'c':'m');
@@ -738,6 +1049,6 @@ function Base64Tool(){
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><h2>{tool.name}</h2></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
