@@ -127,3 +127,26 @@
 @media(max-width:860px){
   .seoDeepDive,.categoryGuide{grid-template-columns:1fr}
 }
+
+
+/* PDF workflow controls */
+.queueHead{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-top:18px}
+.queueHead>span{font-size:12px;font-weight:700;color:#dce5ed}
+.queueHead>small{font-size:10px;color:#778493;text-align:right}
+.fileQueue{display:grid;gap:8px;margin-top:9px}
+.fileQueueItem{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--line);border-radius:12px;padding:10px 11px;background:rgba(255,255,255,.025)}
+.fileQueueItem>span{display:flex;align-items:center;gap:10px;min-width:0}
+.fileQueueItem>span>b{width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:rgba(76,170,255,.08);color:#65b7ff;font-size:10px;flex:0 0 auto}
+.fileQueueItem>span>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fileQueueItem strong{font-size:11px;font-weight:600;color:#d8e0e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.fileQueueItem small{font-size:9px;color:#6f7d8b}
+.fileQueueItem>div{display:flex;gap:5px;flex:0 0 auto}
+.fileQueueItem button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#0b1118;color:#8d9baa;display:grid;place-items:center;cursor:pointer}
+.fileQueueItem button:hover:not(:disabled){color:#fff;border-color:rgba(76,170,255,.3)}
+.fileQueueItem button:disabled{opacity:.28;cursor:default}
+.toolError{border:1px solid rgba(255,91,110,.22);background:rgba(255,91,110,.06);color:#ff9caa;border-radius:12px;padding:11px 13px;margin-top:12px;font-size:11px}
+@media(max-width:720px){
+  .queueHead{align-items:flex-start;flex-direction:column;gap:5px}
+  .queueHead>small{text-align:left}
+  .fileQueueItem strong{max-width:190px}
+}
