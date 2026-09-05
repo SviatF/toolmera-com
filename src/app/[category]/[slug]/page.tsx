@@ -14,10 +14,15 @@ export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)return{};
   const seo=toolSeoContent[tool.id];
+  const title=freeTitle(seo?.title||tool.title);
+  const description=seo?.description||tool.description;
+  const url=`https://toolmera.com/${category}/${slug}/`;
   return{
-    title:freeTitle(seo?.title||tool.title),
-    description:seo?.description||tool.description,
-    alternates:{canonical:`https://toolmera.com/${category}/${slug}/`}
+    title,
+    description,
+    alternates:{canonical:url},
+    openGraph:{title,description,url,siteName:'Toolmera',type:'website'},
+    twitter:{card:'summary',title,description}
   }
 }
 
