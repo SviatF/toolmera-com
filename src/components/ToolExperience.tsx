@@ -481,6 +481,7 @@ function UnitConverter({temperature=false}:{temperature?:boolean}){
     {label:'Boiling',value:100,from:'c',to:'f'},
     {label:'−40°',value:-40,from:'c',to:'f'},
   ];
+  const quickItems:{label:string;from:string;to:string;value?:number}[]=temperature?quickTemp:quickLength;
 
   return <div className="toolUi">
     <div className="fieldGrid">
@@ -490,8 +491,8 @@ function UnitConverter({temperature=false}:{temperature?:boolean}){
     </div>
 
     <div className="quickPills">
-      {(temperature?quickTemp:quickLength).map(item=><button key={item.label} onClick={()=>{
-        if(temperature && 'value' in item)setV(item.value);
+      {quickItems.map(item=><button key={item.label} onClick={()=>{
+        if(item.value!==undefined)setV(item.value);
         setFrom(item.from);setTo(item.to);
       }}>{item.label}</button>)}
     </div>
