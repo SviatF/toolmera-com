@@ -43,10 +43,15 @@ export function generateStaticParams(){return categories.map(c=>({category:c.slu
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
   const {category}=await params;const cat=categories.find(c=>c.slug===category);if(!cat)return{};
   const seo=categorySeoContent[category];
+  const title=freeTitle(seo?.title||cat.label);
+  const description=seo?.description||`${cat.description} Free, fast and privacy-minded online tools from Toolmera.`;
+  const url=`https://toolmera.com/${category}/`;
   return{
-    title:freeTitle(seo?.title||cat.label),
-    description:seo?.description||`${cat.description} Free, fast and private online tools from Toolmera.`,
-    alternates:{canonical:`https://toolmera.com/${category}/`}
+    title,
+    description,
+    alternates:{canonical:url},
+    openGraph:{title,description,url,siteName:'Toolmera',type:'website'},
+    twitter:{card:'summary',title,description}
   }
 }
 
@@ -54,6 +59,16 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
   const {category}=await params;const cat=categories.find(c=>c.slug===category);if(!cat)notFound();
   const list=toolsForCategory(category);
   const seo=categorySeoContent[category];
+  const categoryUrl=`https://toolmera.com/${category}/`;
+  const categorySchemas=[
+    {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
+      {"@type":"ListItem",position:1,name:"Home",item:"https://toolmera.com/"},
+      {"@type":"ListItem",position:2,name:cat.label,item:categoryUrl}
+    ]},
+    {"@context":"https://schema.org","@type":"ItemList",name:`${cat.label} tools`,itemListElement:list.map((tool,index)=>({
+      "@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com/${category}/${tool.slug}/`
+    }))}
+  ];
 
   return <><Header/><main className="subPage">
     <section className="shell categoryHero compactHero">
@@ -100,5 +115,5 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <p>Toolmera keeps every utility focused on a specific intent, while related tools and category navigation make the next step easy to find. The platform is built as a fast, static-first product with browser-side processing wherever the task allows it.</p>
       <Link className="inlineArrowLink" href="/tools/">Browse every Toolmera tool <ArrowRight size={16}/></Link>
     </section>}
-  </main><Footer/></>
+  </main>{categorySchemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>
 }
