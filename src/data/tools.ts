@@ -2,10 +2,17 @@ export type Accent = 'blue' | 'cyan' | 'violet' | 'pink' | 'amber' | 'green';
 export type ToolKind =
   | 'image-convert'
   | 'image-compress'
+  | 'image-compress-jpg'
+  | 'image-compress-png'
   | 'image-resize'
+  | 'image-crop'
+  | 'heic-convert'
   | 'pdf-merge'
   | 'pdf-split'
   | 'images-to-pdf'
+  | 'pdf-to-image'
+  | 'pdf-rotate'
+  | 'pdf-remove-pages'
   | 'age'
   | 'percentage'
   | 'bmi'
@@ -83,6 +90,26 @@ export const tools: Tool[] = [
     title: 'Resize Image Online', description: 'Resize image width and height instantly in your browser.', intro: 'Resize images for websites, social media and documents without installing software.', benefits: ['Exact dimensions', 'Keep aspect ratio', 'Fast local export'], faq: commonFaq,
   },
   {
+    id: 'webp-jpg', name: 'WebP to JPG', short: 'Convert WebP images to JPG with a chosen background.', category: 'image', categoryLabel: 'Image', slug: 'webp-to-jpg', kind: 'image-convert', accent: 'cyan', inputFormat: 'image/webp', outputFormat: 'image/jpeg',
+    title: 'Free WebP to JPG Converter — Convert Images Online', description: 'Convert WebP images to JPG in your browser with adjustable quality and a selectable background for transparent areas.', intro: 'Turn static WebP images into widely compatible JPG files without uploading them to a Toolmera server.', benefits: ['Adjustable JPG quality', 'Background color control', 'Browser-side conversion'], faq: commonFaq,
+  },
+  {
+    id: 'heic-jpg', name: 'HEIC to JPG', short: 'Convert HEIC and HEIF photos to JPG or PNG.', category: 'image', categoryLabel: 'Image', slug: 'heic-to-jpg', kind: 'heic-convert', accent: 'blue',
+    title: 'Free HEIC to JPG Converter — Convert iPhone Photos Online', description: 'Convert HEIC or HEIF photos to JPG or PNG directly in your browser with an output-format selector.', intro: 'Decode HEIC photos locally, choose JPG or PNG output, and download a browser-readable image file.', benefits: ['HEIC & HEIF input', 'JPG or PNG output', 'Local browser decoding'], faq: commonFaq,
+  },
+  {
+    id: 'compress-jpg', name: 'Compress JPG', short: 'Reduce JPG and JPEG file size with quality control.', category: 'image', categoryLabel: 'Image', slug: 'compress-jpg', kind: 'image-compress-jpg', accent: 'green', badge: 'Popular',
+    title: 'Free Compress JPG — Reduce JPEG File Size Online', description: 'Compress JPG and JPEG images in your browser with adjustable quality and a before-and-after size comparison.', intro: 'Reduce JPG file size while keeping the output in JPG format and comparing the actual result before download.', benefits: ['JPG output preserved', 'Quality slider', 'Before & after size'], faq: commonFaq,
+  },
+  {
+    id: 'compress-png', name: 'Compress PNG', short: 'Reduce PNG size with palette quantization.', category: 'image', categoryLabel: 'Image', slug: 'compress-png', kind: 'image-compress-png', accent: 'green',
+    title: 'Free Compress PNG — Reduce PNG File Size Online', description: 'Compress PNG images with client-side color quantization while keeping PNG output and transparency support.', intro: 'Reduce PNG file size with palette quantization and keep the result as a PNG file.', benefits: ['Real PNG output', 'Palette control', 'Transparency-aware'], faq: commonFaq,
+  },
+  {
+    id: 'crop-image', name: 'Crop Image', short: 'Crop JPG, PNG and WebP images visually.', category: 'image', categoryLabel: 'Image', slug: 'crop-image', kind: 'image-crop', accent: 'violet',
+    title: 'Free Crop Image Tool — Crop Photos Online', description: 'Crop JPG, PNG and WebP images in your browser with visual selection and common aspect-ratio presets.', intro: 'Draw a crop area on your image, choose an aspect ratio, and export the selected region locally.', benefits: ['Visual crop selection', 'Aspect ratio presets', 'Local export'], faq: commonFaq,
+  },
+  {
     id: 'merge-pdf', name: 'Merge PDF', short: 'Combine multiple PDF files into one.', category: 'pdf', categoryLabel: 'PDF', slug: 'merge-pdf', kind: 'pdf-merge', accent: 'pink', badge: 'Popular',
     title: 'Merge PDF Online — Free & Private', description: 'Merge PDF files directly in your browser without uploading documents.', intro: 'Combine PDFs into one clean document while keeping the workflow on your device.', benefits: ['Multiple PDFs', 'Reorder before merge', 'Browser processing'], faq: commonFaq,
   },
@@ -97,6 +124,18 @@ export const tools: Tool[] = [
   {
     id: 'png-pdf', name: 'PNG to PDF', short: 'Combine PNG images into a PDF document.', category: 'pdf', categoryLabel: 'PDF', slug: 'png-to-pdf', kind: 'images-to-pdf', accent: 'violet', inputFormat: 'image/png',
     title: 'PNG to PDF Converter', description: 'Convert PNG images into a PDF in your browser.', intro: 'Build a PDF from PNG screenshots, designs or scans without uploading files.', benefits: ['Multiple PNG files', 'Simple ordering', 'Local processing'], faq: commonFaq,
+  },
+  {
+    id: 'pdf-jpg', name: 'PDF to JPG', short: 'Render PDF pages as JPG or PNG images.', category: 'pdf', categoryLabel: 'PDF', slug: 'pdf-to-jpg', kind: 'pdf-to-image', accent: 'pink', badge: 'Popular',
+    title: 'Free PDF to JPG Converter — Convert PDF Pages to Images', description: 'Convert selected PDF pages to JPG or PNG images in your browser with adjustable render scale and ZIP download for multiple pages.', intro: 'Render PDF pages locally as JPG or PNG images, choose page ranges, and export one file or a ZIP bundle.', benefits: ['JPG & PNG output', 'Page range selection', 'ZIP for multiple pages'], faq: commonFaq,
+  },
+  {
+    id: 'rotate-pdf', name: 'Rotate PDF', short: 'Rotate all or selected PDF pages permanently.', category: 'pdf', categoryLabel: 'PDF', slug: 'rotate-pdf', kind: 'pdf-rotate', accent: 'violet',
+    title: 'Free Rotate PDF Tool — Rotate PDF Pages Online', description: 'Rotate all, odd, even or selected PDF pages by 90 or 180 degrees directly in your browser.', intro: 'Fix sideways or upside-down PDF pages and download a new file with the rotation saved.', benefits: ['Selected page rotation', '90° & 180° controls', 'Browser-side processing'], faq: commonFaq,
+  },
+  {
+    id: 'remove-pdf-pages', name: 'Remove PDF Pages', short: 'Delete individual pages or ranges from a PDF.', category: 'pdf', categoryLabel: 'PDF', slug: 'remove-pdf-pages', kind: 'pdf-remove-pages', accent: 'pink',
+    title: 'Free Remove PDF Pages — Delete Pages from PDF Online', description: 'Remove page numbers or ranges from a PDF directly in your browser and download the cleaned document.', intro: 'Enter pages such as 2, 5-9, 12, validate the selection, and create a new PDF without those pages.', benefits: ['Mixed page-range syntax', 'Remaining page count', 'Original stays unchanged'], faq: commonFaq,
   },
   {
     id: 'age', name: 'Age Calculator', short: 'Calculate calendar age between two dates.', category: 'calculators', categoryLabel: 'Calculators', slug: 'age-calculator', kind: 'age', accent: 'pink', badge: 'Popular',
