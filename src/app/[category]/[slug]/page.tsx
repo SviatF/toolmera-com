@@ -6,9 +6,10 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolExperience } from '@/components/ToolExperience';
 import { ToolCard } from '@/components/ToolCard';
-import { findTool, tools, toolsForCategory, toolUrl } from '@/data/tools';
+import { findTool, tools, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
 import { freeTitle } from '@/lib/seo';
+import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
 export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
@@ -29,10 +30,10 @@ export async function generateMetadata({params}:{params:Promise<{category:string
 export default async function ToolPage({params}:{params:Promise<{category:string;slug:string}>}){
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)notFound();
   const seo=toolSeoContent[tool.id];
-  const fallbackRelated=toolsForCategory(category).filter(t=>t.id!==tool.id).slice(0,4);
-  const related=seo?.related?.length
-    ? seo.related.map(item=>tools.find(t=>t.id===item.id)).filter((t):t is NonNullable<typeof t>=>Boolean(t))
-    : fallbackRelated;
+  const workflowIds=new Set(seo?.related?.map(item=>item.id)||[]);
+  const semantic=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id));
+  const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).slice(0,4);
+  const howTo=howToForTool(tool);
   const url=`https://toolmera.com/${category}/${slug}/`;
   const description=seo?.description||tool.description;
   const faq=seo?.faq||tool.faq;
@@ -81,11 +82,9 @@ export default async function ToolPage({params}:{params:Promise<{category:string
 
     <section className="shell howToSection">
       <span className="sectionKicker">HOW IT WORKS</span>
-      <h2>Three steps. That&apos;s it.</h2>
+      <h2>How to use {tool.name}</h2>
       <div className="howToGrid">
-        <div><span>01</span><h3>Open the tool</h3><p>Start immediately. No sign-up, onboarding or dashboard.</p></div>
-        <div><span>02</span><h3>Add your input</h3><p>Upload a file or enter the values needed for this calculation.</p></div>
-        <div><span>03</span><h3>Get the result</h3><p>Download the output or use the result instantly.</p></div>
+        {howTo.map((step,index)=><div key={step.title}><span>{String(index+1).padStart(2,'0')}</span><h3>{step.title}</h3><p>{step.description}</p></div>)}
       </div>
     </section>
 
