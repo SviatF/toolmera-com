@@ -11,13 +11,67 @@ function DownloadResult({ result }: { result: Result }) {
   return <div className="resultBox"><div><strong>Ready</strong>{result.before && result.after ? <small>{(result.before/1024).toFixed(0)} KB → {(result.after/1024).toFixed(0)} KB</small> : <small>Your file is ready to download.</small>}</div><a className="primaryButton" href={result.url} download={result.name}><Download size={17}/> Download</a></div>;
 }
 
-function FileDrop({ accept, multiple = false, onChange, label = 'Choose file' }: { accept: string; multiple?: boolean; onChange: (files: File[]) => void; label?: string }) {
-  function drop(e: DragEvent<HTMLLabelElement>) {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files || []);
-    if (files.length) onChange(multiple ? files : files.slice(0,1));
+const prettyFileSize=(bytes:number)=>{
+  if(bytes<1024)return bytes+' B';
+  if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10240?1:0)+' KB';
+  return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';
+};
+
+function FileDrop({
+  accept,
+  multiple = false,
+  onChange,
+  label = 'Choose file',
+  files = [],
+  busy = false,
+  busyLabel = 'Processing…'
+}: {
+  accept: string;
+  multiple?: boolean;
+  onChange: (files: File[]) => void;
+  label?: string;
+  files?: File[];
+  busy?: boolean;
+  busyLabel?: string;
+}) {
+  const [dragActive,setDragActive]=useState(false);
+  const dragDepth=useRef(0);
+
+  function pick(next:File[]){
+    if(!next.length)return;
+    onChange(multiple?next:next.slice(0,1));
   }
-  return <label className="fileDrop" onDragOver={(e)=>e.preventDefault()} onDrop={drop}><FileUp size={28}/><strong>{label}</strong><span>or drag files here</span><input type="file" accept={accept} multiple={multiple} onChange={(e) => onChange(Array.from(e.target.files || []))}/></label>;
+  function drop(e:DragEvent<HTMLLabelElement>){
+    e.preventDefault();e.stopPropagation();dragDepth.current=0;setDragActive(false);
+    pick(Array.from(e.dataTransfer.files||[]));
+  }
+  function dragEnter(e:DragEvent<HTMLLabelElement>){
+    e.preventDefault();e.stopPropagation();dragDepth.current+=1;setDragActive(true);
+  }
+  function dragLeave(e:DragEvent<HTMLLabelElement>){
+    e.preventDefault();e.stopPropagation();dragDepth.current=Math.max(0,dragDepth.current-1);
+    if(dragDepth.current===0)setDragActive(false);
+  }
+
+  return <label
+    className={`fileDrop ${dragActive?'dragActive':''} ${files.length?'hasFiles':''} ${busy?'isBusy':''}`}
+    onDragEnter={dragEnter}
+    onDragOver={(e)=>{e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='copy'}}
+    onDragLeave={dragLeave}
+    onDrop={drop}
+  >
+    {busy
+      ? <div className="fileProcessState"><span className="processSpinner"></span><strong>{busyLabel}</strong><small>Processing locally in your browser</small><div className="processTrack"><i/></div></div>
+      : files.length
+        ? <div className="fileReadyState">
+            <span className="fileReadyIcon"><Check size={19}/></span>
+            <div className="fileReadyCopy"><strong>{files.length===1?'File ready':files.length+' files ready'}</strong><small>{files.length===1?files[0].name:files.map(f=>f.name).slice(0,2).join(' · ')+(files.length>2?' · +'+(files.length-2)+' more':'')}</small></div>
+            <span className="fileReadySize">{files.length===1?prettyFileSize(files[0].size):prettyFileSize(files.reduce((sum,f)=>sum+f.size,0))}</span>
+            <span className="fileReplaceHint">{multiple?'Drop new files or click to replace':'Drop another file or click to replace'}</span>
+          </div>
+        : <><FileUp size={30}/><strong>{dragActive?'Drop file here':label}</strong><span>{dragActive?'Release to add it':'or drag & drop from your folder'}</span></>}
+    <input type="file" accept={accept} multiple={multiple} disabled={busy} onChange={(e)=>{pick(Array.from(e.target.files||[]));e.currentTarget.value=''}}/>
+  </label>;
 }
 
 function FileQueue({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
@@ -33,7 +87,7 @@ function FileQueue({ files, onChange }: { files: File[]; onChange: (files: File[
   }
   return <div className="fileQueue">
     {files.map((file,index)=><div className="fileQueueItem" key={`${file.name}-${file.size}-${index}`}>
-      <span><b>{index + 1}</b><span><strong>{file.name}</strong><small>{Math.max(1,Math.round(file.size/1024))} KB</small></span></span>
+      <span><b>{index + 1}</b><span><strong>{file.name}</strong><small>{prettyFileSize(file.size)} · <em>Ready</em></small></span></span>
       <div>
         <button type="button" aria-label="Move up" onClick={()=>move(index,-1)} disabled={index===0}><ChevronUp size={15}/></button>
         <button type="button" aria-label="Move down" onClick={()=>move(index,1)} disabled={index===files.length-1}><ChevronDown size={15}/></button>
