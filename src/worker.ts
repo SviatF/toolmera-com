@@ -265,11 +265,11 @@ async function ga4BatchRunReports(
   let response:Response;
   try{
     response=await fetch(
-      \`https://analyticsdata.googleapis.com/v1beta/properties/\${propertyId}:batchRunReports\`,
+      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:batchRunReports`,
       {
         method:'POST',
         headers:{
-          authorization:\`Bearer \${token}\`,
+          authorization:`Bearer ${token}`,
           'content-type':'application/json',
         },
         body:JSON.stringify({
@@ -284,12 +284,12 @@ async function ga4BatchRunReports(
       },
     );
   }catch(error){
-    throw new Error(\`GA4 batch network request failed: \${error instanceof Error?error.message:'unknown fetch error'}\`);
+    throw new Error(`GA4 batch network request failed: ${error instanceof Error?error.message:'unknown fetch error'}`);
   }
 
   const body=await response.text();
   if(!response.ok){
-    throw new Error(\`GA4 Data API batch failed: \${response.status} \${body.slice(0,1000)}\`);
+    throw new Error(`GA4 Data API batch failed: ${response.status} ${body.slice(0,1000)}`);
   }
   let parsed:Ga4BatchReport;
   try{parsed=JSON.parse(body) as Ga4BatchReport}
