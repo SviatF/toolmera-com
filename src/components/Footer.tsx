@@ -18,6 +18,8 @@ export function Footer() {
           <Link href="/pdf/">PDF</Link>
           <Link href="/calculators/">Calculators</Link>
           <Link href="/converters/">Converters</Link>
+          <Link href="/generators/">Generators</Link>
+          <Link href="/time/">Time & Date</Link>
           <Link href="/text/">Text</Link>
           <Link href="/developer/">Developer</Link>
         </div>
