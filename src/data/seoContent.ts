@@ -636,7 +636,7 @@ export const categorySeoContent: Record<string, {
       }
     ]
   },
-,
+
   calculators: {
     title: 'Free Online Calculators — Age, Percentage, BMI & Interest',
     description: 'Fast online calculators for calendar age, percentages, adult BMI and compound interest with clear formulas and assumptions.',
