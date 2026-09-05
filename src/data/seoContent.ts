@@ -822,37 +822,293 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     ]
   },
   'cagr': {
-    title: 'CAGR Calculator — Compound Annual Growth Rate',
-    description: 'Calculate CAGR from a beginning value, ending value and number of years, with the formula and assumptions explained clearly.',
+    title: 'Free CAGR Calculator — Compound Annual Growth Rate',
+    description: 'Calculate CAGR from a beginning value, ending value and number of years, with the formula, limitations and related return metrics explained clearly.',
     intro: 'Calculate the compound annual growth rate between a starting value and an ending value over a multi-year period.',
     sections: [
       {
-        title: 'CAGR formula',
+        title: 'The CAGR formula explained',
         paragraphs: [
-          'CAGR expresses a multi-year change as the constant annual rate that would connect the beginning value to the ending value if growth compounded at the same rate each year.',
+          'CAGR is the constant annualized rate that would connect a beginning value to an ending value if growth had compounded steadily over the full period. It is a smoothing measure, not a record of what happened in each individual year.',
           'Toolmera uses CAGR = ((Ending Value ÷ Beginning Value)^(1 ÷ Years) − 1) × 100.'
         ],
         facts: [
           { label: 'Formula', value: '((Ending ÷ Beginning)^(1/Years) − 1) × 100' },
-          { label: 'Result', value: 'Annualized percentage rate' }
+          { label: 'Result', value: 'Annualized compounded percentage rate' }
         ]
       },
       {
-        title: 'What CAGR does not show',
+        title: 'CAGR vs. total return and average annual return',
         paragraphs: [
-          'CAGR smooths the full period into one annualized rate. It does not show the actual year-by-year path, volatility or intermediate cash flows.',
-          'If money is added or withdrawn during the period, a cash-flow-aware measure such as XIRR may be more appropriate than a simple CAGR calculation.'
+          'Total return measures the overall percentage change from beginning to end without considering how long the period lasted. CAGR converts that start-to-finish change into one annualized compounded rate.',
+          'A simple average of yearly returns can be misleading because gains and losses compound multiplicatively. CAGR is geometric, but it still does not reveal the actual path of yearly returns.'
+        ]
+      },
+      {
+        title: 'What CAGR hides — and when XIRR is different',
+        paragraphs: [
+          'CAGR hides volatility and ignores intermediate deposits or withdrawals. Two investments can have the same CAGR even if one followed a smooth path and the other moved sharply up and down.',
+          'When cash flows happen on different dates, a cash-flow-aware measure such as XIRR is usually more appropriate than simple CAGR.'
         ]
       }
     ],
     faq: [
-      { q: 'What does CAGR mean?', a: 'CAGR means compound annual growth rate. It is the constant annualized rate that links a beginning value to an ending value over a specified number of years.' },
-      { q: 'Is CAGR the same as total return?', a: 'No. Total return measures the overall change across the full period, while CAGR converts that change into an annualized compounded rate.' },
-      { q: 'Does CAGR show yearly volatility?', a: 'No. CAGR smooths the full period into one rate and does not describe the actual path between the beginning and ending values.' },
-      { q: 'Can CAGR handle deposits or withdrawals?', a: 'Not correctly by itself. When there are intermediate cash flows, a cash-flow-aware calculation such as XIRR is usually more appropriate.' }
+      { q: 'What does CAGR mean?', a: 'CAGR means compound annual growth rate. It is the constant annualized compounded rate that links a beginning value to an ending value over a specified period.' },
+      { q: 'Is CAGR the same as total return?', a: 'No. Total return measures overall growth across the full period; CAGR annualizes that growth into one compounded yearly rate.' },
+      { q: 'Does CAGR show yearly volatility?', a: 'No. CAGR smooths the full period into one rate and does not describe the actual year-by-year path.' },
+      { q: 'Can CAGR handle deposits or withdrawals?', a: 'Not correctly by itself. Intermediate cash flows generally require a cash-flow-aware measure such as XIRR.' }
     ],
     related: [
-      { id: 'compound', anchor: 'model compound growth with contributions' }
+      { id: 'roi', anchor: 'calculate total and annualized ROI' },
+      { id: 'compound', anchor: 'model compound growth with recurring contributions' }
+    ]
+  },
+
+  'loan': {
+    title: 'Free Loan Calculator — Monthly Payments & Interest',
+    description: 'Calculate fixed-rate monthly loan payments, total interest, total repayment and a full amortization schedule for any currency.',
+    intro: 'Estimate a fixed-rate loan payment, compare total interest and inspect how the balance changes across the repayment schedule.',
+    sections: [
+      {
+        title: 'How amortized loan payments are calculated',
+        paragraphs: [
+          'A fixed-rate amortized loan spreads repayment across equal monthly installments. Early payments contain a larger interest share because interest is calculated on the higher outstanding balance; over time, more of each payment goes toward principal.',
+          'Toolmera uses the standard fixed-payment formula M = P × r(1+r)^n ÷ ((1+r)^n − 1), where P is principal, r is the monthly interest rate and n is the number of monthly payments.'
+        ],
+        facts: [
+          { label: 'Monthly rate', value: 'Annual rate ÷ 12 ÷ 100' },
+          { label: 'Number of payments', value: 'Years × 12, or entered months' },
+          { label: 'Zero-interest case', value: 'Payment = Principal ÷ number of payments' }
+        ]
+      },
+      {
+        title: 'What changes the total cost of a loan',
+        paragraphs: [
+          'A higher principal or higher interest rate increases both the payment and total interest. A longer term usually lowers the monthly payment but keeps the balance outstanding for longer, which can increase lifetime interest.',
+          'The current calculator models a constant fixed rate and scheduled monthly payments. It does not include lender fees, taxes, insurance, prepayments or variable-rate changes.'
+        ]
+      },
+      {
+        title: 'Reading the amortization schedule',
+        paragraphs: [
+          'The schedule separates every payment into principal and interest and shows the remaining balance. Use the yearly view for a compact overview or switch to monthly detail to inspect each payment period.',
+          'Because the calculator is currency-agnostic, the numbers can represent USD, EUR, GBP, CAD, AUD or another currency as long as all monetary inputs use the same unit.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does the loan calculator support 0% interest?', a: 'Yes. At a 0% rate, Toolmera divides the principal evenly across the selected number of monthly payments.' },
+      { q: 'Is this calculator tied to a specific currency?', a: 'No. The formula is currency-agnostic; use the same currency consistently for the loan amount and results.' },
+      { q: 'Why does a longer loan term usually cost more interest?', a: 'A longer term keeps part of the principal outstanding for more payment periods, allowing interest to accrue for longer even though the monthly payment is lower.' },
+      { q: 'Does the amortization schedule include fees or insurance?', a: 'No. It models principal and fixed-rate interest only and excludes fees, taxes, insurance, prepayments and rate changes.' }
+    ],
+    related: [
+      { id: 'simple-interest', anchor: 'compare with non-compounding simple interest' },
+      { id: 'compound', anchor: 'explore compound interest growth' }
+    ]
+  },
+
+  'roi': {
+    title: 'Free ROI Calculator — Return on Investment',
+    description: 'Calculate ROI percentage, net gain or loss and optional annualized ROI from an initial amount, returned value and holding period.',
+    intro: 'Measure total return on investment and, when a duration is provided, compare it with an annualized compounded rate.',
+    sections: [
+      {
+        title: 'How Return on Investment is calculated',
+        paragraphs: [
+          'ROI measures net gain or loss relative to the amount originally invested. Toolmera calculates Net Gain = Amount Returned − Amount Invested, then ROI = Net Gain ÷ Amount Invested × 100.',
+          'A positive result represents a gain relative to the starting cost; a negative result represents a loss.'
+        ],
+        facts: [
+          { label: 'Net gain/loss', value: 'Amount Returned − Amount Invested' },
+          { label: 'ROI', value: '(Net Gain ÷ Amount Invested) × 100' }
+        ]
+      },
+      {
+        title: 'Simple ROI vs. annualized ROI',
+        paragraphs: [
+          'Simple ROI ignores how long the result took to achieve. A 50% gain over one year and a 50% gain over ten years have the same simple ROI even though their annualized growth rates are very different.',
+          'When a positive duration and positive ending value are provided, Toolmera also shows the compounded annualized rate implied by the start and end values.'
+        ]
+      },
+      {
+        title: 'What the calculator does not include automatically',
+        paragraphs: [
+          'ROI can be used for investments, business projects or marketing spend, but the quality of the result depends on what you include in the returned value and investment cost.',
+          'Taxes, fees, operating expenses and other costs are not added automatically. Include them in your own input assumptions when they matter.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can ROI be negative?', a: 'Yes. If the amount returned is lower than the amount invested, Toolmera shows a negative ROI and labels the absolute difference as a net loss.' },
+      { q: 'What is annualized ROI?', a: 'It converts the start-to-finish value change into an equivalent compounded annual rate using the duration you enter.' },
+      { q: 'Does this include taxes or ongoing fees?', a: 'No. The calculator only uses the values entered. Adjust your inputs if you want those costs reflected.' },
+      { q: 'Is ROI the same as CAGR?', a: 'Simple ROI measures total percentage gain or loss, while CAGR annualizes a start-to-finish value change over time.' }
+    ],
+    related: [
+      { id: 'cagr', anchor: 'compare with compound annual growth rate' },
+      { id: 'percentage', anchor: 'solve general percentage-change questions' }
+    ]
+  },
+
+  'discount': {
+    title: 'Free Discount Calculator — Sale Price & Savings',
+    description: 'Calculate final sale price, total savings and effective discount for percentage, fixed-amount and stacked discounts.',
+    intro: 'Calculate sale prices instantly, including sequential offers such as 20% off plus an extra 10% off.',
+    sections: [
+      {
+        title: 'How percentage discounts reduce a price',
+        paragraphs: [
+          'For a single percentage discount, savings equal Original Price × Discount Rate. The final price is the original amount minus those savings.',
+          'Toolmera also supports a fixed-amount discount when a promotion removes a specific monetary amount instead of a percentage.'
+        ]
+      },
+      {
+        title: 'Why stacked discounts are not simply added',
+        paragraphs: [
+          'Sequential discounts are applied one after another. A 20% discount on 100 reduces the price to 80; an additional 10% discount then removes 8 from that reduced balance.',
+          'The final price is 72, so the effective discount is 28%, not 30%. Toolmera calculates the combined effective percentage automatically.'
+        ],
+        facts: [
+          { label: '20% off 100', value: 'Price becomes 80' },
+          { label: 'Extra 10% off 80', value: 'Price becomes 72' },
+          { label: 'Effective total discount', value: '28%' }
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Why is 20% off plus 10% off not 30% off?', a: 'The second discount is applied to the already-reduced price, so 20% followed by 10% produces an effective 28% reduction.' },
+      { q: 'Can I enter a fixed amount off instead of a percentage?', a: 'Yes. Switch to Fixed amount off and enter the monetary discount directly.' },
+      { q: 'Does the calculator include sales tax?', a: 'No. It calculates promotional discounts only; tax rules vary by location.' },
+      { q: 'Can the final price go below zero?', a: 'No. Toolmera caps savings at the original price so the final price cannot become negative.' }
+    ],
+    related: [
+      { id: 'percentage', anchor: 'use the full percentage calculator' }
+    ]
+  },
+
+  'simple-interest': {
+    title: 'Free Simple Interest Calculator — Interest & Balance',
+    description: 'Calculate non-compounding simple interest and total amount across years, months or days with 365-day and 360-day conventions.',
+    intro: 'Calculate interest that accrues only on the original principal using a transparent simple-interest formula.',
+    sections: [
+      {
+        title: 'The simple interest formula explained',
+        paragraphs: [
+          'Simple interest calculates interest only on the original principal. Interest already accrued is not added back to the principal for future interest calculations.',
+          'Toolmera uses I = P × r × t, where P is principal, r is the annual rate as a decimal and t is time expressed in years.'
+        ],
+        facts: [
+          { label: 'Interest', value: 'I = P × r × t' },
+          { label: 'Total amount', value: 'A = P + I' },
+          { label: 'Months', value: 't = months ÷ 12' }
+        ]
+      },
+      {
+        title: 'Simple interest vs. compound interest',
+        paragraphs: [
+          'Simple interest grows linearly because the interest base remains the original principal. Compound interest can grow faster because accumulated interest is added to the balance and can itself earn interest.',
+          'Use the Compound Interest Calculator when interest is periodically capitalized or when recurring contributions are part of the scenario.'
+        ]
+      },
+      {
+        title: '365-day vs. 360-day calculations',
+        paragraphs: [
+          'For day-based periods, Toolmera lets you choose a 365-day year or a 360-day banking convention. The selected basis changes how a number of days is converted into a fraction of a year.',
+          'Real contracts can use their own day-count conventions, so check the applicable agreement when the exact contractual interest amount matters.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How is simple interest calculated for months?', a: 'Toolmera converts months to years by dividing the number of months by 12, then applies I = P × r × t.' },
+      { q: 'How are day-based periods handled?', a: 'Choose either a 365-day year or a 360-day banking basis; Toolmera divides the number of days by that basis.' },
+      { q: 'Does simple interest compound?', a: 'No. Interest is calculated only on the original principal in this tool.' },
+      { q: 'What is the difference from the Compound Interest Calculator?', a: 'Compound interest can earn interest on prior interest; simple interest does not.' }
+    ],
+    related: [
+      { id: 'compound', anchor: 'compare with compound interest' },
+      { id: 'loan', anchor: 'calculate an amortized fixed-rate loan' }
+    ]
+  },
+
+  'date-difference': {
+    title: 'Free Date Difference Calculator — Days Between Dates',
+    description: 'Calculate calendar duration, total days, weeks, hours and weekday-only business days between two dates with an inclusive-end option.',
+    intro: 'Measure the elapsed time between any two calendar dates and choose whether the end date should be included.',
+    sections: [
+      {
+        title: 'How calendar differences are calculated',
+        paragraphs: [
+          'Calendar duration has to respect real month lengths and leap years rather than treating every month or year as the same number of days. Toolmera calculates a calendar years-months-days breakdown separately from the absolute elapsed-day count.',
+          'The total-day calculation uses UTC calendar-day boundaries to avoid local timezone shifts changing the selected dates.'
+        ]
+      },
+      {
+        title: 'Exclusive vs. inclusive end dates',
+        paragraphs: [
+          'Standard elapsed difference treats January 1 to January 2 as one day. When Include end date is enabled, both calendar dates are counted, so that same range spans two counted days.',
+          'Use the inclusive option for workflows such as event dates or other periods where the final calendar day should be part of the count.'
+        ]
+      },
+      {
+        title: 'How business days are counted',
+        paragraphs: [
+          'Toolmera counts Monday through Friday as business days and excludes Saturdays and Sundays. The business-day count follows the same end-date inclusion setting as the total-day result.',
+          'Public holidays are not removed because holiday calendars differ by country and region.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does the calculator account for leap years?', a: 'Yes. Calendar and total-day calculations use real Gregorian calendar dates, including February 29 in leap years.' },
+      { q: 'What does Include end date do?', a: 'It adds the ending calendar date to the counted period. Without it, the tool measures standard elapsed time between the two dates.' },
+      { q: 'Are public holidays excluded from business days?', a: 'No. Business days exclude Saturdays and Sundays only; public holidays vary by location.' },
+      { q: 'How is this different from the Age Calculator?', a: 'Age Calculator is designed around birth dates and birthday milestones; Date Difference measures general start-to-end calendar intervals.' }
+    ],
+    related: [
+      { id: 'age', anchor: 'calculate age and birthday milestones' }
+    ]
+  },
+
+  'average': {
+    title: 'Free Average Calculator — Mean, Median, Mode & Range',
+    description: 'Calculate mean, median, mode, range, sum, count, minimum and maximum from numbers separated by spaces, commas or line breaks.',
+    intro: 'Paste a list of numbers to calculate the main descriptive statistics in one compact summary.',
+    sections: [
+      {
+        title: 'Mean, median and mode explained',
+        paragraphs: [
+          'The arithmetic mean is the sum of all values divided by the number of values. The median is the middle value after sorting the dataset, or the average of the two middle values when the count is even.',
+          'The mode is the most frequently occurring value. Toolmera can report multiple modes when several values share the same highest frequency; if every value occurs only once, it reports No mode.'
+        ],
+        facts: [
+          { label: 'Mean', value: 'Sum ÷ Count' },
+          { label: 'Median', value: 'Middle value of the sorted dataset' },
+          { label: 'Range', value: 'Maximum − Minimum' }
+        ]
+      },
+      {
+        title: 'When median can be more useful than mean',
+        paragraphs: [
+          'The mean reacts strongly to extreme values because every number contributes directly to the total. The median depends on position rather than magnitude, so it can better represent the center of a highly skewed dataset.',
+          'Toolmera shows both so you can compare the arithmetic center with the ordered middle of the data.'
+        ]
+      },
+      {
+        title: 'Flexible dataset input',
+        paragraphs: [
+          'Enter numbers separated by commas, spaces or line breaks. The calculator validates the tokens before producing results and also reports count, sum, minimum and maximum.',
+          'Use Copy statistical summary when you want to move the calculated results into notes, a document or another workflow.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How can I separate the numbers?', a: 'Use spaces, commas or line breaks. Toolmera parses all three separator styles.' },
+      { q: 'What happens when there is no repeated number?', a: 'If every value occurs only once, Toolmera reports No mode.' },
+      { q: 'How is median calculated for an even number of values?', a: 'The values are sorted and the two middle numbers are averaged.' },
+      { q: 'Can a dataset have more than one mode?', a: 'Yes. If multiple values share the same highest frequency, Toolmera lists all of them.' }
+    ],
+    related: [
+      { id: 'percentage', anchor: 'calculate percentages from your results' }
     ]
   }
 };
@@ -908,15 +1164,15 @@ export const categorySeoContent: Record<string, {
   },
 
   calculators: {
-    title: 'Free Online Calculators — Age, Percentage, BMI, CAGR & Interest',
-    description: 'Fast online calculators for calendar age, percentages, adult BMI, CAGR and compound interest with clear formulas and assumptions.',
+    title: 'Free Online Calculators — Math, Finance, Dates & Health',
+    description: 'Free online calculators for loans, ROI, discounts, interest, dates, averages, percentages, CAGR, BMI and compound growth.'
     intro: 'Math, health and everyday calculators built around clear inputs, transparent formulas and useful results.',
     sections: [
       {
         title: 'Which calculator do you need?',
         paragraphs: [
-          'Use Age Calculator for calendar age between two dates, total days and a next-birthday countdown. Use Percentage Calculator for four common percentage questions: part of a total, percent of a number, change and difference.',
-          'Use BMI Calculator for an adult screening estimate in metric or imperial units. Use CAGR Calculator for annualized multi-year growth, and Compound Interest Calculator to model growth with a starting amount, compounding frequency and optional monthly contributions.'
+          'Use Loan, ROI, CAGR, Compound Interest and Simple Interest for financial math. Use Percentage, Discount and Average for everyday calculations, and Date Difference or Age for calendar questions.',
+          'Use BMI Calculator for an adult screening estimate in metric or imperial units. Each calculator keeps its formula, assumptions or interpretation visible instead of returning an unexplained number.'
         ]
       },
       {
