@@ -813,3 +813,64 @@ html[data-theme="light"] .adminApp{
 @media(max-width:820px){
   .adminRefresh{flex:1;justify-content:center}
 }
+
+
+/* SEO audit improvements: semantic tool headings, methodology and India pillar */
+.experienceTitle{font-size:27px;line-height:1.1;margin:8px 0 0;font-weight:760;letter-spacing:-.025em}
+.methodologyHero{padding-top:90px;padding-bottom:38px}
+.methodologyHero h1{font-size:clamp(52px,6vw,82px);line-height:.98;letter-spacing:-.055em;margin:16px 0 20px}
+.methodologyHero p{max-width:820px;color:var(--muted);font-size:17px;line-height:1.7}
+.methodologyGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+.methodologyCard{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(15,23,33,.92),rgba(8,14,21,.92));padding:24px}
+.methodologyCard svg{color:#49aaff;margin-bottom:14px}
+.methodologyCard h2{font-size:20px;margin:0 0 10px}
+.methodologyCard p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}
+.methodologyDeepDive{margin-top:20px}
+.reviewStamp{margin:30px auto 80px;border:1px solid var(--line);border-radius:18px;padding:24px;background:rgba(9,15,22,.7);display:grid;grid-template-columns:auto auto 1fr;gap:10px 18px;align-items:center}
+.reviewStamp span{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.reviewStamp strong{font-size:13px}
+.reviewStamp p{grid-column:1/-1;margin:0;color:var(--muted);font-size:12px}
+
+.indiaPillarHero{padding-bottom:36px}
+.indiaPillarGrid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-bottom:18px}
+.indiaPillarCard{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:20px;padding:26px;background:linear-gradient(180deg,rgba(15,23,33,.92),rgba(8,14,21,.92));min-height:240px}
+.indiaPillarCard:before{content:"";position:absolute;inset:-1px;pointer-events:none;background:radial-gradient(circle at 15% 0%,var(--accentGlow),transparent 38%);opacity:.8}
+.indiaPillarCard>svg,.indiaPillarCard>span,.indiaPillarCard>h2,.indiaPillarCard>p,.indiaPillarCard>b{position:relative}
+.indiaPillarCard>svg{color:var(--accent);margin-bottom:28px}
+.indiaPillarCard>span{display:block;font-size:10px;letter-spacing:.15em;color:var(--accent)}
+.indiaPillarCard h2{font-size:28px;letter-spacing:-.035em;margin:7px 0 10px}
+.indiaPillarCard p{max-width:520px;color:var(--muted);font-size:13px;line-height:1.65}
+.indiaPillarCard b{position:absolute;left:26px;bottom:24px;display:flex;align-items:center;gap:7px;color:var(--accent);font-size:12px}
+.indiaToolCluster{padding-top:52px;padding-bottom:20px}
+.indiaTrustGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:34px auto 54px}
+.indiaTrustGrid>div{border:1px solid var(--line);border-radius:16px;padding:20px;background:rgba(9,15,22,.68)}
+.indiaTrustGrid svg{color:#49aaff;margin-bottom:12px}
+.indiaTrustGrid strong{display:block;font-size:13px;margin-bottom:7px}
+.indiaTrustGrid p{margin:0;color:var(--muted);font-size:11px;line-height:1.65}
+.indiaHubActions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:18px}
+.indiaDeepDive{padding-top:55px}
+
+html[data-theme="light"] .methodologyCard,
+html[data-theme="light"] .indiaPillarCard,
+html[data-theme="light"] .indiaTrustGrid>div,
+html[data-theme="light"] .reviewStamp{
+  background:linear-gradient(180deg,#fff,#fafcfe);
+  border-color:rgba(15,23,42,.09);
+  box-shadow:0 5px 18px rgba(15,23,42,.025);
+}
+html[data-theme="light"] .methodologyCard p,
+html[data-theme="light"] .indiaPillarCard p,
+html[data-theme="light"] .indiaTrustGrid p,
+html[data-theme="light"] .reviewStamp p{color:#667085}
+
+@media(max-width:900px){
+  .methodologyGrid,.indiaTrustGrid{grid-template-columns:1fr}
+  .indiaPillarGrid{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .experienceTitle{font-size:23px}
+  .methodologyHero{padding-top:65px}
+  .methodologyHero h1{font-size:48px}
+  .reviewStamp{grid-template-columns:1fr}
+  .indiaPillarCard{min-height:220px}
+}
