@@ -359,7 +359,7 @@ export function AdminDashboard(){
         </section>
       </>}
 
-      {view==='countries'&&<section className="adminPanel">
+      {view==='countries'&&<><section className="adminPanel">
         <div className="adminPanelHead"><div><span>GOOGLE SEARCH CONSOLE</span><h2>Countries</h2></div>{gsc?<Pill tone="green">Live</Pill>:<Pill>Not connected</Pill>}</div>
         {gsc&&gsc.countries.length?<div className="countryList">{gsc.countries.map((c,i)=><div key={c.country}><b>{i+1}</b><span><strong>{c.country.toUpperCase()}</strong><small>{number(c.impressions)} impressions</small></span><span>{number(c.clicks)} clicks</span><span>{pct(c.ctr)}</span></div>)}</div>:<EmptyState title="No country data yet" body="Country-level search metrics will come directly from GSC. GA4 user/session geography will be added separately after GA4 is connected."/>}
       </section>
