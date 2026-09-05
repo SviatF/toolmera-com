@@ -24,23 +24,71 @@ async function imageToCanvas(file: File) {
 }
 
 function ImageConvert({ tool }: { tool: Tool }) {
-  const [quality, setQuality] = useState(82); const [result, setResult] = useState<Result | null>(null); const [busy, setBusy] = useState(false);
-  async function convert(files: File[]) {
-    if (!files[0]) return; setBusy(true); setResult(null);
-    const file = files[0]; const { bitmap, canvas, ctx } = await imageToCanvas(file);
-    if (tool.outputFormat === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+  const [quality, setQuality] = useState(82);
+  const [result, setResult] = useState<Result | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [background, setBackground] = useState('#ffffff');
+
+  async function run(input?: File) {
+    const source = input || file;
+    if (!source) return;
+    setBusy(true);
+    setResult(null);
+    const { bitmap, canvas, ctx } = await imageToCanvas(source);
+    if (tool.outputFormat === 'image/jpeg') {
+      ctx.fillStyle = background;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
     ctx.drawImage(bitmap, 0, 0);
-    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Conversion failed')), tool.outputFormat, quality/100));
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Conversion failed')), tool.outputFormat, quality/100)
+    );
     const ext = tool.outputFormat?.split('/')[1].replace('jpeg','jpg') || 'image';
-    setResult({ url: URL.createObjectURL(blob), name: `${file.name.replace(/\.[^.]+$/, '')}.${ext}`, before: file.size, after: blob.size }); setBusy(false);
+    setResult({ url: URL.createObjectURL(blob), name: `${source.name.replace(/\.[^.]+$/, '')}.${ext}`, before: source.size, after: blob.size });
+    setBusy(false);
   }
-  return <div className="toolUi"><FileDrop accept={tool.inputFormat || 'image/*'} onChange={convert} label={busy ? 'Converting…' : `Choose ${tool.name.split(' to ')[0]} file`}/><div className="controlRow"><label>Quality <b>{quality}%</b></label><input type="range" min="35" max="100" value={quality} onChange={(e)=>setQuality(+e.target.value)}/></div>{result && <DownloadResult result={result}/>}</div>;
+
+  async function choose(files: File[]) {
+    if (!files[0]) return;
+    setFile(files[0]);
+    await run(files[0]);
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept={tool.inputFormat || 'image/*'} onChange={choose} label={busy ? 'Converting…' : `Choose ${tool.name.split(' to ')[0]} file`}/>
+    <div className="controlRow">
+      <label>Quality <b>{quality}%</b></label>
+      <input type="range" min="35" max="100" value={quality} onChange={(e)=>setQuality(+e.target.value)}/>
+      {tool.outputFormat === 'image/jpeg' && <label className="colorControl">Background <input type="color" value={background} onChange={(e)=>setBackground(e.target.value)}/><b>{background.toUpperCase()}</b></label>}
+      {file && <button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> {busy ? 'Converting…' : 'Reconvert'}</button>}
+    </div>
+    {result && <DownloadResult result={result}/>}
+  </div>;
 }
 
 function ImageCompress() {
-  const [quality, setQuality] = useState(75); const [file, setFile] = useState<File | null>(null); const [result, setResult] = useState<Result | null>(null);
-  async function run(next?: File) { const input = next || file; if (!input) return; setFile(input); const { bitmap, canvas, ctx } = await imageToCanvas(input); ctx.drawImage(bitmap,0,0); const type = input.type === 'image/png' ? 'image/webp' : (input.type || 'image/jpeg'); const blob = await new Promise<Blob>((resolve,reject)=>canvas.toBlob((b)=>b?resolve(b):reject(),type,quality/100)); setResult({url:URL.createObjectURL(blob),name:`${input.name.replace(/\.[^.]+$/,'')}-compressed.${type.split('/')[1].replace('jpeg','jpg')}`,before:input.size,after:blob.size}); }
-  return <div className="toolUi"><FileDrop accept="image/png,image/jpeg,image/webp" onChange={(f)=>f[0]&&run(f[0])}/><div className="controlRow"><label>Compression quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={(e)=>setQuality(+e.target.value)}/><button className="secondaryButton" onClick={()=>run()}><RefreshCw size={15}/> Recompress</button></div>{result&&<DownloadResult result={result}/>}</div>;
+  const [quality, setQuality] = useState(75);
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+
+  async function run(next?: File) {
+    const input = next || file;
+    if (!input) return;
+    setFile(input);
+    const { bitmap, canvas, ctx } = await imageToCanvas(input);
+    ctx.drawImage(bitmap,0,0);
+    const type = input.type === 'image/png' ? 'image/webp' : (input.type || 'image/jpeg');
+    const blob = await new Promise<Blob>((resolve,reject)=>canvas.toBlob((b)=>b?resolve(b):reject(),type,quality/100));
+    setResult({url:URL.createObjectURL(blob),name:`${input.name.replace(/\.[^.]+$/,'')}-compressed.${type.split('/')[1].replace('jpeg','jpg')}`,before:input.size,after:blob.size});
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="image/png,image/jpeg,image/webp" onChange={(f)=>f[0]&&run(f[0])}/>
+    {file?.type === 'image/png' && <div className="toolNote"><ShieldCheck size={15}/><span>PNG input is exported as WebP in the current compressor for stronger browser-side size reduction.</span></div>}
+    <div className="controlRow"><label>Compression quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={(e)=>setQuality(+e.target.value)}/><button className="secondaryButton" onClick={()=>run()}><RefreshCw size={15}/> Recompress</button></div>
+    {result&&<DownloadResult result={result}/>}
+  </div>;
 }
 
 function ImageResize() {
