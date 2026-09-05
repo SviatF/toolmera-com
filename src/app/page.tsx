@@ -1,15 +1,15 @@
 import Link from 'next/link';
-import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2 } from 'lucide-react';
+import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
 import { ToolCard } from '@/components/ToolCard';
 import { categories, tools, toolUrl } from '@/data/tools';
 
-const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, text: TextCursorInput, developer: Code2 };
+const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, generators: QrCode, time: Clock3, text: TextCursorInput, developer: Code2 };
 
 export default function Home() {
-  const featured = tools.filter(t => ['png-webp','merge-pdf','percentage','jpg-pdf','resize-image','json'].includes(t.id));
+  const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
 
@@ -23,7 +23,7 @@ export default function Home() {
           <h1>Every tool. <span>One place.</span></h1>
           <p>Fast, private online tools for files, numbers and everyday tasks. No sign-up. No clutter. Just results.</p>
           <ToolSearch tools={tools}/>
-          <div className="popular"><b>Popular:</b><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/calculators/percentage-calculator/">Percentage Calculator</Link><Link href="/text/word-counter/">Word Counter</Link></div>
+          <div className="popular"><b>Popular:</b><Link href="/generators/qr-code-generator/">QR Code Generator</Link><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/generators/password-generator/">Password Generator</Link></div>
         </div>
         <div className="heroAside"><span>TOOLS</span><span>FOR A SMARTER</span><span>EVERYDAY.</span><i/></div>
       </div>
