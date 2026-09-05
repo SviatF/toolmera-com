@@ -216,11 +216,11 @@ function CoreCalculator({ kind }: { kind: Tool['kind'] }) {
   const [b,setB]=useState(kind==='emi'?10:kind==='sip'?12:kind==='fd'?7:kind==='cagr'?200000:kind==='gst'?18:100);
   const [c,setC]=useState(kind==='emi'?5:kind==='sip'?10:kind==='fd'?3:kind==='cagr'?5:0);
   const values=useMemo(()=>{
-    if(kind==='emi'){const r=b/12/100,n=c*12,emi=r? a*r*(1+r)**n/((1+r)**n-1):a/n;return [{l:'Monthly EMI',v:\`₹\${money(emi)}\`},{l:'Total interest',v:\`₹\${money(emi*n-a)}\`},{l:'Total repayment',v:\`₹\${money(emi*n)}\`}]}
-    if(kind==='sip'){const r=b/12/100,n=c*12,fv=r?a*((1+r)**n-1)/r*(1+r):a*n;return [{l:'Invested',v:\`₹\${money(a*n)}\`},{l:'Estimated returns',v:\`₹\${money(fv-a*n)}\`},{l:'Future value',v:\`₹\${money(fv)}\`}]}
-    if(kind==='fd'){const fv=a*(1+b/100)**c;return [{l:'Maturity value',v:\`₹\${money(fv)}\`},{l:'Interest earned',v:\`₹\${money(fv-a)}\`}]}
-    if(kind==='cagr'){const rate=a>0&&c>0?((b/a)**(1/c)-1)*100:0;return [{l:'CAGR',v:\`\${rate.toFixed(2)}%\`}]}
-    if(kind==='gst'){const tax=a*b/100;return [{l:'GST amount',v:\`₹\${money(tax)}\`},{l:'Total incl. GST',v:\`₹\${money(a+tax)}\`},{l:'Base from inclusive',v:\`₹\${money(a/(1+b/100))}\`}]}
+    if(kind==='emi'){const r=b/12/100,n=c*12,emi=r? a*r*(1+r)**n/((1+r)**n-1):a/n;return [{l:'Monthly EMI',v:`₹${money(emi)}`},{l:'Total interest',v:`₹${money(emi*n-a)}`},{l:'Total repayment',v:`₹${money(emi*n)}`}]}
+    if(kind==='sip'){const r=b/12/100,n=c*12,fv=r?a*((1+r)**n-1)/r*(1+r):a*n;return [{l:'Invested',v:`₹${money(a*n)}`},{l:'Estimated returns',v:`₹${money(fv-a*n)}`},{l:'Future value',v:`₹${money(fv)}`}]}
+    if(kind==='fd'){const fv=a*(1+b/100)**c;return [{l:'Maturity value',v:`₹${money(fv)}`},{l:'Interest earned',v:`₹${money(fv-a)}`}]}
+    if(kind==='cagr'){const rate=a>0&&c>0?((b/a)**(1/c)-1)*100:0;return [{l:'CAGR',v:`${rate.toFixed(2)}%`}]}
+    if(kind==='gst'){const tax=a*b/100;return [{l:'GST amount',v:`₹${money(tax)}`},{l:'Total incl. GST',v:`₹${money(a+tax)}`},{l:'Base from inclusive',v:`₹${money(a/(1+b/100))}`}]}
     return [];
   },[a,b,c,kind]);
   const labels:Record<string,[string,string,string?]>={
@@ -271,7 +271,7 @@ function calendarAge(start:DateParts,end:DateParts){
 function localTodayValue(){
   const d=new Date();
   const pad=(v:number)=>String(v).padStart(2,'0');
-  return \`\${d.getFullYear()}-\${pad(d.getMonth()+1)}-\${pad(d.getDate())}\`;
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
 
 function AgeCalculator(){
@@ -304,7 +304,7 @@ function AgeCalculator(){
       <div className="metricGrid compactMetrics">
         <MetricCard label="Total weeks" value={money(result.totalWeeks)}/>
         <MetricCard label="Total hours" value={money(result.totalHours)}/>
-        <MetricCard label="Next birthday" value={result.birthdayDays===0?'Today':\`\${money(result.birthdayDays)} days\`}/>
+        <MetricCard label="Next birthday" value={result.birthdayDays===0?'Today':`${money(result.birthdayDays)} days`}/>
       </div>
       <div className="toolNote"><ShieldCheck size={15}/><span>Calendar-based calculation. For Feb 29 birthdays, Toolmera treats Feb 28 as the anniversary in non-leap years.</span></div>
     </>}
@@ -321,19 +321,19 @@ function PercentageCalculator(){
   const result=useMemo(()=>{
     if(mode==='part'){
       if(b===0)return {value:'Undefined',label:'Result',formula:'Total cannot be zero.'};
-      return {value:\`\${((a/b)*100).toFixed(2)}%\`,label:'Result',formula:\`(\${a} ÷ \${b}) × 100\`};
+      return {value:`${((a/b)*100).toFixed(2)}%`,label:'Result',formula:`(${a} ÷ ${b}) × 100`};
     }
     if(mode==='of'){
-      return {value:(b*(a/100)).toFixed(2),label:'Result',formula:\`\${a}% × \${b}\`};
+      return {value:(b*(a/100)).toFixed(2),label:'Result',formula:`${a}% × ${b}`};
     }
     if(mode==='change'){
       if(a===0)return {value:'Undefined',label:'Change',formula:'The starting value cannot be zero.'};
       const pct=((b-a)/Math.abs(a))*100;
-      return {value:\`\${pct>=0?'+':''}\${pct.toFixed(2)}%\`,label:pct>=0?'Increase':'Decrease',formula:\`((\${b} − \${a}) ÷ |\${a}|) × 100\`};
+      return {value:`${pct>=0?'+':''}${pct.toFixed(2)}%`,label:pct>=0?'Increase':'Decrease',formula:`((${b} − ${a}) ÷ |${a}|) × 100`};
     }
     const avg=(Math.abs(a)+Math.abs(b))/2;
     if(avg===0)return {value:'0.00%',label:'Difference',formula:'Both values are zero.'};
-    return {value:\`\${(Math.abs(a-b)/avg*100).toFixed(2)}%\`,label:'Difference',formula:\`|\${a} − \${b}| ÷ average × 100\`};
+    return {value:`${(Math.abs(a-b)/avg*100).toFixed(2)}%`,label:'Difference',formula:`|${a} − ${b}| ÷ average × 100`};
   },[a,b,mode]);
 
   const labels:Record<PercentageMode,[string,string]>={
