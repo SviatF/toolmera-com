@@ -8,10 +8,13 @@ import { categories, tools } from '@/data/tools';
 export const metadata:Metadata={
   title:'Free Online Tools — Browse All Tools',
   description:'Browse all Toolmera tools for images, PDFs, calculators, converters, text, developer tasks and India finance.',
-  alternates:{canonical:'https://toolmera.com/tools/'}
+  alternates:{canonical:'https://toolmera.com/tools/'},
+  openGraph:{title:'Free Online Tools — Browse All Tools',description:'Browse the complete Toolmera utility library.',url:'https://toolmera.com/tools/',siteName:'Toolmera',type:'website'},
+  twitter:{card:'summary',title:'Free Online Tools — Browse All Tools',description:'Browse the complete Toolmera utility library.'}
 };
 
 export default function AllToolsPage(){
+  const toolsSchema={"@context":"https://schema.org","@type":"ItemList",name:"Toolmera tools",itemListElement:tools.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com${tool.country?`/${tool.country}/${tool.category}/${tool.slug}/`:`/${tool.category}/${tool.slug}/`}`}))};
   return <><Header/><main className="subPage">
     <section className="shell allToolsHero">
       <span className="eyebrow neonText">TOOLMERA / ALL TOOLS</span>
@@ -32,5 +35,5 @@ export default function AllToolsPage(){
       <div className="sectionHead"><div><span className="sectionKicker">LOCAL UTILITIES</span><h2>India tools</h2><p>Finance and tax calculators localized for India.</p></div></div>
       <div className="toolGrid">{tools.filter(t=>t.country==='in').map(t=><ToolCard key={t.id} tool={t}/>)}</div>
     </section>
-  </main><Footer/></>
+  </main><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(toolsSchema)}}/><Footer/></>
 }
