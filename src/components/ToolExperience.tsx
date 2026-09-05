@@ -106,80 +106,142 @@ async function imageToCanvas(file: File) {
 }
 
 function ImageConvert({ tool }: { tool: Tool }) {
-  const [quality, setQuality] = useState(82);
-  const [result, setResult] = useState<Result | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [background, setBackground] = useState('#ffffff');
+  const [quality,setQuality]=useState(82);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [file,setFile]=useState<File|null>(null);
+  const [background,setBackground]=useState('#ffffff');
+  const [error,setError]=useState('');
 
-  async function run(input?: File) {
-    const source = input || file;
-    if (!source) return;
-    setBusy(true);
-    setResult(null);
-    const { bitmap, canvas, ctx } = await imageToCanvas(source);
-    if (tool.outputFormat === 'image/jpeg') {
-      ctx.fillStyle = background;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-    }
-    ctx.drawImage(bitmap, 0, 0);
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Conversion failed')), tool.outputFormat, quality/100)
-    );
-    const ext = tool.outputFormat?.split('/')[1].replace('jpeg','jpg') || 'image';
-    setResult({ url: URL.createObjectURL(blob), name: `${source.name.replace(/\.[^.]+$/, '')}.${ext}`, before: source.size, after: blob.size });
-    setBusy(false);
+  function choose(files:File[]){
+    if(!files[0])return;
+    setFile(files[0]);setResult(null);setError('');
   }
 
-  async function choose(files: File[]) {
-    if (!files[0]) return;
-    setFile(files[0]);
-    await run(files[0]);
+  async function run(){
+    if(!file)return;
+    setBusy(true);setResult(null);setError('');
+    try{
+      const {bitmap,canvas,ctx}=await imageToCanvas(file);
+      if(tool.outputFormat==='image/jpeg'){
+        ctx.fillStyle=background;ctx.fillRect(0,0,canvas.width,canvas.height);
+      }
+      ctx.drawImage(bitmap,0,0);
+      const blob=await new Promise<Blob>((resolve,reject)=>
+        canvas.toBlob(b=>b?resolve(b):reject(new Error('Conversion failed.')),tool.outputFormat,quality/100)
+      );
+      const ext=tool.outputFormat?.split('/')[1].replace('jpeg','jpg')||'image';
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+ext,before:file.size,after:blob.size});
+      bitmap.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not convert this image.')}
+    finally{setBusy(false)}
   }
 
+  const outputName=(tool.outputFormat?.split('/')[1].replace('jpeg','JPG').toUpperCase()||'IMAGE');
   return <div className="toolUi">
-    <FileDrop accept={tool.inputFormat || 'image/*'} onChange={choose} label={busy ? 'Converting…' : `Choose ${tool.name.split(' to ')[0]} file`}/>
-    <div className="controlRow">
-      <label>Quality <b>{quality}%</b></label>
-      <input type="range" min="35" max="100" value={quality} onChange={(e)=>setQuality(+e.target.value)}/>
-      {tool.outputFormat === 'image/jpeg' && <label className="colorControl">Background <input type="color" value={background} onChange={(e)=>setBackground(e.target.value)}/><b>{background.toUpperCase()}</b></label>}
-      {file && <button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> {busy ? 'Converting…' : 'Reconvert'}</button>}
-    </div>
-    {result && <DownloadResult result={result}/>}
+    <FileDrop
+      accept={tool.inputFormat||'image/*'}
+      onChange={choose}
+      label={'Choose '+tool.name.split(' to ')[0]+' file'}
+      files={file?[file]:[]}
+      busy={busy}
+      busyLabel={'Converting to '+outputName+'…'}
+    />
+    {file&&<>
+      <div className="controlRow">
+        <label>Quality <b>{quality}%</b></label>
+        <input type="range" min="35" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/>
+        {tool.outputFormat==='image/jpeg'&&<label className="colorControl">Background <input type="color" value={background} onChange={e=>setBackground(e.target.value)}/><b>{background.toUpperCase()}</b></label>}
+      </div>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Converting…':'Convert to '+outputName}</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
   </div>;
 }
 
 function ImageCompress() {
-  const [quality, setQuality] = useState(75);
-  const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
+  const [quality,setQuality]=useState(75);
+  const [file,setFile]=useState<File|null>(null);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
 
-  async function run(next?: File) {
-    const input = next || file;
-    if (!input) return;
-    setFile(input);
-    const { bitmap, canvas, ctx } = await imageToCanvas(input);
-    ctx.drawImage(bitmap,0,0);
-    const type = input.type === 'image/png' ? 'image/webp' : (input.type || 'image/jpeg');
-    const blob = await new Promise<Blob>((resolve,reject)=>canvas.toBlob((b)=>b?resolve(b):reject(),type,quality/100));
-    setResult({url:URL.createObjectURL(blob),name:`${input.name.replace(/\.[^.]+$/,'')}-compressed.${type.split('/')[1].replace('jpeg','jpg')}`,before:input.size,after:blob.size});
+  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+
+  async function run(){
+    if(!file)return;
+    setBusy(true);setResult(null);setError('');
+    try{
+      const {bitmap,canvas,ctx}=await imageToCanvas(file);
+      ctx.drawImage(bitmap,0,0);
+      const type=file.type==='image/png'?'image/webp':(file.type||'image/jpeg');
+      const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Compression failed.')),type,quality/100));
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.'+type.split('/')[1].replace('jpeg','jpg'),before:file.size,after:blob.size});
+      bitmap.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress this image.')}
+    finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/png,image/jpeg,image/webp" onChange={(f)=>f[0]&&run(f[0])}/>
-    {file?.type === 'image/png' && <div className="toolNote"><ShieldCheck size={15}/><span>PNG input is exported as WebP in the current compressor for stronger browser-side size reduction.</span></div>}
-    <div className="controlRow"><label>Compression quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={(e)=>setQuality(+e.target.value)}/><button className="secondaryButton" onClick={()=>run()}><RefreshCw size={15}/> Recompress</button></div>
+    <FileDrop accept="image/png,image/jpeg,image/webp" onChange={choose} files={file?[file]:[]} busy={busy} busyLabel="Compressing image…"/>
+    {file?.type==='image/png'&&<div className="toolNote"><ShieldCheck size={15}/><span>PNG input is exported as WebP in the current general compressor for stronger browser-side size reduction.</span></div>}
+    {file&&<>
+      <div className="controlRow"><label>Compression quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Compressing…':'Compress image'}</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
   </div>;
 }
 
 function ImageResize() {
-  const [file,setFile]=useState<File|null>(null); const [width,setWidth]=useState(1200); const [height,setHeight]=useState(800); const [ratio,setRatio]=useState(1.5); const [result,setResult]=useState<Result|null>(null);
-  async function select(files:File[]){ if(!files[0])return; const f=files[0]; const b=await createImageBitmap(f); setFile(f); setWidth(b.width); setHeight(b.height); setRatio(b.width/b.height); }
-  async function resize(){ if(!file)return; const b=await createImageBitmap(file); const c=document.createElement('canvas');c.width=width;c.height=height; c.getContext('2d')!.drawImage(b,0,0,width,height); const blob=await new Promise<Blob>((r,j)=>c.toBlob(x=>x?r(x):j(),file.type||'image/png',0.9)); setResult({url:URL.createObjectURL(blob),name:`${file.name.replace(/\.[^.]+$/,'')}-${width}x${height}.${(file.type||'image/png').split('/')[1].replace('jpeg','jpg')}`,before:file.size,after:blob.size}); }
-  return <div className="toolUi"><FileDrop accept="image/*" onChange={select}/>{file&&<><div className="fieldGrid"><label>Width<input type="number" value={width} onChange={(e)=>{const w=+e.target.value;setWidth(w);setHeight(Math.round(w/ratio));}}/></label><label>Height<input type="number" value={height} onChange={(e)=>{const h=+e.target.value;setHeight(h);setWidth(Math.round(h*ratio));}}/></label></div><button className="primaryButton wide" onClick={resize}>Resize image</button></>}{result&&<DownloadResult result={result}/>}</div>;
-}
+  const [file,setFile]=useState<File|null>(null);
+  const [width,setWidth]=useState(1200);
+  const [height,setHeight]=useState(800);
+  const [ratio,setRatio]=useState(1.5);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Reading image…');
+  const [error,setError]=useState('');
 
+  async function select(files:File[]){
+    if(!files[0])return;
+    const f=files[0];setFile(f);setResult(null);setError('');setBusyLabel('Reading image…');setBusy(true);
+    try{
+      const b=await createImageBitmap(f);
+      setWidth(b.width);setHeight(b.height);setRatio(b.width/b.height);b.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not read this image.');setFile(null)}
+    finally{setBusy(false)}
+  }
+
+  async function resize(){
+    if(!file)return;
+    setBusyLabel('Resizing image…');setBusy(true);setResult(null);setError('');
+    try{
+      const b=await createImageBitmap(file);
+      const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+      canvas.getContext('2d')!.drawImage(b,0,0,width,height);
+      const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(x=>x?resolve(x):reject(new Error('Resize failed.')),file.type||'image/png',0.9));
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-'+width+'x'+height+'.'+(file.type||'image/png').split('/')[1].replace('jpeg','jpg'),before:file.size,after:blob.size});
+      b.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not resize this image.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="image/*" onChange={select} files={file?[file]:[]} busy={busy} busyLabel={busyLabel}/>
+    {file&&!busy&&<>
+      <div className="fieldGrid fileSettingsGrid">
+        <label>Width<input type="number" value={width} onChange={e=>{const w=+e.target.value;setWidth(w);setHeight(Math.round(w/ratio))}}/></label>
+        <label>Height<input type="number" value={height} onChange={e=>{const h=+e.target.value;setHeight(h);setWidth(Math.round(h*ratio))}}/></label>
+      </div>
+      <button className="primaryButton wide filePrimaryAction" onClick={resize}>Resize image</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
 
 function ImageCompressJpg(){
   const [quality,setQuality]=useState(80);
@@ -188,25 +250,28 @@ function ImageCompressJpg(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
 
-  async function run(next?:File){
-    const input=next||file;
-    if(!input)return;
-    setBusy(true);setError('');setResult(null);setFile(input);
+  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+
+  async function run(){
+    if(!file)return;
+    setBusy(true);setError('');setResult(null);
     try{
-      if(input.type!=='image/jpeg'&&!/\.jpe?g$/i.test(input.name))throw new Error('Choose a JPG or JPEG image.');
-      const {bitmap,canvas,ctx}=await imageToCanvas(input);
-      ctx.drawImage(bitmap,0,0);
+      if(file.type!=='image/jpeg'&&!/\.jpe?g$/i.test(file.name))throw new Error('Choose a JPG or JPEG image.');
+      const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
       const encoded=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG compression failed.')),'image/jpeg',quality/100));
-      const output=encoded.size<input.size?encoded:input;
-      setResult({url:URL.createObjectURL(output),name:input.name.replace(/\.[^.]+$/,'')+'-compressed.jpg',before:input.size,after:output.size});
+      const output=encoded.size<file.size?encoded:file;
+      setResult({url:URL.createObjectURL(output),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.jpg',before:file.size,after:output.size});
       bitmap.close();
     }catch(e){setError(e instanceof Error?e.message:'Could not compress this JPG.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/jpeg,.jpg,.jpeg" onChange={f=>f[0]&&run(f[0])} label={busy?'Compressing…':'Choose JPG file'}/>
-    <div className="controlRow"><label>JPEG quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/>{file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Recompress</button>}</div>
+    <FileDrop accept="image/jpeg,.jpg,.jpeg" onChange={choose} label="Choose JPG file" files={file?[file]:[]} busy={busy} busyLabel="Compressing JPG…"/>
+    {file&&<>
+      <div className="controlRow"><label>JPEG quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Compressing…':'Compress JPG'}</button>
+    </>}
     <div className="toolNote"><ShieldCheck size={15}/><span>If re-encoding would make the file larger, Toolmera keeps the original JPG bytes instead.</span></div>
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -220,30 +285,32 @@ function ImageCompressPng(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
 
-  async function run(next?:File){
-    const input=next||file;
-    if(!input)return;
-    setBusy(true);setError('');setResult(null);setFile(input);
+  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+
+  async function run(){
+    if(!file)return;
+    setBusy(true);setError('');setResult(null);
     try{
-      if(input.type!=='image/png'&&!/\.png$/i.test(input.name))throw new Error('Choose a PNG image.');
-      const {bitmap,canvas,ctx}=await imageToCanvas(input);
-      ctx.drawImage(bitmap,0,0);
+      if(file.type!=='image/png'&&!/\.png$/i.test(file.name))throw new Error('Choose a PNG image.');
+      const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
       const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
       const mod=await import('@upng/upng-js');
       const UPNG=(mod.default||mod) as unknown as {encode:(frames:ArrayBuffer[],w:number,h:number,cnum:number)=>ArrayBuffer};
       const rgba=pixels.data.buffer.slice(pixels.data.byteOffset,pixels.data.byteOffset+pixels.data.byteLength) as ArrayBuffer;
       const encoded=UPNG.encode([rgba],canvas.width,canvas.height,colors);
       const blob=new Blob([encoded],{type:'image/png'});
-      setResult({url:URL.createObjectURL(blob),name:input.name.replace(/\.[^.]+$/,'')+'-compressed.png',before:input.size,after:blob.size});
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.png',before:file.size,after:blob.size});
       bitmap.close();
     }catch(e){setError(e instanceof Error?e.message:'Could not compress this PNG.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/png,.png" onChange={f=>f[0]&&run(f[0])} label={busy?'Optimizing…':'Choose PNG file'}/>
-    <div className="calcModeTabs unitTabs">{[256,128,64].map(v=><button key={v} className={colors===v?'active':''} onClick={()=>setColors(v)}>{v} colors</button>)}</div>
-    {file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Recompress PNG</button>}
+    <FileDrop accept="image/png,.png" onChange={choose} label="Choose PNG file" files={file?[file]:[]} busy={busy} busyLabel="Optimizing PNG…"/>
+    {file&&<>
+      <div className="calcModeTabs unitTabs">{[256,128,64].map(v=><button key={v} className={colors===v?'active':''} onClick={()=>setColors(v)}>{v} colors</button>)}</div>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Optimizing…':'Compress PNG'}</button>
+    </>}
     <div className="toolNote"><ShieldCheck size={15}/><span>PNG stays PNG. Palette quantization can reduce color precision, so compare the result before replacing an original asset.</span></div>
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -258,28 +325,29 @@ function HeicConverter(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
 
-  async function run(next?:File){
-    const input=next||file;
-    if(!input)return;
-    setFile(input);setBusy(true);setError('');setResult(null);
+  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+
+  async function run(){
+    if(!file)return;
+    setBusy(true);setError('');setResult(null);
     try{
-      if(!/\.(heic|heif)$/i.test(input.name)&&!['image/heic','image/heif'].includes(input.type))throw new Error('Choose a HEIC or HEIF photo.');
-      const mod=await import('heic2any');
-      const convert=mod.default;
-      const converted=await convert({blob:input,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
+      if(!/\.(heic|heif)$/i.test(file.name)&&!['image/heic','image/heif'].includes(file.type))throw new Error('Choose a HEIC or HEIF photo.');
+      const mod=await import('heic2any');const convert=mod.default;
+      const converted=await convert({blob:file,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
       const blob=Array.isArray(converted)?converted[0]:converted;
       if(!blob)throw new Error('This HEIC container did not produce a usable image.');
-      const ext=format==='jpg'?'jpg':'png';
-      setResult({url:URL.createObjectURL(blob),name:input.name.replace(/\.[^.]+$/,'')+'.'+ext,before:input.size,after:blob.size});
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+format,before:file.size,after:blob.size});
     }catch(e){setError(e instanceof Error?e.message:'Could not decode this HEIC file.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept=".heic,.heif,image/heic,image/heif" onChange={f=>f[0]&&run(f[0])} label={busy?'Decoding HEIC…':'Choose HEIC / HEIF photo'}/>
-    <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG output</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG output</button></div>
-    {format==='jpg'&&<div className="controlRow"><label>JPG quality <b>{quality}%</b></label><input type="range" min="40" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>}
-    {file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Reconvert</button>}
+    <FileDrop accept=".heic,.heif,image/heic,image/heif" onChange={choose} label="Choose HEIC / HEIF photo" files={file?[file]:[]} busy={busy} busyLabel={'Converting HEIC to '+format.toUpperCase()+'…'}/>
+    {file&&<>
+      <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG output</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG output</button></div>
+      {format==='jpg'&&<div className="controlRow"><label>JPG quality <b>{quality}%</b></label><input type="range" min="40" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>}
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Converting…':'Convert to '+format.toUpperCase()}</button>
+    </>}
     <div className="toolNote"><ShieldCheck size={15}/><span>The converted file is a fresh image and does not preserve the original HEIC metadata. Very large phone photos can use substantial browser memory.</span></div>
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
