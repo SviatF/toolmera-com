@@ -10,6 +10,7 @@ export type ToolSeoContent = {
   sections: ToolSeoSection[];
   faq: { q: string; a: string }[];
   related: { id: string; anchor: string }[];
+  sources?: { label: string; href: string }[];
 };
 
 export const toolSeoContent: Record<string, ToolSeoContent> = {
