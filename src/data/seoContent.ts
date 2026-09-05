@@ -460,8 +460,9 @@ export const categorySeoContent: Record<string, {
           'Image processing happens in the browser for these tools, so your files do not need to be sent to a Toolmera server just to convert, compress or resize them.'
         ]
       }
-    ],
-,
+    ]
+  },
+
   pdf: {
     title: 'Free PDF Tools — Merge, Split & Convert Online',
     description: 'Free browser-based PDF tools to merge PDFs, extract page ranges, and convert JPG or PNG images into PDF files.',
@@ -482,6 +483,5 @@ export const categorySeoContent: Record<string, {
         ]
       }
     ]
-  }
   }
 };
