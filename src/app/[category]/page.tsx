@@ -26,6 +26,17 @@ const groupedCategoryTools: Record<string,{title:string;description:string;ids:s
     { title: 'Convert to PDF', description: 'Turn image files into ordered PDF pages.', ids: ['jpg-pdf','png-pdf'] },
     { title: 'Convert from PDF', description: 'Render PDF pages as downloadable image files.', ids: ['pdf-jpg'] },
   ],
+  converters: [
+    { title: 'Physical Measurements', description: 'Length, mass, surface area and volume conversions.', ids: ['length','weight','area','volume'] },
+    { title: 'Temperature', description: 'Convert Celsius, Fahrenheit and Kelvin.', ids: ['temperature'] },
+  ],
+  generators: [
+    { title: 'Codes & Identifiers', description: 'Create QR codes and UUID v4 identifiers.', ids: ['qr-code','uuid'] },
+    { title: 'Secure & Random', description: 'Generate random passwords and numeric values.', ids: ['password','random-number'] },
+  ],
+  time: [
+    { title: 'Epoch & Timestamps', description: 'Convert Unix time to readable dates and back.', ids: ['unix-timestamp'] },
+  ],
 };
 
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
