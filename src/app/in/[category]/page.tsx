@@ -9,7 +9,7 @@ import { toolsForCategory } from '@/data/tools';
 
 const labels:Record<string,string>={finance:'India Finance Calculators',tax:'India Tax Tools'};
 const descriptions:Record<string,string>={
-  finance:'Plan loans, investments and growth with focused calculators designed around common Indian finance decisions.',
+  finance:'Estimate India-specific loan payments, SIP scenarios and fixed-deposit growth with focused local finance calculators.',
   tax:'Simple India-focused tax utilities for quick estimates and everyday calculations.'
 };
 
