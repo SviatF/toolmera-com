@@ -16,11 +16,15 @@ const descriptions:Record<string,string>={
 
 export function generateStaticParams(){return [{category:'finance'},{category:'tax'}]}
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
-  const {category}=await params;return{title:freeTitle(labels[category]||'India Tools'),description:descriptions[category]||'Free India tools from Toolmera.',alternates:{canonical:`https://toolmera.com/in/${category}/`}}
+  const {category}=await params;
+  const title=freeTitle(labels[category]||'India Tools');
+  const description=descriptions[category]||'Free India tools from Toolmera.';
+  const url=`https://toolmera.com/in/${category}/`;
+  return{title,description,alternates:{canonical:url},openGraph:{title,description,url,siteName:'Toolmera',type:'website'},twitter:{card:'summary',title,description}}
 }
 
 export default async function IndiaCategory({params}:{params:Promise<{category:string}>}){
-  const {category}=await params;if(!labels[category])notFound();const list=toolsForCategory(category,'in');
+  const {category}=await params;if(!labels[category])notFound();const list=toolsForCategory(category,'in');const categoryUrl=`https://toolmera.com/in/${category}/`;const categorySchemas=[{"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"Home",item:"https://toolmera.com/"},{"@type":"ListItem",position:2,name:"India",item:"https://toolmera.com/in/"},{"@type":"ListItem",position:3,name:labels[category],item:categoryUrl}]},{"@context":"https://schema.org","@type":"ItemList",name:labels[category],itemListElement:list.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com/in/${category}/${tool.slug}/`}))}];
   return <><Header/><main className="subPage">
     <section className="shell categoryHero compactHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><Link href="/in/">India</Link><ChevronRight/><span>{labels[category]}</span></div>
@@ -40,5 +44,5 @@ export default async function IndiaCategory({params}:{params:Promise<{category:s
       <p>These calculators are designed for fast estimates and planning. Results are informational and should be checked against current lender, tax or investment terms when making financial decisions.</p>
       <Link className="inlineArrowLink" href="/in/">Explore all India tools <ArrowRight size={16}/></Link>
     </section>
-  </main><Footer/></>
+  </main>{categorySchemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>
 }
