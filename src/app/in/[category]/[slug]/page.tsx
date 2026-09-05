@@ -7,11 +7,12 @@ import { Footer } from '@/components/Footer';
 import { ToolExperience } from '@/components/ToolExperience';
 import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolsForCategory } from '@/data/tools';
+import { freeTitle } from '@/lib/seo';
 
 export function generateStaticParams(){return tools.filter(t=>t.country==='in').map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug,'in');if(!tool)return{};
-  return{title:tool.title,description:tool.description,alternates:{canonical:`https://toolmera.com/in/${category}/${slug}/`}}
+  return{title:freeTitle(tool.title),description:tool.description,alternates:{canonical:`https://toolmera.com/in/${category}/${slug}/`}}
 }
 
 export default async function IndiaTool({params}:{params:Promise<{category:string;slug:string}>}){
