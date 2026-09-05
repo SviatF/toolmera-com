@@ -365,6 +365,8 @@ function CropImage(){
   const [ratio,setRatio]=useState<'free'|'1:1'|'4:3'|'16:9'|'9:16'>('free');
   const [result,setResult]=useState<Result|null>(null);
   const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Reading image…');
 
   function redraw(){
     const bitmap=bitmapRef.current,canvas=canvasRef.current;
@@ -382,14 +384,14 @@ function CropImage(){
 
   async function choose(files:File[]){
     if(!files[0])return;
-    setError('');setResult(null);
+    const input=files[0];setFile(input);setError('');setResult(null);setBusyLabel('Reading image…');setBusy(true);
     try{
-      const input=files[0];
       if(!['image/jpeg','image/png','image/webp'].includes(input.type))throw new Error('Choose a JPG, PNG or WebP image.');
       bitmapRef.current?.close();
       const bitmap=await createImageBitmap(input);
-      bitmapRef.current=bitmap;setFile(input);setCrop({x:0,y:0,w:bitmap.width,h:bitmap.height});
-    }catch(e){setError(e instanceof Error?e.message:'Could not open this image.')}
+      bitmapRef.current=bitmap;setCrop({x:0,y:0,w:bitmap.width,h:bitmap.height});
+    }catch(e){setError(e instanceof Error?e.message:'Could not open this image.');setFile(null)}
+    finally{setBusy(false)}
   }
 
   function canvasPoint(e:PointerEvent<HTMLCanvasElement>){
@@ -437,7 +439,7 @@ function CropImage(){
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/jpeg,image/png,image/webp" onChange={choose} label={file?'Choose another image':'Choose image'}/>
+    <FileDrop accept="image/jpeg,image/png,image/webp" onChange={choose} label="Choose image" files={file?[file]:[]} busy={busy} busyLabel={busyLabel}/>
     {file&&<>
       <div className="calcModeTabs unitTabs">{(['free','1:1','4:3','16:9','9:16'] as const).map(v=><button key={v} className={ratio===v?'active':''} onClick={()=>applyRatio(v)}>{v==='free'?'Free crop':v}</button>)}</div>
       <div className="cropStage"><canvas ref={canvasRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp}/><span>Drag across the image to draw a new crop area.</span></div>
@@ -447,7 +449,7 @@ function CropImage(){
         <label>Width<input type="number" min="1" max={bitmapRef.current?.width||1} value={crop.w} onChange={e=>setCrop({...crop,w:+e.target.value})}/></label>
         <label>Height<input type="number" min="1" max={bitmapRef.current?.height||1} value={crop.h} onChange={e=>setCrop({...crop,h:+e.target.value})}/></label>
       </div>
-      <button className="primaryButton wide" onClick={exportCrop}>Crop & download image</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={exportCrop} disabled={busy}>{busy?'Cropping…':'Crop image'}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -479,15 +481,17 @@ function PdfRotate(){
   const [angle,setAngle]=useState<90|-90|180>(90);
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Reading PDF…');
   const [error,setError]=useState('');
 
   async function choose(files:File[]){
-    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');setBusyLabel('Reading PDF…');setBusy(true);
     try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
-    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.')}
+    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.');setFile(null)}
+    finally{setBusy(false)}
   }
   async function run(){
-    if(!file)return;setBusy(true);setError('');setResult(null);
+    if(!file)return;setBusyLabel('Rotating PDF…');setBusy(true);setError('');setResult(null);
     try{
       const {PDFDocument,degrees}=await import('pdf-lib');
       const doc=await PDFDocument.load(await file.arrayBuffer());const count=doc.getPageCount();
@@ -500,12 +504,12 @@ function PdfRotate(){
   }
 
   return <div className="toolUi">
-    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' pages selected':'PDF selected'):'Choose PDF file'}/>
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label="Choose PDF file" files={file?[file]:[]} busy={busy} busyLabel={busyLabel}/>
     {file&&<>
       <div className="calcModeTabs unitTabs">{(['all','odd','even','custom'] as const).map(v=><button key={v} className={mode===v?'active':''} onClick={()=>setMode(v)}>{v==='all'?'All pages':v==='odd'?'Odd pages':v==='even'?'Even pages':'Custom pages'}</button>)}</div>
       {mode==='custom'&&<label className="singleField">Pages to rotate<input value={custom} onChange={e=>setCustom(e.target.value)} placeholder="2, 5-8"/></label>}
       <div className="calcModeTabs unitTabs"><button className={angle===90?'active':''} onClick={()=>setAngle(90)}>90° clockwise</button><button className={angle===-90?'active':''} onClick={()=>setAngle(-90)}>90° counter-clockwise</button><button className={angle===180?'active':''} onClick={()=>setAngle(180)}>180°</button></div>
-      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Rotating…':'Rotate PDF'}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Rotating…':'Rotate PDF'}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -518,17 +522,19 @@ function PdfRemovePages(){
   const [selection,setSelection]=useState('2');
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Reading PDF…');
   const [error,setError]=useState('');
 
   async function choose(files:File[]){
-    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');setBusyLabel('Reading PDF…');setBusy(true);
     try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
-    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.')}
+    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.');setFile(null)}
+    finally{setBusy(false)}
   }
   const selectedCount=useMemo(()=>{try{return pageCount?parsePageSet(selection,pageCount).size:0}catch{return 0}},[selection,pageCount]);
 
   async function run(){
-    if(!file)return;setBusy(true);setError('');setResult(null);
+    if(!file)return;setBusyLabel('Removing PDF pages…');setBusy(true);setError('');setResult(null);
     try{
       const {PDFDocument}=await import('pdf-lib');
       const src=await PDFDocument.load(await file.arrayBuffer());const count=src.getPageCount();const remove=parsePageSet(selection,count);
@@ -543,11 +549,11 @@ function PdfRemovePages(){
   }
 
   return <div className="toolUi">
-    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' page PDF':'PDF selected'):'Choose PDF file'}/>
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label="Choose PDF file" files={file?[file]:[]} busy={busy} busyLabel={busyLabel}/>
     {file&&<>
       <label className="singleField">Pages to remove<input value={selection} onChange={e=>setSelection(e.target.value)} placeholder="2, 5-9, 12"/></label>
       {pageCount>0&&<div className="toolNote"><ShieldCheck size={15}/><span>{selectedCount} page{selectedCount===1?'':'s'} selected for removal · {Math.max(0,pageCount-selectedCount)} page{pageCount-selectedCount===1?'':'s'} would remain.</span></div>}
-      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Removing pages…':'Remove pages'}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Removing pages…':'Remove pages'}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -562,16 +568,18 @@ function PdfToImage(){
   const [scale,setScale]=useState(1.5);
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Reading PDF…');
   const [error,setError]=useState('');
 
   async function choose(files:File[]){
-    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');setBusyLabel('Reading PDF…');setBusy(true);
     try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
-    catch{setPageCount(0);setError('Could not read this PDF. Password-protected or damaged PDFs are not supported in this converter.')}
+    catch{setPageCount(0);setError('Could not read this PDF. Password-protected or damaged PDFs are not supported in this converter.');setFile(null)}
+    finally{setBusy(false)}
   }
 
   async function run(){
-    if(!file)return;setBusy(true);setError('');setResult(null);
+    if(!file)return;setBusyLabel('Rendering PDF pages…');setBusy(true);setError('');setResult(null);
     try{
       const pdfjs=await import('pdfjs-dist');
       pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
@@ -602,7 +610,7 @@ function PdfToImage(){
   }
 
   return <div className="toolUi">
-    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' page PDF':'PDF selected'):'Choose PDF file'}/>
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label="Choose PDF file" files={file?[file]:[]} busy={busy} busyLabel={busyLabel}/>
     {file&&<>
       <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG</button></div>
       <div className="fieldGrid calculatorTwoFields">
@@ -610,7 +618,7 @@ function PdfToImage(){
         <label>Render scale<select value={scale} onChange={e=>setScale(+e.target.value)}><option value={1}>1× compact</option><option value={1.5}>1.5× standard</option><option value={2}>2× sharp</option><option value={3}>3× high detail</option></select></label>
       </div>
       <div className="toolNote"><ShieldCheck size={15}/><span>Pages render sequentially to limit memory use. Multiple outputs are bundled into a ZIP. Password-protected PDFs are not supported in this version.</span></div>
-      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Rendering pages…':'Convert PDF to '+format.toUpperCase()}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Rendering pages…':'Convert PDF to '+format.toUpperCase()}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
     {result&&<DownloadResult result={result}/>}
@@ -684,7 +692,7 @@ function PdfTool({ tool }: { tool: Tool }) {
   const reorderable=tool.kind==='pdf-merge'||tool.kind==='images-to-pdf';
 
   return <div className="toolUi">
-    <FileDrop accept={accept} multiple={tool.kind!=='pdf-split'} onChange={selectFiles} label={files.length?`${files.length} file${files.length>1?'s':''} selected`:'Choose files'}/>
+    <FileDrop accept={accept} multiple={tool.kind!=='pdf-split'} onChange={selectFiles} label="Choose files" files={files} busy={busy} busyLabel={tool.kind==='pdf-merge'?'Merging PDF files…':tool.kind==='pdf-split'?'Extracting PDF pages…':'Creating PDF…'}/>
     {reorderable&&files.length>0&&<>
       <div className="queueHead"><span>Output order</span><small>Use the arrows to arrange files before creating the PDF.</small></div>
       <FileQueue files={files} onChange={selectFiles}/>
@@ -695,7 +703,7 @@ function PdfTool({ tool }: { tool: Tool }) {
     </>}
     {tool.kind==='images-to-pdf'&&files.length>0&&<div className="toolNote"><ShieldCheck size={15}/><span>Each image becomes one PDF page sized to that image&apos;s own dimensions.</span></div>}
     {error&&<div className="toolError">{error}</div>}
-    <button className="primaryButton wide" onClick={run} disabled={!files.length||busy}>{busy?'Processing…':tool.name}</button>
+    <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={!files.length||busy}>{busy?'Processing…':tool.name}</button>
     {result&&<DownloadResult result={result}/>}
   </div>;
 }
