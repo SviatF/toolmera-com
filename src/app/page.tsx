@@ -9,7 +9,7 @@ import { categories, tools, toolUrl } from '@/data/tools';
 const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, text: TextCursorInput, developer: Code2 };
 
 export default function Home() {
-  const featured = tools.filter(t => ['png-webp','merge-pdf','emi-in','jpg-pdf','resize-image','age'].includes(t.id));
+  const featured = tools.filter(t => ['png-webp','merge-pdf','percentage','jpg-pdf','resize-image','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
 
@@ -23,7 +23,7 @@ export default function Home() {
           <h1>Every tool. <span>One place.</span></h1>
           <p>Fast, private online tools for files, numbers and everyday tasks. No sign-up. No clutter. Just results.</p>
           <ToolSearch tools={tools}/>
-          <div className="popular"><b>Popular:</b><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/in/finance/emi-calculator/">EMI Calculator</Link><Link href="/text/word-counter/">Word Counter</Link></div>
+          <div className="popular"><b>Popular:</b><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/calculators/percentage-calculator/">Percentage Calculator</Link><Link href="/text/word-counter/">Word Counter</Link></div>
         </div>
         <div className="heroAside"><span>TOOLS</span><span>FOR A SMARTER</span><span>EVERYDAY.</span><i/></div>
       </div>
@@ -49,7 +49,7 @@ export default function Home() {
       <div>
         <span className="sectionKicker">LOCAL UTILITIES</span>
         <h2>Built globally. Useful locally.</h2>
-        <p>Country-specific calculators live alongside global file and productivity tools. India is our first localized finance cluster.</p>
+        <p>Global tools come first. Country-specific calculators appear only where local terminology, tax rules or financial conventions make a separate experience useful.</p>
       </div>
       <div className="localClusters">
         <div className="localClusterCard">
