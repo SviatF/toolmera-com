@@ -17,7 +17,7 @@ export function Header() {
         </nav>
         <div className="headerActions">
           <Link className="iconButton" href="/#tool-search" aria-label="Search tools"><Search size={18} /></Link>
-          <Link className="allToolsButton" href="/#categories"><Grid2X2 size={16} /> All tools</Link>
+          <Link className="allToolsButton" href="/tools/"><Grid2X2 size={16} /> All tools</Link>
         </div>
       </div>
     </header>
