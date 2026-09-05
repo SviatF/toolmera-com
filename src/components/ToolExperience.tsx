@@ -774,27 +774,174 @@ function PdfTool({ tool }: { tool: Tool }) {
 
 function MetricCard({ label, value, suffix='' }: {label:string;value:string|number;suffix?:string}){return <div className="metricCard"><span>{label}</span><strong>{value}{suffix}</strong></div>}
 
-function CoreCalculator({ kind }: { kind: Tool['kind'] }) {
-  const [a,setA]=useState(kind==='emi'?500000:kind==='sip'?10000:kind==='fd'?100000:kind==='cagr'?100000:kind==='gst'?1000:25);
-  const [b,setB]=useState(kind==='emi'?10:kind==='sip'?12:kind==='fd'?7:kind==='cagr'?200000:kind==='gst'?18:100);
-  const [c,setC]=useState(kind==='emi'?5:kind==='sip'?10:kind==='fd'?3:kind==='cagr'?5:0);
-  const values=useMemo(()=>{
-    if(kind==='emi'){const r=b/12/100,n=c*12,emi=r? a*r*(1+r)**n/((1+r)**n-1):a/n;return [{l:'Monthly EMI',v:`₹${money(emi)}`},{l:'Total interest',v:`₹${money(emi*n-a)}`},{l:'Total repayment',v:`₹${money(emi*n)}`}]}
-    if(kind==='sip'){const r=b/12/100,n=c*12,fv=r?a*((1+r)**n-1)/r*(1+r):a*n;return [{l:'Invested',v:`₹${money(a*n)}`},{l:'Estimated returns',v:`₹${money(fv-a*n)}`},{l:'Future value',v:`₹${money(fv)}`}]}
-    if(kind==='fd'){const fv=a*(1+b/100)**c;return [{l:'Maturity value',v:`₹${money(fv)}`},{l:'Interest earned',v:`₹${money(fv-a)}`}]}
-    if(kind==='cagr'){const rate=a>0&&c>0?((b/a)**(1/c)-1)*100:0;return [{l:'CAGR',v:`${rate.toFixed(2)}%`}]}
-    if(kind==='gst'){const tax=a*b/100;return [{l:'GST amount',v:`₹${money(tax)}`},{l:'Total incl. GST',v:`₹${money(a+tax)}`},{l:'Base from inclusive',v:`₹${money(a/(1+b/100))}`}]}
-    return [];
-  },[a,b,c,kind]);
-  const labels:Record<string,[string,string,string?]>={
-    emi:['Loan amount (₹)','Interest rate (%)','Tenure (years)'],
-    sip:['Monthly SIP (₹)','Expected return (%)','Period (years)'],
-    fd:['Deposit amount (₹)','Interest rate (%)','Term (years)'],
-    cagr:['Beginning value','Ending value','Years'],
-    gst:['Amount (₹)','GST rate (%)']
-  };
-  const lab=labels[kind]||['Value A','Value B','Value C'];
-  return <div className="toolUi"><div className="fieldGrid"><label>{lab[0]}<input type="number" value={a} onChange={e=>setA(+e.target.value)}/></label><label>{lab[1]}<input type="number" value={b} onChange={e=>setB(+e.target.value)}/></label>{lab[2]&&<label>{lab[2]}<input type="number" value={c} onChange={e=>setC(+e.target.value)}/></label>}</div><div className="metricGrid">{values.map(v=><MetricCard key={v.l} label={v.l} value={v.v}/>)}</div></div>;
+function EmiIndiaCalculator({variant}:{variant:'generic'|'home'|'car'}){
+  const [amount,setAmount]=useState(variant==='home'?5000000:variant==='car'?1200000:1000000);
+  const [downPayment,setDownPayment]=useState(variant==='car'?200000:0);
+  const [rate,setRate]=useState(variant==='home'?8.5:variant==='car'?9.5:9);
+  const [years,setYears]=useState(variant==='home'?20:5);
+
+  const principal=variant==='car'?Math.max(0,amount-downPayment):amount;
+  const result=useMemo(()=>{
+    const n=Math.max(1,Math.round(years*12));
+    if(principal<=0)return {error:'Enter a financed amount greater than zero.'} as const;
+    if(rate<0)return {error:'Interest rate cannot be negative.'} as const;
+    const r=rate/12/100;
+    const emi=r===0?principal/n:principal*r*(1+r)**n/((1+r)**n-1);
+    let balance=principal;
+    const yearly:{year:number;principal:number;interest:number;balance:number;payments:number}[]=[];
+    let yp=0,yi=0,ypay=0;
+    for(let month=1;month<=n;month++){
+      const interest=balance*r;
+      const principalPaid=month===n?balance:Math.min(balance,emi-interest);
+      const payment=principalPaid+interest;
+      balance=Math.max(0,balance-principalPaid);
+      yp+=principalPaid;yi+=interest;ypay+=payment;
+      if(month%12===0||month===n){
+        yearly.push({year:Math.ceil(month/12),principal:yp,interest:yi,balance,payments:ypay});
+        yp=0;yi=0;ypay=0;
+      }
+    }
+    const total=yearly.reduce((s,row)=>s+row.payments,0);
+    return {emi,total,interest:total-principal,yearly,n};
+  },[principal,rate,years]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid batch5Fields">
+      {variant==='car'?<>
+        <label>Vehicle / on-road price (₹)<input type="number" min="0" step="10000" value={amount} onChange={e=>setAmount(+e.target.value)}/></label>
+        <label>Down payment (₹)<input type="number" min="0" step="10000" value={downPayment} onChange={e=>setDownPayment(Math.max(0,+e.target.value))}/></label>
+      </>:<label>Loan amount (₹)<input type="number" min="0" step="10000" value={amount} onChange={e=>setAmount(+e.target.value)}/></label>}
+      <label>Annual interest rate (%)<input type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(+e.target.value)}/></label>
+      <label>Tenure (years)<input type="number" min="0.1" max={variant==='home'?50:20} step="0.5" value={years} onChange={e=>setYears(+e.target.value)}/></label>
+    </div>
+    {variant==='car'&&<div className="formulaNote"><span>Financed principal</span><code>₹{money(principal)} = price − down payment</code></div>}
+    {'error' in result?<div className="toolError">{result.error}</div>:<>
+      <div className="metricGrid compactMetrics">
+        <MetricCard label="Monthly EMI" value={'₹'+money(result.emi)}/>
+        <MetricCard label="Total interest" value={'₹'+money(result.interest)}/>
+        <MetricCard label="Total repayment" value={'₹'+money(result.total)}/>
+        {variant==='car'&&<MetricCard label="Financed amount" value={'₹'+money(principal)}/>}
+      </div>
+      <div className="formulaNote"><span>Reducing-balance formula</span><code>EMI = P × r × (1+r)^n ÷ ((1+r)^n − 1)</code></div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>{variant==='home'?'This is a constant-rate home-loan scenario. Floating-rate resets, fees, insurance, taxes and unscheduled prepayments can change the real repayment path.':variant==='car'?'The financed amount is modeled as vehicle price minus down payment. Processing fees, insurance, registration and other lender-specific charges are not added automatically.':'Fixed-rate reducing-balance estimate. Fees, insurance, rate resets and unscheduled prepayments are excluded.'}</span></div>
+      {(variant==='home'||variant==='generic')&&<>
+        <div className="tableToolbar"><div><strong>Amortization overview</strong><small>{result.n} monthly instalments</small></div></div>
+        <div className="growthTableWrap"><table className="growthTable"><thead><tr><th>Year</th><th>Payments</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>{result.yearly.map(row=><tr key={row.year}><td>{row.year}</td><td>₹{money(row.payments)}</td><td>₹{money(row.principal)}</td><td>₹{money(row.interest)}</td><td>₹{money(row.balance)}</td></tr>)}</tbody></table></div>
+      </>}
+    </>}
+  </div>;
+}
+
+function SipIndiaCalculator(){
+  const [monthly,setMonthly]=useState(10000);
+  const [annual,setAnnual]=useState(12);
+  const [years,setYears]=useState(10);
+  const result=useMemo(()=>{
+    const n=Math.max(1,Math.round(years*12));
+    const r=annual/12/100;
+    const future=r===0?monthly*n:monthly*((1+r)**n-1)/r*(1+r);
+    const invested=monthly*n;
+    const rows=[];
+    for(let year=1;year<=Math.ceil(n/12);year++){
+      const months=Math.min(n,year*12);
+      const fv=r===0?monthly*months:monthly*((1+r)**months-1)/r*(1+r);
+      const inv=monthly*months;
+      rows.push({year,invested:inv,value:fv,growth:fv-inv});
+    }
+    return {future,invested,growth:future-invested,rows,n};
+  },[monthly,annual,years]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid">
+      <label>Monthly SIP (₹)<input type="number" min="0" step="500" value={monthly} onChange={e=>setMonthly(Math.max(0,+e.target.value))}/></label>
+      <label>Expected annual return (%)<input type="number" step="0.1" value={annual} onChange={e=>setAnnual(+e.target.value)}/></label>
+      <label>Investment period (years)<input type="number" min="0.1" max="60" step="0.5" value={years} onChange={e=>setYears(+e.target.value)}/></label>
+    </div>
+    <div className="metricGrid compactMetrics">
+      <MetricCard label="Invested amount" value={'₹'+money(result.invested)}/>
+      <MetricCard label="Estimated growth" value={'₹'+money(result.growth)}/>
+      <MetricCard label="Projected value" value={'₹'+money(result.future)}/>
+    </div>
+    <div className="formulaNote"><span>Model</span><code>Monthly contribution · compounded scenario · contribution at period start</code></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Expected return is a planning assumption, not a guaranteed mutual-fund return. This projection excludes taxes, expense ratios, exit loads and real market volatility.</span></div>
+    <div className="growthTableWrap"><table className="growthTable"><thead><tr><th>Year</th><th>Invested</th><th>Estimated growth</th><th>Projected value</th></tr></thead><tbody>{result.rows.map(row=><tr key={row.year}><td>{row.year}</td><td>₹{money(row.invested)}</td><td>₹{money(row.growth)}</td><td>₹{money(row.value)}</td></tr>)}</tbody></table></div>
+  </div>;
+}
+
+function FdIndiaCalculator(){
+  const [principal,setPrincipal]=useState(100000);
+  const [annual,setAnnual]=useState(7);
+  const [years,setYears]=useState(3);
+  const [frequency,setFrequency]=useState<1|2|4|12>(4);
+  const result=useMemo(()=>{
+    const maturity=principal*(1+annual/100/frequency)**(frequency*years);
+    return {maturity,interest:maturity-principal};
+  },[principal,annual,years,frequency]);
+
+  return <div className="toolUi">
+    <div className="fieldGrid batch5Fields">
+      <label>Deposit amount (₹)<input type="number" min="0" step="1000" value={principal} onChange={e=>setPrincipal(Math.max(0,+e.target.value))}/></label>
+      <label>Annual interest rate (%)<input type="number" step="0.01" value={annual} onChange={e=>setAnnual(+e.target.value)}/></label>
+      <label>Term (years)<input type="number" min="0.1" max="50" step="0.25" value={years} onChange={e=>setYears(+e.target.value)}/></label>
+      <label>Compounding<select value={frequency} onChange={e=>setFrequency(+e.target.value as 1|2|4|12)}><option value={1}>Annually</option><option value={2}>Half-yearly</option><option value={4}>Quarterly</option><option value={12}>Monthly</option></select></label>
+    </div>
+    <div className="metricGrid compactMetrics">
+      <MetricCard label="Maturity value" value={'₹'+money(result.maturity)}/>
+      <MetricCard label="Interest earned" value={'₹'+money(result.interest)}/>
+      <MetricCard label="Principal" value={'₹'+money(principal)}/>
+    </div>
+    <div className="formulaNote"><span>Compound model</span><code>A = P × (1 + r/m)^(m×t)</code></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Use the compounding frequency stated by the actual deposit product. This is a gross mathematical estimate and does not model TDS, tax, premature-withdrawal adjustments or bank-specific rounding.</span></div>
+  </div>;
+}
+
+function GstIndiaCalculator(){
+  const [mode,setMode]=useState<'add'|'remove'>('add');
+  const [amount,setAmount]=useState(1000);
+  const [rate,setRate]=useState(18);
+  const result=useMemo(()=>{
+    if(mode==='add'){
+      const gst=amount*rate/100;
+      return {base:amount,gst,total:amount+gst};
+    }
+    const base=amount/(1+rate/100);
+    return {base,gst:amount-base,total:amount};
+  },[mode,amount,rate]);
+
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs">
+      <button className={mode==='add'?'active':''} onClick={()=>setMode('add')}>Add GST</button>
+      <button className={mode==='remove'?'active':''} onClick={()=>setMode('remove')}>Remove GST</button>
+    </div>
+    <div className="fieldGrid calculatorTwoFields">
+      <label>{mode==='add'?'Base amount (₹)':'GST-inclusive amount (₹)'}<input type="number" min="0" step="0.01" value={amount} onChange={e=>setAmount(Math.max(0,+e.target.value))}/></label>
+      <label>GST rate (%)<input type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(Math.max(0,+e.target.value))}/></label>
+    </div>
+    <div className="quickPills">{[5,12,18,28].map(v=><button key={v} onClick={()=>setRate(v)}>{v}%</button>)}</div>
+    <div className="metricGrid compactMetrics">
+      <MetricCard label="Base amount" value={'₹'+money(result.base)}/>
+      <MetricCard label="GST amount" value={'₹'+money(result.gst)}/>
+      <MetricCard label="GST-inclusive total" value={'₹'+money(result.total)}/>
+    </div>
+    <div className="formulaNote"><span>{mode==='add'?'Add GST':'Remove GST'}</span><code>{mode==='add'?'GST = Base × rate ÷ 100':'Base = Inclusive total ÷ (1 + rate/100)'}</code></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>The 5%, 12%, 18% and 28% buttons are common presets, not a classification decision. Verify the currently applicable GST rate for the specific goods or services using official CBIC/GST information.</span></div>
+  </div>;
+}
+
+function CagrCoreCalculator(){
+  const [begin,setBegin]=useState(100000);
+  const [end,setEnd]=useState(200000);
+  const [years,setYears]=useState(5);
+  const rate=begin>0&&end>=0&&years>0?((end/begin)**(1/years)-1)*100:null;
+  return <div className="toolUi">
+    <div className="fieldGrid">
+      <label>Beginning value<input type="number" value={begin} onChange={e=>setBegin(+e.target.value)}/></label>
+      <label>Ending value<input type="number" value={end} onChange={e=>setEnd(+e.target.value)}/></label>
+      <label>Years<input type="number" min="0.01" step="0.1" value={years} onChange={e=>setYears(+e.target.value)}/></label>
+    </div>
+    <div className="metricGrid compactMetrics"><MetricCard label="CAGR" value={rate===null?'—':rate.toFixed(2)+'%'}/></div>
+    <div className="formulaNote"><span>Formula</span><code>CAGR = (Ending ÷ Beginning)^(1 ÷ Years) − 1</code></div>
+  </div>;
 }
 
 type DateParts = { y:number; m:number; d:number };
@@ -2048,6 +2195,6 @@ function Base64Tool(){
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
