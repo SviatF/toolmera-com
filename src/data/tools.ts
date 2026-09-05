@@ -109,28 +109,28 @@ export const tools: Tool[] = [
     title: 'Compound Interest Calculator', description: 'Estimate future value with selectable compounding frequency and optional monthly contributions.', intro: 'Model how a starting amount can grow with compound interest, regular monthly contributions and different compounding frequencies.', benefits: ['Compounding frequency', 'Monthly contributions', 'Year-by-year growth'], faq: commonFaq,
   },
   {
-    id: 'length', name: 'Length Converter', short: 'Convert meters, feet, miles, inches and more.', category: 'converters', categoryLabel: 'Converters', slug: 'length-converter', kind: 'unit-length', accent: 'cyan',
-    title: 'Length Converter', description: 'Convert common length units instantly.', intro: 'Convert between metric and imperial length units in real time.', benefits: ['Metric & imperial', 'Instant updates', 'No limits'], faq: commonFaq,
+    id: 'length', name: 'Length Converter', short: 'Convert metric and imperial length units instantly.', category: 'converters', categoryLabel: 'Converters', slug: 'length-converter', kind: 'unit-length', accent: 'cyan',
+    title: 'Length Converter — Metric & Imperial Units', description: 'Convert meters, kilometers, centimeters, millimeters, feet, inches, yards and miles instantly.', intro: 'Convert common metric and imperial length measurements in real time with clear unit labels and quick pair shortcuts.', benefits: ['8 common units', 'Metric & imperial', 'Quick conversion pairs'], faq: commonFaq,
   },
   {
     id: 'temperature', name: 'Temperature Converter', short: 'Convert Celsius, Fahrenheit and Kelvin.', category: 'converters', categoryLabel: 'Converters', slug: 'temperature-converter', kind: 'unit-temperature', accent: 'blue',
-    title: 'Temperature Converter', description: 'Convert Celsius, Fahrenheit and Kelvin instantly.', intro: 'A fast temperature converter for the three most common temperature scales.', benefits: ['Celsius', 'Fahrenheit', 'Kelvin'], faq: commonFaq,
+    title: 'Temperature Converter — Celsius, Fahrenheit & Kelvin', description: 'Convert Celsius, Fahrenheit and Kelvin instantly with absolute-zero validation.', intro: 'Convert between Celsius, Fahrenheit and Kelvin in real time, with common reference points and an absolute-zero guard.', benefits: ['3 temperature scales', 'Formula-accurate conversion', 'Absolute-zero validation'], faq: commonFaq,
   },
   {
-    id: 'word-counter', name: 'Word Counter', short: 'Count words, characters, sentences and reading time.', category: 'text', categoryLabel: 'Text', slug: 'word-counter', kind: 'word-counter', accent: 'violet', badge: 'Popular',
-    title: 'Word Counter', description: 'Count words, characters, sentences and estimated reading time.', intro: 'Paste text to get instant writing statistics.', benefits: ['Words & characters', 'Sentence count', 'Reading time'], faq: commonFaq,
+    id: 'word-counter', name: 'Word Counter', short: 'Count words, characters, sentences, paragraphs and reading time.', category: 'text', categoryLabel: 'Text', slug: 'word-counter', kind: 'word-counter', accent: 'violet', badge: 'Popular',
+    title: 'Word Counter — Words, Characters & Reading Time', description: 'Count words, characters with and without spaces, sentences, paragraphs and estimated reading time.', intro: 'Paste or type text to get immediate writing statistics with browser-side analysis.', benefits: ['Words & characters', 'Sentences & paragraphs', 'Reading time estimate'], faq: commonFaq,
   },
   {
-    id: 'case-converter', name: 'Case Converter', short: 'Switch text between upper, lower and title case.', category: 'text', categoryLabel: 'Text', slug: 'case-converter', kind: 'case-converter', accent: 'violet',
-    title: 'Text Case Converter', description: 'Convert text to uppercase, lowercase and title case.', intro: 'Clean up capitalization instantly with one click.', benefits: ['Uppercase', 'Lowercase', 'Title case'], faq: commonFaq,
+    id: 'case-converter', name: 'Case Converter', short: 'Convert text across editorial and developer case styles.', category: 'text', categoryLabel: 'Text', slug: 'case-converter', kind: 'case-converter', accent: 'violet',
+    title: 'Case Converter — Uppercase, Title, camelCase & More', description: 'Convert text to uppercase, lowercase, simple title case, sentence case, camelCase, PascalCase, snake_case and kebab-case.', intro: 'Transform capitalization and naming styles instantly, then copy the result in one click.', benefits: ['9 case modes', 'Editorial & code styles', 'Copy result'], faq: commonFaq,
   },
   {
-    id: 'json', name: 'JSON Formatter', short: 'Format and validate JSON in your browser.', category: 'developer', categoryLabel: 'Developer', slug: 'json-formatter', kind: 'json-formatter', accent: 'pink', badge: 'Popular',
-    title: 'JSON Formatter & Validator', description: 'Format, minify and validate JSON locally in your browser.', intro: 'Paste JSON and instantly turn it into readable, structured output.', benefits: ['Pretty print', 'Minify', 'Validation errors'], faq: commonFaq,
+    id: 'json', name: 'JSON Formatter', short: 'Format, validate and minify JSON in your browser.', category: 'developer', categoryLabel: 'Developer', slug: 'json-formatter', kind: 'json-formatter', accent: 'pink', badge: 'Popular',
+    title: 'JSON Formatter & Validator', description: 'Format, validate and minify JSON locally with 2-space, 4-space or tab indentation.', intro: 'Paste JSON to pretty-print or minify it, validate syntax and inspect parse errors without sending the payload to a Toolmera server.', benefits: ['Format & minify', 'Syntax validation', 'Indentation controls'], faq: commonFaq,
   },
   {
-    id: 'base64', name: 'Base64 Encode / Decode', short: 'Encode text to Base64 or decode it back.', category: 'developer', categoryLabel: 'Developer', slug: 'base64-encode-decode', kind: 'base64', accent: 'cyan',
-    title: 'Base64 Encoder & Decoder', description: 'Encode and decode Base64 text instantly in your browser.', intro: 'A lightweight Base64 utility for developers and everyday use.', benefits: ['Encode', 'Decode', 'Runs locally'], faq: commonFaq,
+    id: 'base64', name: 'Base64 Encode / Decode', short: 'Encode and decode UTF-8 text with Base64 or Base64URL.', category: 'developer', categoryLabel: 'Developer', slug: 'base64-encode-decode', kind: 'base64', accent: 'cyan',
+    title: 'Base64 Encode & Decode — UTF-8 & Base64URL', description: 'Encode UTF-8 text to Base64 or Base64URL and decode it back locally in your browser.', intro: 'Encode text to standard Base64 or Base64URL, decode UTF-8 text, and keep the operation in your browser.', benefits: ['UTF-8 text', 'Base64 & Base64URL', 'Browser-side processing'], faq: commonFaq,
   },
   {
     id: 'emi-in', name: 'EMI Calculator', short: 'Calculate monthly loan EMI, interest and repayment.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'emi-calculator', kind: 'emi', accent: 'blue', badge: 'India',
