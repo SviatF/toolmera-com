@@ -618,7 +618,7 @@ function jsonErrorDetail(message:string,input:string){
   const before=input.slice(0,pos);
   const line=before.split('\n').length;
   const col=before.length-before.lastIndexOf('\n');
-  return \`\${message} · line \${line}, column \${col}\`;
+  return `${message} · line ${line}, column ${col}`;
 }
 
 function JsonFormatter(){
@@ -635,7 +635,7 @@ function JsonFormatter(){
       setOutput(JSON.stringify(obj,null,spacing));
       setStatus('valid');
     }catch(e){
-      setOutput(\`Invalid JSON: \${jsonErrorDetail((e as Error).message,text)}\`);
+      setOutput(`Invalid JSON: ${jsonErrorDetail((e as Error).message,text)}`);
       setStatus('invalid');
     }
     setCopied(false);
@@ -657,7 +657,7 @@ function JsonFormatter(){
       </div>
       <label>Indentation<select value={indent} onChange={e=>setIndent(e.target.value as '2'|'4'|'tab')}><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></label>
     </div>
-    {status!=='idle'&&<div className={\`validationPill \${status}\`}>{status==='valid'?'Valid JSON':'Invalid JSON'}</div>}
+    {status!=='idle'&&<div className={`validationPill ${status}`}>{status==='valid'?'Valid JSON':'Invalid JSON'}</div>}
     <div className="outputWrap">
       <textarea className="textArea output codeArea" readOnly value={output} placeholder="Formatted or minified JSON appears here…"/>
       <button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button>
