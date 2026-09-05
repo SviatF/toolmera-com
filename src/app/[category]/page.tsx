@@ -9,12 +9,24 @@ import { categories, toolsForCategory } from '@/data/tools';
 import { categorySeoContent } from '@/data/seoContent';
 import { freeTitle } from '@/lib/seo';
 
-const calculatorGroups = [
-  { title: 'Finance & Growth', description: 'Loans, returns and interest calculations.', ids: ['loan','roi','simple-interest','compound','cagr'] },
-  { title: 'Everyday Math & Shopping', description: 'Percentages, discounts and statistical averages.', ids: ['percentage','discount','average'] },
-  { title: 'Date & Time', description: 'Calendar age and elapsed date calculations.', ids: ['age','date-difference'] },
-  { title: 'Health', description: 'General health screening calculations.', ids: ['bmi'] },
-];
+const groupedCategoryTools: Record<string,{title:string;description:string;ids:string[]}[]> = {
+  calculators: [
+    { title: 'Finance & Growth', description: 'Loans, returns and interest calculations.', ids: ['loan','roi','simple-interest','compound','cagr'] },
+    { title: 'Everyday Math & Shopping', description: 'Percentages, discounts and statistical averages.', ids: ['percentage','discount','average'] },
+    { title: 'Date & Time', description: 'Calendar age and elapsed date calculations.', ids: ['age','date-difference'] },
+    { title: 'Health', description: 'General health screening calculations.', ids: ['bmi'] },
+  ],
+  image: [
+    { title: 'Format Conversion', description: 'Move between JPG, PNG, WebP and HEIC workflows.', ids: ['png-webp','webp-png','jpg-webp','jpg-png','png-jpg','webp-jpg','heic-jpg'] },
+    { title: 'Optimization & Compression', description: 'Reduce file size with format-specific controls.', ids: ['compress-image','compress-jpg','compress-png'] },
+    { title: 'Editing & Layout', description: 'Change composition or pixel dimensions.', ids: ['resize-image','crop-image'] },
+  ],
+  pdf: [
+    { title: 'Organization & Editing', description: 'Combine, extract, rotate or remove PDF pages.', ids: ['merge-pdf','split-pdf','rotate-pdf','remove-pdf-pages'] },
+    { title: 'Convert to PDF', description: 'Turn image files into ordered PDF pages.', ids: ['jpg-pdf','png-pdf'] },
+    { title: 'Convert from PDF', description: 'Render PDF pages as downloadable image files.', ids: ['pdf-jpg'] },
+  ],
+};
 
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
@@ -41,10 +53,10 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
 
-    {category==='calculators'
+    {groupedCategoryTools[category]
       ? <section className="shell section categoryToolSection calculatorGroups">
-          <div className="sectionHead"><div><span className="sectionKicker">GLOBAL CALCULATORS</span><h2>Choose by task</h2><p>Universal calculators grouped by what you are trying to solve.</p></div></div>
-          {calculatorGroups.map(group=>{
+          <div className="sectionHead"><div><span className="sectionKicker">{category==='calculators'?'GLOBAL CALCULATORS':'TOOL COLLECTION'}</span><h2>Choose by task</h2><p>{category==='calculators'?'Universal calculators grouped by what you are trying to solve.':'Focused utilities grouped around the workflow you need.'}</p></div></div>
+          {groupedCategoryTools[category].map(group=>{
             const groupTools=list.filter(t=>group.ids.includes(t.id));
             if(!groupTools.length)return null;
             return <div className="calculatorGroup" key={group.title}>
