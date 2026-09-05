@@ -462,7 +462,7 @@ function PdfToImage(){
         const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
         const ctx=canvas.getContext('2d')!;
         if(format==='jpg'){ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height)}
-        await page.render({canvasContext:ctx,viewport}).promise;
+        await page.render({canvas,canvasContext:ctx,viewport}).promise;
         const mime=format==='jpg'?'image/jpeg':'image/png';
         const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Page rendering failed.')),mime,format==='jpg'?.9:undefined));
         outputs.push({name:file.name.replace(/\.pdf$/i,'')+'-page-'+(index+1)+'.'+format,blob});
