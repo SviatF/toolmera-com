@@ -124,10 +124,35 @@ export function howToForTool(tool:Tool):HowToStep[]{
     {title:'Choose the pages and options',description:'Select the page range, rotation or removal settings required by this tool.'},
     {title:'Process and download',description:'Create a new output file locally and download the result.'},
   ];
-  if(['emi','sip','fd','gst'].includes(tool.kind))return[
-    {title:'Enter your scenario',description:'Use the amount, rate and period fields that match the calculation.'},
-    {title:'Review the assumptions',description:'Check the formula, compounding or repayment assumptions shown with the tool.'},
-    {title:'Compare the estimate',description:'Change one input at a time to see how the estimated result changes.'},
+  if(tool.id==='car-emi-in')return[
+    {title:'Enter vehicle price and down payment',description:'Toolmera subtracts the down payment to estimate the financed principal.'},
+    {title:'Add rate and tenure',description:'Enter the annual loan rate and repayment period for the fixed-rate scenario.'},
+    {title:'Compare EMI and total cost',description:'Review financed amount, monthly EMI, total interest and total repayment.'},
+  ];
+  if(tool.id==='home-emi-in')return[
+    {title:'Enter the home-loan amount',description:'Use the principal you expect to finance, not the property value unless they are the same.'},
+    {title:'Set rate and tenure',description:'Enter the annual rate and repayment period for the constant-rate scenario.'},
+    {title:'Review EMI and amortization',description:'Compare monthly EMI, total interest and the year-by-year outstanding balance.'},
+  ];
+  if(tool.id==='emi-in')return[
+    {title:'Enter loan principal',description:'Use the amount you expect to borrow.'},
+    {title:'Set annual rate and tenure',description:'Toolmera converts the annual rate to a monthly reducing-balance calculation.'},
+    {title:'Review EMI and repayment',description:'See monthly EMI, total interest, total repayment and the amortization overview.'},
+  ];
+  if(tool.id==='sip-in')return[
+    {title:'Enter the monthly SIP',description:'Set the contribution amount you want to model each month.'},
+    {title:'Set expected return and duration',description:'Use an assumed annual return and investment period for the scenario.'},
+    {title:'Review invested amount and projection',description:'Compare total contributions with modeled growth and projected future value.'},
+  ];
+  if(tool.id==='fd-in')return[
+    {title:'Enter the deposit and rate',description:'Use the principal and contracted annual rate from the deposit product you are comparing.'},
+    {title:'Choose term and compounding',description:'Select the duration and the compounding frequency stated by the product.'},
+    {title:'Review maturity and interest',description:'Compare principal, modeled interest earned and estimated maturity value.'},
+  ];
+  if(tool.id==='gst-in')return[
+    {title:'Choose Add GST or Remove GST',description:'Select whether your starting amount is before tax or already GST-inclusive.'},
+    {title:'Enter amount and GST rate',description:'Use a preset or enter the percentage applicable to your scenario.'},
+    {title:'Review base, tax and total',description:'Toolmera separates the base value, GST component and GST-inclusive total.'},
   ];
   if(tool.kind==='json-formatter')return[
     {title:'Paste your JSON',description:'Enter or paste the JSON payload you want to inspect.'},
