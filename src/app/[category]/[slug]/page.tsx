@@ -69,6 +69,7 @@ export default async function ToolPage({params}:{params:Promise<{category:string
       {seo.sections.map(section=><article key={section.title} className="seoArticle">
         <h2>{section.title}</h2>
         {section.paragraphs.map((p,i)=><p key={i}>{p}</p>)}
+        {section.facts?.length&&<div className="referenceFacts">{section.facts.map(f=><div key={f.label}><span>{f.label}</span><strong>{f.value}</strong></div>)}</div>}
       </article>)}
     </section>}
 
