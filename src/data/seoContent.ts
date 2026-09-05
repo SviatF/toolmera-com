@@ -433,6 +433,157 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'png-webp', anchor: 'convert large PNGs to WebP for web use' },
       { id: 'compress-image', anchor: 'reduce image size before creating the PDF' }
     ]
+  },
+  'age': {
+    title: 'Age Calculator — Years, Months & Days',
+    description: 'Calculate calendar age between a date of birth and any comparison date, with total days, weeks, hours and a next-birthday countdown.',
+    intro: 'Enter a date of birth and an as-of date to get a calendar age in years, months and days, plus total time and the next birthday.',
+    sections: [
+      {
+        title: 'What “calendar age” means here',
+        paragraphs: [
+          'Toolmera calculates age as a calendar difference between two dates rather than dividing elapsed time by an average year or month length. That matters because months have different numbers of days and leap years add an extra day.',
+          'The result is expressed as completed years, completed months and remaining days between the date of birth and the selected “age as of” date.'
+        ]
+      },
+      {
+        title: 'Why years, months and days are not just total days ÷ 365',
+        paragraphs: [
+          'A simple division by 365 or 365.25 is only an approximation. Calendar age has to respect real month lengths and leap years, so Toolmera separates the calendar breakdown from total elapsed days.',
+          'Total weeks and hours are also shown as elapsed-time views of the same date range, while the years/months/days result remains calendar-based.'
+        ]
+      },
+      {
+        title: 'Calculate age today — or on another date',
+        paragraphs: [
+          'The comparison date defaults to today, but you can change it to a past or future date. That makes the calculator useful for questions such as “How old was I on this date?” or “How old will I be when this event happens?”',
+          'For February 29 birthdays, Toolmera uses February 28 as the anniversary date in non-leap years so the convention remains consistent.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I calculate age on a date other than today?', a: 'Yes. Change the “Age as of” field to any valid date on or after the date of birth.' },
+      { q: 'How does Toolmera handle February 29 birthdays?', a: 'In non-leap years, Toolmera treats February 28 as the anniversary for the calendar-age and next-birthday calculation.' },
+      { q: 'What is the difference between calendar age and total days?', a: 'Calendar age is expressed in years, months and days using real calendar boundaries. Total days is the elapsed number of whole calendar days between the two dates.' },
+      { q: 'Does the calculator include hours and weeks?', a: 'Yes. Toolmera also shows total weeks and total hours derived from the elapsed calendar-day count.' }
+    ],
+    related: []
+  },
+
+  'percentage': {
+    title: 'Percentage Calculator — Four Common Percentage Modes',
+    description: 'Calculate what percent X is of Y, find X% of a number, measure percentage increase or decrease, and compare percentage difference.',
+    intro: 'Choose the percentage question you need: part of a total, percent of a number, increase or decrease, or percentage difference.',
+    sections: [
+      {
+        title: 'Four percentage questions — four different formulas',
+        paragraphs: [
+          'Percentage calculations are often grouped under one name even though they answer different questions. Toolmera separates them into four modes so the inputs and formula match the problem you are actually solving.',
+          'Use “X is what % of Y?” for part-of-a-whole questions, “What is X% of Y?” to calculate a percentage of a number, “Increase / decrease” for before-and-after change, and “Percentage difference” when comparing two values without treating either one as the original.'
+        ]
+      },
+      {
+        title: 'The formulas, with quick examples',
+        paragraphs: [
+          'Part of a total uses (Value ÷ Total) × 100. For example, 42 out of 60 is 70%. A percentage of a number uses Number × (Percent ÷ 100), so 20% of 80 is 16.',
+          'Percentage change uses ((New − Old) ÷ |Old|) × 100. Percentage difference uses the absolute difference divided by the average magnitude of the two values, then × 100. Toolmera shows the active formula beneath the result.'
+        ]
+      },
+      {
+        title: 'Percentage change vs. percentage difference',
+        paragraphs: [
+          'Use percentage change when one value is clearly the starting point and the other is the new value. The sign tells you whether the result is an increase or decrease.',
+          'Use percentage difference when the two values are peers and neither is the baseline. This is common when comparing two measurements, estimates or experimental results.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can this calculate percentage increase and decrease?', a: 'Yes. Choose the “Increase / decrease” mode and enter the starting value and new value.' },
+      { q: 'Can I calculate 20% of 80?', a: 'Yes. Choose “What is X% of Y?”, enter 20 for the percent and 80 for the number, and the result is 16.' },
+      { q: 'What happens if the total or starting value is zero?', a: 'Toolmera marks calculations that require division by zero as undefined instead of returning a misleading percentage.' },
+      { q: 'What is the difference between percentage change and percentage difference?', a: 'Percentage change compares a new value with a baseline. Percentage difference compares two peer values using their average as the reference.' }
+    ],
+    related: [
+      { id: 'gst-in', anchor: 'calculate GST percentages for India' }
+    ]
+  },
+
+  'bmi': {
+    title: 'BMI Calculator — Metric & Imperial',
+    description: 'Calculate adult BMI from kg/cm or lb/in measurements, with standard adult categories and clear screening limitations.',
+    intro: 'Calculate adult BMI from metric or imperial measurements. BMI is a general screening estimate, not a diagnosis.',
+    sections: [
+      {
+        title: 'What your adult BMI category means',
+        paragraphs: [
+          'BMI is weight divided by height squared. Toolmera calculates the same BMI whether you enter kilograms and centimeters or pounds and inches, then maps the result to the standard adult categories.',
+          'For adults, the categories are: underweight below 18.5, healthy weight from 18.5 to below 25, overweight from 25 to below 30, and obesity at 30 or above. Toolmera also shows obesity class 1, 2 or 3 when the BMI is 30 or higher.'
+        ]
+      },
+      {
+        title: 'What BMI does not measure',
+        paragraphs: [
+          'BMI does not directly measure body fat, muscle mass, fat distribution, fitness or metabolic health. A muscular person can have a high BMI without having a high body-fat percentage, while an older adult with lower muscle mass can have a BMI that understates body fat.',
+          'That is why BMI is best treated as a broad screening measure rather than a standalone judgment about an individual’s health.'
+        ]
+      },
+      {
+        title: 'Who this calculator is not designed for',
+        paragraphs: [
+          'The fixed adult BMI categories are not the correct reference for children or teenagers, who use age- and sex-specific percentile approaches. Standard adult BMI categories are also not intended for pregnancy.',
+          'If BMI is being used for a health decision rather than general information, interpret it alongside other relevant health information with a qualified healthcare professional.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I use pounds and inches?', a: 'Yes. Switch the unit selector to Imperial to enter weight in pounds and height in inches.' },
+      { q: 'Is BMI the same as body fat percentage?', a: 'No. BMI is a weight-to-height ratio and does not directly measure body fat or muscle mass.' },
+      { q: 'What is considered a healthy adult BMI?', a: 'The standard adult healthy-weight range is 18.5 to below 25. BMI is a screening category, not an individual diagnosis.' },
+      { q: 'Is this BMI calculator for children or pregnancy?', a: 'No. The fixed adult categories shown here are not the appropriate reference for children, teenagers or pregnancy.' }
+    ],
+    related: [],
+    sources: [
+      { label: 'CDC — Adult BMI Categories', href: 'https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html' }
+    ]
+  },
+
+  'compound': {
+    title: 'Compound Interest Calculator — Contributions & Frequency',
+    description: 'Estimate compound growth with annual, quarterly, monthly or daily compounding, optional monthly contributions and a year-by-year breakdown.',
+    intro: 'Model compound growth from a starting amount, interest rate, time period, compounding frequency and optional monthly contributions.',
+    sections: [
+      {
+        title: 'The compound-interest formula behind the calculator',
+        paragraphs: [
+          'For a lump sum with no recurring contribution, compound growth follows A = P(1 + r/n)^(nt), where P is the starting amount, r is the annual nominal rate as a decimal, n is the number of compounding periods per year and t is time in years.',
+          'Choosing annual, quarterly, monthly or daily compounding changes n. More frequent compounding produces a slightly higher effective annual return when the nominal annual rate is held constant.'
+        ]
+      },
+      {
+        title: 'How monthly contributions are modeled',
+        paragraphs: [
+          'When you add a monthly contribution, Toolmera first converts the selected compounding setup to its equivalent monthly growth rate, then adds each contribution at the end of the month. This keeps the recurring-contribution model consistent across annual, quarterly, monthly and daily compounding choices.',
+          'The results separate total contributed money from interest earned so you can see how much of the final value came from your own deposits and how much came from compound growth.'
+        ]
+      },
+      {
+        title: 'What the result assumes',
+        paragraphs: [
+          'The model assumes a constant stated interest rate for the whole period and regular monthly contributions of the amount you enter. It does not model taxes, account fees, inflation, withdrawals or a changing market return.',
+          'Use the result as a scenario model, not a forecast of what a real investment or savings account is guaranteed to produce.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I include monthly contributions?', a: 'Yes. Enter an optional monthly contribution; Toolmera adds it at the end of each modeled month.' },
+      { q: 'Which compounding frequencies are available?', a: 'You can choose annual, quarterly, monthly or daily compounding.' },
+      { q: 'Does the calculator show how much I contributed versus earned?', a: 'Yes. The result separates total contributions from interest earned and includes a year-by-year growth table.' },
+      { q: 'Does this account for inflation, tax or fees?', a: 'No. The result is a nominal growth scenario before inflation, taxes, fees or withdrawals.' }
+    ],
+    related: [
+      { id: 'sip-in', anchor: 'model India-focused monthly SIP growth' },
+      { id: 'fd-in', anchor: 'estimate a fixed deposit maturity value' }
+    ]
   }
 };
 
@@ -481,6 +632,28 @@ export const categorySeoContent: Record<string, {
         paragraphs: [
           'Each Toolmera PDF utility focuses on one job: file order for merging, a clear page range for splitting, and page order plus image-to-page sizing for JPG and PNG conversion.',
           'These PDF operations run in the browser, so documents and images do not need to be uploaded to a Toolmera server just to be combined, extracted or turned into a PDF.'
+        ]
+      }
+    ]
+  },
+,
+  calculators: {
+    title: 'Free Online Calculators — Age, Percentage, BMI & Interest',
+    description: 'Fast online calculators for calendar age, percentages, adult BMI and compound interest with clear formulas and assumptions.',
+    intro: 'Math, health and everyday calculators built around clear inputs, transparent formulas and useful results.',
+    sections: [
+      {
+        title: 'Which calculator do you need?',
+        paragraphs: [
+          'Use Age Calculator for calendar age between two dates, total days and a next-birthday countdown. Use Percentage Calculator for four common percentage questions: part of a total, percent of a number, change and difference.',
+          'Use BMI Calculator for an adult screening estimate in metric or imperial units. Use Compound Interest Calculator to model growth with a starting amount, compounding frequency and optional monthly contributions.'
+        ]
+      },
+      {
+        title: 'Calculators that make the assumptions visible',
+        paragraphs: [
+          'A useful calculator should make clear what is being calculated, not just return a number. Toolmera exposes the relevant formula, units, category thresholds or modeling assumptions where they matter.',
+          'That is especially important for health and finance-related calculations, where a clean mathematical output can still be incomplete without context about what the result does and does not mean.'
         ]
       }
     ]
