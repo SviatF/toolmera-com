@@ -474,7 +474,7 @@ function PdfToImage(){
         const JSZip=(await import('jszip')).default;const zip=new JSZip();outputs.forEach(out=>zip.file(out.name,out.blob));
         const blob=await zip.generateAsync({type:'blob'});setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.pdf$/i,'')+'-images.zip',after:blob.size});
       }
-      await pdf.destroy();
+      await loading.destroy();
     }catch(e){setError(e instanceof Error?e.message:'Could not convert this PDF to images.')}
     finally{setBusy(false)}
   }
