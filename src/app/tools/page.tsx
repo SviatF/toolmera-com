@@ -6,7 +6,7 @@ import { ToolCard } from '@/components/ToolCard';
 import { categories, tools } from '@/data/tools';
 
 export const metadata:Metadata={
-  title:'All Online Tools',
+  title:'Free Online Tools — Browse All Tools',
   description:'Browse all Toolmera tools for images, PDFs, calculators, converters, text, developer tasks and India finance.',
   alternates:{canonical:'https://toolmera.com/tools/'}
 };
