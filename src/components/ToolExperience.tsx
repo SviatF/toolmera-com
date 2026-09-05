@@ -1117,6 +1117,441 @@ function AverageCalculator(){
   </div>;
 }
 
+
+function downloadTextFile(name:string,text:string,type='text/plain'){
+  const blob=new Blob([text],{type});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  window.setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+async function copyPlainText(value:string){
+  await navigator.clipboard.writeText(value);
+}
+
+function QrCodeGenerator(){
+  const [content,setContent]=useState('https://toolmera.com');
+  const [size,setSize]=useState(320);
+  const [level,setLevel]=useState<'L'|'M'|'Q'|'H'>('M');
+  const [foreground,setForeground]=useState('#05070A');
+  const [background,setBackground]=useState('#FFFFFF');
+  const [margin,setMargin]=useState(2);
+  const [svg,setSvg]=useState('');
+  const [png,setPng]=useState('');
+  const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [copied,setCopied]=useState(false);
+
+  useEffect(()=>{
+    let cancelled=false;
+    async function render(){
+      if(!content){setSvg('');setPng('');setError('Enter text or a URL to generate a QR code.');return}
+      setBusy(true);setError('');
+      try{
+        const QRCode=await import('qrcode');
+        const options={errorCorrectionLevel:level,width:size,margin,color:{dark:foreground,light:background}};
+        const [svgOut,pngOut]=await Promise.all([
+          QRCode.toString(content,{...options,type:'svg'}),
+          QRCode.toDataURL(content,{...options,type:'image/png'})
+        ]);
+        if(!cancelled){setSvg(svgOut);setPng(pngOut)}
+      }catch(e){
+        if(!cancelled){setSvg('');setPng('');setError(e instanceof Error?e.message:'Could not generate this QR code.')}
+      }finally{if(!cancelled)setBusy(false)}
+    }
+    render();
+    return()=>{cancelled=true};
+  },[content,size,level,foreground,background,margin]);
+
+  function downloadSvg(){if(svg)downloadTextFile('toolmera-qr-code.svg',svg,'image/svg+xml')}
+  function downloadPng(){
+    if(!png)return;
+    const a=document.createElement('a');a.href=png;a.download='toolmera-qr-code.png';a.click();
+  }
+  async function copyImage(){
+    if(!png)return;
+    try{
+      if(typeof ClipboardItem==='undefined')throw new Error('Image clipboard is not supported by this browser.');
+      const blob=await (await fetch(png)).blob();
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      setCopied(true);window.setTimeout(()=>setCopied(false),1400);
+    }catch(e){setError(e instanceof Error?e.message:'Could not copy the QR image.')}
+  }
+
+  return <div className="toolUi">
+    <textarea className="textArea qrInput" value={content} onChange={e=>setContent(e.target.value)} placeholder="Enter a URL or text…"/>
+    <div className="fieldGrid qrFields">
+      <label>Size (px)<input type="number" min="120" max="1000" step="10" value={size} onChange={e=>setSize(Math.max(120,Math.min(1000,+e.target.value||320)))}/></label>
+      <label>Error correction<select value={level} onChange={e=>setLevel(e.target.value as 'L'|'M'|'Q'|'H')}><option value="L">Low (L)</option><option value="M">Medium (M)</option><option value="Q">Quartile (Q)</option><option value="H">High (H)</option></select></label>
+      <label>Quiet zone<input type="number" min="0" max="8" value={margin} onChange={e=>setMargin(Math.max(0,Math.min(8,+e.target.value||0)))}/></label>
+    </div>
+    <div className="colorPair">
+      <label>Foreground <input type="color" value={foreground} onChange={e=>setForeground(e.target.value)}/><code>{foreground}</code></label>
+      <label>Background <input type="color" value={background} onChange={e=>setBackground(e.target.value)}/><code>{background}</code></label>
+    </div>
+    <div className="qrResult">
+      <div className="qrPreview" dangerouslySetInnerHTML={{__html:svg}}/>
+      <div>
+        <strong>{busy?'Rendering…':'Static QR code ready'}</strong>
+        <p>The encoded content is placed directly in the QR matrix. Toolmera does not create a redirect URL for this generator.</p>
+        <div className="buttonRow">
+          <button className="primaryButton" onClick={downloadPng} disabled={!png}>Download PNG</button>
+          <button className="secondaryButton" onClick={downloadSvg} disabled={!svg}>Download SVG</button>
+          <button className="secondaryButton" onClick={copyImage} disabled={!png}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy PNG'}</button>
+        </div>
+      </div>
+    </div>
+    {error&&<div className="toolError">{error}</div>}
+  </div>;
+}
+
+function createUuidV4(){
+  if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
+  const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
+  bytes[6]=(bytes[6]&0x0f)|0x40;bytes[8]=(bytes[8]&0x3f)|0x80;
+  const hex=[...bytes].map(v=>v.toString(16).padStart(2,'0'));
+  return hex.slice(0,4).join('')+'-'+hex.slice(4,6).join('')+'-'+hex.slice(6,8).join('')+'-'+hex.slice(8,10).join('')+'-'+hex.slice(10).join('');
+}
+
+function UuidGenerator(){
+  const [quantity,setQuantity]=useState(5);
+  const [upper,setUpper]=useState(false);
+  const [hyphens,setHyphens]=useState(true);
+  const [wrap,setWrap]=useState<'none'|'quotes'|'braces'|'json'>('none');
+  const [values,setValues]=useState<string[]>([]);
+  const [copied,setCopied]=useState(false);
+
+  function generate(){
+    const qty=Math.max(1,Math.min(1000,Math.round(quantity||1)));
+    setQuantity(qty);setValues(Array.from({length:qty},()=>createUuidV4()));setCopied(false);
+  }
+  useEffect(()=>{generate()},[]);
+
+  const formatted=useMemo(()=>values.map(raw=>{
+    let value=upper?raw.toUpperCase():raw.toLowerCase();
+    if(!hyphens)value=value.replace(/-/g,'');
+    if(wrap==='quotes')value='"'+value+'"';
+    if(wrap==='braces')value='{'+value+'}';
+    return value;
+  }),[values,upper,hyphens,wrap]);
+  const output=wrap==='json'?JSON.stringify(formatted.map(v=>v.replace(/^"|"$/g,'')),null,2):formatted.join('\n');
+
+  async function copyAll(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1400)}
+
+  return <div className="toolUi">
+    <div className="fieldGrid generatorFields">
+      <label>Quantity<input type="number" min="1" max="1000" value={quantity} onChange={e=>setQuantity(+e.target.value)}/></label>
+      <label>Letter case<select value={upper?'upper':'lower'} onChange={e=>setUpper(e.target.value==='upper')}><option value="lower">Lowercase</option><option value="upper">Uppercase</option></select></label>
+      <label>Wrapping<select value={wrap} onChange={e=>setWrap(e.target.value as typeof wrap)}><option value="none">None</option><option value="quotes">Quotes</option><option value="braces">Braces</option><option value="json">JSON array</option></select></label>
+    </div>
+    <label className="checkControl"><input type="checkbox" checked={hyphens} onChange={e=>setHyphens(e.target.checked)}/><span>Include standard UUID hyphens</span></label>
+    <div className="buttonRow"><button className="primaryButton" onClick={generate}>Generate new UUIDs</button><button className="secondaryButton" onClick={copyAll} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy all'}</button><button className="secondaryButton" onClick={()=>downloadTextFile('toolmera-uuids.txt',output)} disabled={!output}><Download size={15}/> Download TXT</button></div>
+    <textarea className="textArea output codeArea uuidOutput" readOnly value={output}/>
+    <div className="toolNote"><ShieldCheck size={15}/><span>UUID v4 values are generated locally with the browser cryptographic API. Toolmera does not provide timestamp-based UUID versions on this page.</span></div>
+  </div>;
+}
+
+const secureRandom53=()=>{
+  const a=new Uint32Array(2);crypto.getRandomValues(a);
+  return (a[0]&0x1fffff)*4294967296+a[1];
+};
+function secureRandomInt(min:number,max:number){
+  if(!Number.isSafeInteger(min)||!Number.isSafeInteger(max)||max<min)throw new Error('Use safe integer range values.');
+  const span=max-min+1;
+  if(!Number.isSafeInteger(span)||span<1)throw new Error('The selected integer range is too large.');
+  const universe=9007199254740992;
+  const limit=Math.floor(universe/span)*span;
+  let x=secureRandom53();while(x>=limit)x=secureRandom53();
+  return min+(x%span);
+}
+function secureShuffle<T>(items:T[]){
+  const out=[...items];
+  for(let i=out.length-1;i>0;i--){const j=secureRandomInt(0,i);[out[i],out[j]]=[out[j],out[i]]}
+  return out;
+}
+
+function PasswordGenerator(){
+  const [length,setLength]=useState(20);
+  const [upper,setUpper]=useState(true);
+  const [lower,setLower]=useState(true);
+  const [digits,setDigits]=useState(true);
+  const [symbols,setSymbols]=useState(true);
+  const [ambiguous,setAmbiguous]=useState(true);
+  const [password,setPassword]=useState('');
+  const [error,setError]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  function generate(){
+    const sets=[
+      upper?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'',
+      lower?'abcdefghijklmnopqrstuvwxyz':'',
+      digits?'0123456789':'',
+      symbols?'!@#$%^&*()_+-=[]{}|;:,.<>?':''
+    ].filter(Boolean);
+    if(!sets.length){setError('Select at least one character type.');setPassword('');return}
+    const target=Math.max(8,Math.min(128,Math.round(length||20)));setLength(target);
+    const banned=ambiguous?'Il1O0':'';
+    const cleanSets=sets.map(set=>[...set].filter(ch=>!banned.includes(ch)).join('')).filter(Boolean);
+    const pool=cleanSets.join('');
+    if(!pool){setError('The selected rules leave no usable characters.');return}
+    const chars:string[]=[];
+    cleanSets.forEach(set=>chars.push(set[secureRandomInt(0,set.length-1)]));
+    while(chars.length<target)chars.push(pool[secureRandomInt(0,pool.length-1)]);
+    setPassword(secureShuffle(chars).join(''));setError('');setCopied(false);
+  }
+  useEffect(()=>{generate()},[]);
+
+  const poolSize=useMemo(()=>{
+    let pool=(upper?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'')+(lower?'abcdefghijklmnopqrstuvwxyz':'')+(digits?'0123456789':'')+(symbols?'!@#$%^&*()_+-=[]{}|;:,.<>?':'');
+    if(ambiguous)pool=[...pool].filter(ch=>!'Il1O0'.includes(ch)).join('');
+    return new Set(pool).size;
+  },[upper,lower,digits,symbols,ambiguous]);
+  const entropy=poolSize>1?length*Math.log2(poolSize):0;
+  const strength=entropy>=100?'Very strong':entropy>=70?'Strong':entropy>=50?'Moderate':'Limited';
+
+  async function copyPassword(){if(!password)return;await copyPlainText(password);setCopied(true);window.setTimeout(()=>setCopied(false),1400)}
+
+  return <div className="toolUi">
+    <div className="passwordOutput"><code>{password||'—'}</code><button className="copyButton inlineCopy" onClick={copyPassword} disabled={!password}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <div className="entropyBar"><span>Character-space estimate</span><strong>{entropy.toFixed(0)} bits · {strength}</strong></div>
+    <div className="controlRow"><label>Password length <b>{length}</b></label><input type="range" min="8" max="128" value={length} onChange={e=>setLength(+e.target.value)}/><input className="smallNumberInput" type="number" min="8" max="128" value={length} onChange={e=>setLength(+e.target.value)}/></div>
+    <div className="toggleGrid">
+      <label><input type="checkbox" checked={upper} onChange={e=>setUpper(e.target.checked)}/> Uppercase A–Z</label>
+      <label><input type="checkbox" checked={lower} onChange={e=>setLower(e.target.checked)}/> Lowercase a–z</label>
+      <label><input type="checkbox" checked={digits} onChange={e=>setDigits(e.target.checked)}/> Digits 0–9</label>
+      <label><input type="checkbox" checked={symbols} onChange={e=>setSymbols(e.target.checked)}/> Symbols</label>
+      <label><input type="checkbox" checked={ambiguous} onChange={e=>setAmbiguous(e.target.checked)}/> Exclude I, l, 1, O, 0</label>
+    </div>
+    <button className="primaryButton wide" onClick={generate}>Regenerate password</button>
+    {error&&<div className="toolError">{error}</div>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>Random choices use the browser Web Crypto API. The entropy number is an estimate of the selected character search space, not a guarantee about account security.</span></div>
+  </div>;
+}
+
+type RandomMode='integer'|'decimal';
+function RandomNumberGenerator(){
+  const [min,setMin]=useState(1);
+  const [max,setMax]=useState(100);
+  const [quantity,setQuantity]=useState(1);
+  const [mode,setMode]=useState<RandomMode>('integer');
+  const [precision,setPrecision]=useState(2);
+  const [unique,setUnique]=useState(false);
+  const [sort,setSort]=useState<'none'|'asc'|'desc'>('none');
+  const [results,setResults]=useState<number[]>([]);
+  const [error,setError]=useState('');
+  const [copied,setCopied]=useState(false);
+
+  function generate(){
+    try{
+      const qty=Math.max(1,Math.min(10000,Math.round(quantity||1)));setQuantity(qty);
+      const p=mode==='integer'?0:Math.max(0,Math.min(6,Math.round(precision)));
+      const scale=10**p;
+      const lo=mode==='integer'?Math.ceil(min):Math.ceil(min*scale);
+      const hi=mode==='integer'?Math.floor(max):Math.floor(max*scale);
+      if(!Number.isSafeInteger(lo)||!Number.isSafeInteger(hi)||hi<lo)throw new Error('Choose a valid range that can be represented safely.');
+      const slots=hi-lo+1;
+      if(unique&&qty>slots)throw new Error('Quantity exceeds the available unique values in this range.');
+      const ticks:number[]=[];
+      if(unique&&slots<=100000){
+        const pool=Array.from({length:slots},(_,i)=>lo+i);
+        for(let i=0;i<qty;i++){const j=secureRandomInt(i,pool.length-1);[pool[i],pool[j]]=[pool[j],pool[i]];ticks.push(pool[i])}
+      }else{
+        const seen=new Set<number>();
+        while(ticks.length<qty){
+          const value=secureRandomInt(lo,hi);
+          if(!unique||!seen.has(value)){seen.add(value);ticks.push(value)}
+        }
+      }
+      let out=ticks.map(v=>v/scale);
+      if(sort==='asc')out=out.sort((a,b)=>a-b);
+      if(sort==='desc')out=out.sort((a,b)=>b-a);
+      setResults(out);setError('');setCopied(false);
+    }catch(e){setResults([]);setError(e instanceof Error?e.message:'Could not generate this range.')}
+  }
+  useEffect(()=>{generate()},[]);
+
+  const output=results.map(v=>mode==='decimal'?v.toFixed(precision):String(v)).join('\n');
+  async function copyResults(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1400)}
+
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs"><button className={mode==='integer'?'active':''} onClick={()=>setMode('integer')}>Integers</button><button className={mode==='decimal'?'active':''} onClick={()=>setMode('decimal')}>Decimals</button></div>
+    <div className="fieldGrid randomFields">
+      <label>Minimum<input type="number" value={min} onChange={e=>setMin(+e.target.value)}/></label>
+      <label>Maximum<input type="number" value={max} onChange={e=>setMax(+e.target.value)}/></label>
+      <label>Quantity<input type="number" min="1" max="10000" value={quantity} onChange={e=>setQuantity(+e.target.value)}/></label>
+      {mode==='decimal'&&<label>Decimal places<select value={precision} onChange={e=>setPrecision(+e.target.value)}>{[1,2,3,4,5,6].map(v=><option key={v} value={v}>{v}</option>)}</select></label>}
+      <label>Sort<select value={sort} onChange={e=>setSort(e.target.value as typeof sort)}><option value="none">Random order</option><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+    </div>
+    <label className="checkControl"><input type="checkbox" checked={unique} onChange={e=>setUnique(e.target.checked)}/><span>Unique values only</span></label>
+    <div className="buttonRow"><button className="primaryButton" onClick={generate}>Generate</button><button className="secondaryButton" onClick={copyResults} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy results'}</button></div>
+    {results.length===1?<div className="singleRandomResult">{mode==='decimal'?results[0].toFixed(precision):results[0]}</div>:<textarea className="textArea output codeArea randomOutput" readOnly value={output}/>}
+    {error&&<div className="toolError">{error}</div>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>Bounded values use Web Crypto output with rejection sampling to avoid simple modulo bias. This utility is not a certified lottery or regulated drawing system.</span></div>
+  </div>;
+}
+
+function relativeTime(ms:number){
+  const delta=ms-Date.now(),abs=Math.abs(delta);
+  const units:[number,string][]=[[86400000,'day'],[3600000,'hour'],[60000,'minute'],[1000,'second']];
+  for(const [size,label] of units)if(abs>=size||label==='second'){
+    const value=Math.round(abs/size),word=label+(value===1?'':'s');
+    return delta>=0?'in '+value+' '+word:value+' '+word+' ago';
+  }
+  return 'now';
+}
+
+function UnixTimestampConverter(){
+  const [nowMs,setNowMs]=useState(0);
+  const [timestamp,setTimestamp]=useState('');
+  const [unit,setUnit]=useState<'auto'|'seconds'|'milliseconds'>('auto');
+  const [dateInput,setDateInput]=useState('');
+  const [dateMode,setDateMode]=useState<'local'|'utc'>('local');
+  const [copied,setCopied]=useState('');
+
+  useEffect(()=>{
+    const tick=()=>{
+      const now=Date.now();setNowMs(now);
+      if(!timestamp)setTimestamp(String(Math.floor(now/1000)));
+      if(!dateInput){
+        const d=new Date(now),pad=(v:number)=>String(v).padStart(2,'0');
+        setDateInput(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()));
+      }
+    };
+    tick();const id=window.setInterval(tick,1000);return()=>window.clearInterval(id);
+  },[]);
+
+  const parsed=useMemo(()=>{
+    const raw=timestamp.trim();if(!raw)return {error:'Enter a Unix timestamp.'} as const;
+    const n=Number(raw);if(!Number.isFinite(n))return {error:'Timestamp must be numeric.'} as const;
+    const detected=unit==='auto'?(Math.abs(n)>=1e11?'milliseconds':'seconds'):unit;
+    const ms=detected==='seconds'?n*1000:n;
+    const d=new Date(ms);if(!Number.isFinite(d.getTime()))return {error:'This timestamp is outside the supported JavaScript Date range.'} as const;
+    return {date:d,ms,detected};
+  },[timestamp,unit]);
+
+  const reverse=useMemo(()=>{
+    if(!dateInput)return null;
+    const localDate=dateMode==='local'?new Date(dateInput):null;
+    let ms:number;
+    if(dateMode==='local')ms=localDate!.getTime();
+    else{
+      const m=dateInput.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if(!m)return null;
+      ms=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));
+    }
+    return Number.isFinite(ms)?{ms,seconds:Math.floor(ms/1000)}:null;
+  },[dateInput,dateMode]);
+
+  async function copyValue(key:string,value:string){await copyPlainText(value);setCopied(key);window.setTimeout(()=>setCopied(''),1200)}
+  const zone=typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'Local time';
+
+  return <div className="toolUi">
+    <div className="epochNow">
+      <div><span>Current Unix seconds</span><strong>{nowMs?Math.floor(nowMs/1000):'—'}</strong><button onClick={()=>copyValue('now-sec',String(Math.floor(nowMs/1000)))}>{copied==='now-sec'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+      <div><span>Current milliseconds</span><strong>{nowMs||'—'}</strong><button onClick={()=>copyValue('now-ms',String(nowMs))}>{copied==='now-ms'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+    </div>
+    <div className="toolSubsection">
+      <h3>Timestamp → Date</h3>
+      <div className="fieldGrid calculatorTwoFields">
+        <label>Unix timestamp<input inputMode="numeric" value={timestamp} onChange={e=>setTimestamp(e.target.value)}/></label>
+        <label>Unit<select value={unit} onChange={e=>setUnit(e.target.value as typeof unit)}><option value="auto">Auto detect</option><option value="seconds">Seconds</option><option value="milliseconds">Milliseconds</option></select></label>
+      </div>
+      {'error' in parsed?<div className="toolError">{parsed.error}</div>:<div className="epochOutputs">
+        <div><span>Detected</span><strong>{parsed.detected}</strong></div>
+        <div><span>UTC</span><strong>{parsed.date.toUTCString()}</strong><button onClick={()=>copyValue('utc',parsed.date.toUTCString())}>{copied==='utc'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+        <div><span>Local · {zone}</span><strong>{parsed.date.toLocaleString()}</strong><button onClick={()=>copyValue('local',parsed.date.toLocaleString())}>{copied==='local'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+        <div><span>ISO 8601</span><strong>{parsed.date.toISOString()}</strong><button onClick={()=>copyValue('iso',parsed.date.toISOString())}>{copied==='iso'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+        <div><span>Relative</span><strong>{relativeTime(parsed.ms)}</strong></div>
+      </div>}
+    </div>
+    <div className="toolSubsection">
+      <h3>Date → Timestamp</h3>
+      <div className="calcModeTabs unitTabs"><button className={dateMode==='local'?'active':''} onClick={()=>setDateMode('local')}>Local time</button><button className={dateMode==='utc'?'active':''} onClick={()=>setDateMode('utc')}>UTC</button></div>
+      <input className="dateTimeInput" type="datetime-local" step="1" value={dateInput} onChange={e=>setDateInput(e.target.value)}/>
+      {reverse&&<div className="metricGrid calculatorTwoFields"><MetricCard label="Unix seconds" value={String(reverse.seconds)}/><MetricCard label="Milliseconds" value={String(reverse.ms)}/></div>}
+    </div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Unix time represents an instant relative to 1970-01-01T00:00:00Z. Local display uses your browser&apos;s current timezone rules.</span></div>
+  </div>;
+}
+
+type MatrixUnit={id:string;label:string;factor:number};
+function formatConverted(value:number){
+  if(!Number.isFinite(value))return '—';
+  const abs=Math.abs(value);
+  if(abs!==0&&(abs>=1e9||abs<1e-6))return value.toExponential(8).replace(/\.?0+e/,'e');
+  return new Intl.NumberFormat('en-US',{maximumSignificantDigits:10}).format(value);
+}
+
+function MatrixUnitConverter({units,defaultFrom,defaultTo,note}:{units:MatrixUnit[];defaultFrom:string;defaultTo:string;note?:string}){
+  const [value,setValue]=useState(1);
+  const [from,setFrom]=useState(defaultFrom);
+  const [to,setTo]=useState(defaultTo);
+  const fromUnit=units.find(u=>u.id===from)||units[0],toUnit=units.find(u=>u.id===to)||units[1];
+  const base=value*fromUnit.factor;
+  const target=base/toUnit.factor;
+
+  async function copyValue(v:number){await copyPlainText(formatConverted(v))}
+
+  return <div className="toolUi">
+    <div className="fieldGrid matrixFields">
+      <label>Value<input type="number" value={value} onChange={e=>setValue(+e.target.value)}/></label>
+      <label>From<select value={from} onChange={e=>setFrom(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+      <label>To<select value={to} onChange={e=>setTo(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+      <button className="secondaryButton matrixSwap" onClick={()=>{setFrom(to);setTo(from)}}><RefreshCw size={15}/> Swap units</button>
+    </div>
+    <div className="durationHero matrixHero"><strong>{formatConverted(target)}</strong><span>{toUnit.label}</span></div>
+    <div className="conversionMatrix">{units.map(unit=>{const converted=base/unit.factor;return <div key={unit.id}><span>{unit.label}</span><strong>{formatConverted(converted)}</strong><button onClick={()=>copyValue(converted)} aria-label={'Copy '+unit.label}><Copy size={14}/></button></div>})}</div>
+    {note&&<div className="toolNote"><ShieldCheck size={15}/><span>{note}</span></div>}
+  </div>;
+}
+
+function WeightConverter(){
+  const units:MatrixUnit[]=[
+    {id:'kg',label:'Kilogram (kg)',factor:1},
+    {id:'g',label:'Gram (g)',factor:.001},
+    {id:'mg',label:'Milligram (mg)',factor:.000001},
+    {id:'lb',label:'Pound (lb)',factor:.45359237},
+    {id:'oz',label:'Ounce (oz)',factor:.028349523125},
+    {id:'st',label:'Stone (st)',factor:6.35029318},
+    {id:'t',label:'Metric tonne (t)',factor:1000},
+  ];
+  return <MatrixUnitConverter units={units} defaultFrom="kg" defaultTo="lb" note="Pound and ounce values use international avoirdupois definitions; precious-metal troy ounces are not included."/>;
+}
+
+function AreaConverter(){
+  const units:MatrixUnit[]=[
+    {id:'m2',label:'Square meter (m²)',factor:1},
+    {id:'km2',label:'Square kilometer (km²)',factor:1000000},
+    {id:'cm2',label:'Square centimeter (cm²)',factor:.0001},
+    {id:'ft2',label:'Square foot (ft²)',factor:.09290304},
+    {id:'yd2',label:'Square yard (yd²)',factor:.83612736},
+    {id:'mi2',label:'Square mile (mi²)',factor:2589988.110336},
+    {id:'acre',label:'Acre (ac)',factor:4046.8564224},
+    {id:'ha',label:'Hectare (ha)',factor:10000},
+  ];
+  return <MatrixUnitConverter units={units} defaultFrom="acre" defaultTo="ft2" note="Area conversion uses international units. Linear lengths cannot be converted directly into area without a second dimension."/>;
+}
+
+function VolumeConverter(){
+  const units:MatrixUnit[]=[
+    {id:'ml',label:'Milliliter (mL)',factor:.001},
+    {id:'l',label:'Liter (L)',factor:1},
+    {id:'m3',label:'Cubic meter (m³)',factor:1000},
+    {id:'us-tsp',label:'US teaspoon',factor:.00492892159375},
+    {id:'us-tbsp',label:'US tablespoon',factor:.01478676478125},
+    {id:'us-floz',label:'US fluid ounce',factor:.0295735295625},
+    {id:'us-cup',label:'US customary cup',factor:.2365882365},
+    {id:'us-pint',label:'US liquid pint',factor:.473176473},
+    {id:'us-quart',label:'US liquid quart',factor:.946352946},
+    {id:'us-gallon',label:'US liquid gallon',factor:3.785411784},
+    {id:'imp-floz',label:'Imperial fluid ounce',factor:.0284130625},
+    {id:'imp-pint',label:'Imperial pint',factor:.56826125},
+    {id:'imp-quart',label:'Imperial quart',factor:1.1365225},
+    {id:'imp-gallon',label:'Imperial gallon',factor:4.54609},
+  ];
+  return <MatrixUnitConverter units={units} defaultFrom="l" defaultTo="us-gallon" note="US customary and UK Imperial gallons, pints and fluid ounces are different units and are labeled separately here."/>;
+}
+
 function UnitConverter({temperature=false}:{temperature?:boolean}){
   const [v,setV]=useState(1);
   const [from,setFrom]=useState(temperature?'c':'m');
@@ -1419,6 +1854,6 @@ function Base64Tool(){
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><h2>{tool.name}</h2></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
