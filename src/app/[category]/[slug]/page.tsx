@@ -8,13 +8,14 @@ import { ToolExperience } from '@/components/ToolExperience';
 import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolsForCategory, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
+import { freeTitle } from '@/lib/seo';
 
 export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)return{};
   const seo=toolSeoContent[tool.id];
   return{
-    title:seo?.title||tool.title,
+    title:freeTitle(seo?.title||tool.title),
     description:seo?.description||tool.description,
     alternates:{canonical:`https://toolmera.com/${category}/${slug}/`}
   }
