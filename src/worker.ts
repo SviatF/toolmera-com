@@ -29,6 +29,7 @@ type Ga4Report = {
   metricHeaders?: Ga4Header[];
   rows?: Ga4Row[];
 };
+type Ga4BatchReport = { reports?: Ga4Report[] };
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -248,6 +249,54 @@ async function ga4RunReport(
   return await response.json() as Ga4Report;
 }
 
+
+async function ga4BatchRunReports(
+  token:string,
+  propertyId:string,
+  requests:{
+    startDate:string;
+    endDate:string;
+    dimensions:string[];
+    metrics:string[];
+    limit?:number;
+  }[],
+){
+  if(requests.length>5)throw new Error('GA4 batchRunReports supports at most 5 reports per request.');
+  let response:Response;
+  try{
+    response=await fetch(
+      \`https://analyticsdata.googleapis.com/v1beta/properties/\${propertyId}:batchRunReports\`,
+      {
+        method:'POST',
+        headers:{
+          authorization:\`Bearer \${token}\`,
+          'content-type':'application/json',
+        },
+        body:JSON.stringify({
+          requests:requests.map(item=>({
+            dateRanges:[{startDate:item.startDate,endDate:item.endDate}],
+            dimensions:item.dimensions.map(name=>({name})),
+            metrics:item.metrics.map(name=>({name})),
+            limit:item.limit??100,
+            keepEmptyRows:false,
+          })),
+        }),
+      },
+    );
+  }catch(error){
+    throw new Error(\`GA4 batch network request failed: \${error instanceof Error?error.message:'unknown fetch error'}\`);
+  }
+
+  const body=await response.text();
+  if(!response.ok){
+    throw new Error(\`GA4 Data API batch failed: \${response.status} \${body.slice(0,1000)}\`);
+  }
+  let parsed:Ga4BatchReport;
+  try{parsed=JSON.parse(body) as Ga4BatchReport}
+  catch{throw new Error('GA4 Data API returned invalid JSON.')}
+  return parsed.reports||[];
+}
+
 function ga4Rows(report:Ga4Report){
   const dimensions=(report.dimensionHeaders||[]).map(h=>h.name||'');
   const metrics=(report.metricHeaders||[]).map(h=>h.name||'');
@@ -289,28 +338,30 @@ async function handleGa4(request:Request,env:Env){
   const token=await googleAccessToken(env,['https://www.googleapis.com/auth/analytics.readonly']);
   const propertyId=env.GA4_PROPERTY_ID;
 
-  // Keep GA4 requests sequential. Cloudflare Workers limit simultaneous
-  // outgoing connections, and sequential reads make runtime behavior deterministic.
-  const summaryReport=await ga4RunReport(
-    token,propertyId,window.startDate,window.endDate,[],
-    ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1
-  );
-  const previousReport=await ga4RunReport(
-    token,propertyId,window.previousStartDate,window.previousEndDate,[],
-    ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1
-  );
-  const landingReport=await ga4RunReport(
-    token,propertyId,window.startDate,window.endDate,['landingPagePlusQueryString'],
-    ['sessions','totalUsers','screenPageViews','engagementRate'],100
-  );
-  const countryReport=await ga4RunReport(
-    token,propertyId,window.startDate,window.endDate,['country'],
-    ['totalUsers','sessions','screenPageViews'],100
-  );
-  const eventReport=await ga4RunReport(
-    token,propertyId,window.startDate,window.endDate,['eventName'],
-    ['eventCount','totalUsers'],100
-  );
+  const reports=await ga4BatchRunReports(token,propertyId,[
+    {
+      startDate:window.startDate,endDate:window.endDate,dimensions:[],
+      metrics:['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],limit:1
+    },
+    {
+      startDate:window.previousStartDate,endDate:window.previousEndDate,dimensions:[],
+      metrics:['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],limit:1
+    },
+    {
+      startDate:window.startDate,endDate:window.endDate,dimensions:['landingPagePlusQueryString'],
+      metrics:['sessions','totalUsers','screenPageViews','engagementRate'],limit:100
+    },
+    {
+      startDate:window.startDate,endDate:window.endDate,dimensions:['country'],
+      metrics:['totalUsers','sessions','screenPageViews'],limit:100
+    },
+    {
+      startDate:window.startDate,endDate:window.endDate,dimensions:['eventName'],
+      metrics:['eventCount','totalUsers'],limit:100
+    },
+  ]);
+
+  const [summaryReport={},previousReport={},landingReport={},countryReport={},eventReport={}]=reports;
   const trendReport=await ga4RunReport(
     token,propertyId,window.startDate,window.endDate,['date'],
     ['totalUsers','sessions','screenPageViews'],100
@@ -525,32 +576,35 @@ async function handleGsc(request: Request, env: Env) {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+    let url:URL|undefined;
+    try{
+      url=new URL(request.url);
 
-    // Canonical host enforcement. Once www.toolmera.com is bound to this Worker,
-    // every path and query is permanently redirected to the apex hostname.
-    if (url.hostname === 'www.toolmera.com') {
-      return Response.redirect(`https://toolmera.com${url.pathname}${url.search}`, 301);
-    }
-
-    if (url.pathname.startsWith('/api/admin/')) {
-      if (!hasAccess(request, env)) {
-        return json({ error: 'Unauthorized' }, 401);
+      if(url.hostname==='www.toolmera.com'){
+        return Response.redirect(`https://toolmera.com${url.pathname}${url.search}`,301);
       }
 
-      try {
-        if (url.pathname === '/api/admin/status') return handleStatus(env);
-        if (url.pathname === '/api/admin/gsc') return handleGsc(request, env);
-        if (url.pathname === '/api/admin/ga4') return handleGa4(request, env);
-        return json({ error: 'Not found' }, 404);
-      } catch (error) {
-        return json({
-          error: 'Admin API request failed.',
-          detail: error instanceof Error ? error.message : 'Unknown error',
-        }, 500);
-      }
-    }
+      if(url.pathname.startsWith('/api/admin/')){
+        if(!hasAccess(request,env))return json({error:'Unauthorized'},401);
 
-    return env.ASSETS.fetch(request);
+        if(url.pathname==='/api/admin/status')return await handleStatus(env);
+        if(url.pathname==='/api/admin/gsc')return await handleGsc(request,env);
+        if(url.pathname==='/api/admin/ga4')return await handleGa4(request,env);
+        return json({error:'Not found'},404);
+      }
+
+      return await env.ASSETS.fetch(request);
+    }catch(error){
+      const detail=error instanceof Error?`${error.name}: ${error.message}`:String(error);
+      console.error('TOOLMERA_WORKER_ERROR',{
+        path:url?.pathname||'unknown',
+        detail,
+        stack:error instanceof Error?error.stack:undefined,
+      });
+      if(url?.pathname.startsWith('/api/')){
+        return json({error:'Worker request failed.',detail},500);
+      }
+      return new Response('Toolmera Worker error',{status:500,headers:{'content-type':'text/plain; charset=utf-8'}});
+    }
   },
 };
