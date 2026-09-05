@@ -1790,19 +1790,19 @@ export const categorySeoContent: Record<string, {
   converters: {
     title: 'Free Unit Converters — Length, Weight, Volume, Area & Temperature',
     description: 'Free online converters for length, weight, volume, area and temperature with clearly labeled units and browser-side calculations.',
-    intro: 'Convert physical measurements across metric, customary and Imperial units with focused tools and transparent unit definitions.'
+    intro: 'Convert physical measurements across metric, customary and Imperial units with focused tools and transparent unit definitions.',
     sections: [
       {
         title: 'Which converter do you need?',
         paragraphs: [
-          'Use Length for distance, Weight for mass, Volume for liquid and capacity units, Area for surface or land measurements, and Temperature for Celsius, Fahrenheit or Kelvin.'
+          'Use Length for distance, Weight for mass, Volume for liquid and capacity units, Area for surface or land measurements, and Temperature for Celsius, Fahrenheit or Kelvin.',
           'Each converter updates in the browser and exposes clear unit labels, especially where similar names such as US and Imperial gallons represent different quantities.'
         ]
       },
       {
         title: 'Focused conversion tools, not a giant unit menu',
         paragraphs: [
-          'Toolmera keeps each measurement domain on its own page so the unit list, reference factors and internal links stay specific to the task.'
+          'Toolmera keeps each measurement domain on its own page so the unit list, reference factors and internal links stay specific to the task.',
           'As new converters are added, they will live on their own task-specific pages rather than being mixed into one oversized control.'
         ]
       }
@@ -1852,7 +1852,7 @@ export const categorySeoContent: Record<string, {
       }
     ]
   },
-,
+
   generators: {
     title: 'Free Online Generators — QR Codes, UUIDs, Passwords & Random Numbers',
     description: 'Free browser-based generators for static QR codes, UUID v4 identifiers, random passwords and random number sets.',
