@@ -1,6 +1,6 @@
 'use client';
 
-import { DragEvent, useMemo, useState } from 'react';
+import { DragEvent, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Copy, Download, FileUp, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import type { Tool } from '@/data/tools';
 
@@ -124,6 +124,375 @@ function ImageResize() {
   async function select(files:File[]){ if(!files[0])return; const f=files[0]; const b=await createImageBitmap(f); setFile(f); setWidth(b.width); setHeight(b.height); setRatio(b.width/b.height); }
   async function resize(){ if(!file)return; const b=await createImageBitmap(file); const c=document.createElement('canvas');c.width=width;c.height=height; c.getContext('2d')!.drawImage(b,0,0,width,height); const blob=await new Promise<Blob>((r,j)=>c.toBlob(x=>x?r(x):j(),file.type||'image/png',0.9)); setResult({url:URL.createObjectURL(blob),name:`${file.name.replace(/\.[^.]+$/,'')}-${width}x${height}.${(file.type||'image/png').split('/')[1].replace('jpeg','jpg')}`,before:file.size,after:blob.size}); }
   return <div className="toolUi"><FileDrop accept="image/*" onChange={select}/>{file&&<><div className="fieldGrid"><label>Width<input type="number" value={width} onChange={(e)=>{const w=+e.target.value;setWidth(w);setHeight(Math.round(w/ratio));}}/></label><label>Height<input type="number" value={height} onChange={(e)=>{const h=+e.target.value;setHeight(h);setWidth(Math.round(h*ratio));}}/></label></div><button className="primaryButton wide" onClick={resize}>Resize image</button></>}{result&&<DownloadResult result={result}/>}</div>;
+}
+
+
+function ImageCompressJpg(){
+  const [quality,setQuality]=useState(80);
+  const [file,setFile]=useState<File|null>(null);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function run(next?:File){
+    const input=next||file;
+    if(!input)return;
+    setBusy(true);setError('');setResult(null);setFile(input);
+    try{
+      if(input.type!=='image/jpeg'&&!/\.jpe?g$/i.test(input.name))throw new Error('Choose a JPG or JPEG image.');
+      const {bitmap,canvas,ctx}=await imageToCanvas(input);
+      ctx.drawImage(bitmap,0,0);
+      const encoded=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG compression failed.')),'image/jpeg',quality/100));
+      const output=encoded.size<input.size?encoded:input;
+      setResult({url:URL.createObjectURL(output),name:input.name.replace(/\.[^.]+$/,'')+'-compressed.jpg',before:input.size,after:output.size});
+      bitmap.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress this JPG.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="image/jpeg,.jpg,.jpeg" onChange={f=>f[0]&&run(f[0])} label={busy?'Compressing…':'Choose JPG file'}/>
+    <div className="controlRow"><label>JPEG quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/>{file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Recompress</button>}</div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>If re-encoding would make the file larger, Toolmera keeps the original JPG bytes instead.</span></div>
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+function ImageCompressPng(){
+  const [colors,setColors]=useState(256);
+  const [file,setFile]=useState<File|null>(null);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function run(next?:File){
+    const input=next||file;
+    if(!input)return;
+    setBusy(true);setError('');setResult(null);setFile(input);
+    try{
+      if(input.type!=='image/png'&&!/\.png$/i.test(input.name))throw new Error('Choose a PNG image.');
+      const {bitmap,canvas,ctx}=await imageToCanvas(input);
+      ctx.drawImage(bitmap,0,0);
+      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const mod=await import('@upng/upng-js');
+      const UPNG=(mod.default||mod) as unknown as {encode:(frames:ArrayBuffer[],w:number,h:number,cnum:number)=>ArrayBuffer};
+      const rgba=pixels.data.buffer.slice(pixels.data.byteOffset,pixels.data.byteOffset+pixels.data.byteLength) as ArrayBuffer;
+      const encoded=UPNG.encode([rgba],canvas.width,canvas.height,colors);
+      const blob=new Blob([encoded],{type:'image/png'});
+      setResult({url:URL.createObjectURL(blob),name:input.name.replace(/\.[^.]+$/,'')+'-compressed.png',before:input.size,after:blob.size});
+      bitmap.close();
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress this PNG.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="image/png,.png" onChange={f=>f[0]&&run(f[0])} label={busy?'Optimizing…':'Choose PNG file'}/>
+    <div className="calcModeTabs unitTabs">{[256,128,64].map(v=><button key={v} className={colors===v?'active':''} onClick={()=>setColors(v)}>{v} colors</button>)}</div>
+    {file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Recompress PNG</button>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>PNG stays PNG. Palette quantization can reduce color precision, so compare the result before replacing an original asset.</span></div>
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+function HeicConverter(){
+  const [file,setFile]=useState<File|null>(null);
+  const [format,setFormat]=useState<'jpg'|'png'>('jpg');
+  const [quality,setQuality]=useState(85);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function run(next?:File){
+    const input=next||file;
+    if(!input)return;
+    setFile(input);setBusy(true);setError('');setResult(null);
+    try{
+      if(!/\.(heic|heif)$/i.test(input.name)&&!['image/heic','image/heif'].includes(input.type))throw new Error('Choose a HEIC or HEIF photo.');
+      const mod=await import('heic2any');
+      const convert=mod.default;
+      const converted=await convert({blob:input,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
+      const blob=Array.isArray(converted)?converted[0]:converted;
+      if(!blob)throw new Error('This HEIC container did not produce a usable image.');
+      const ext=format==='jpg'?'jpg':'png';
+      setResult({url:URL.createObjectURL(blob),name:input.name.replace(/\.[^.]+$/,'')+'.'+ext,before:input.size,after:blob.size});
+    }catch(e){setError(e instanceof Error?e.message:'Could not decode this HEIC file.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept=".heic,.heif,image/heic,image/heif" onChange={f=>f[0]&&run(f[0])} label={busy?'Decoding HEIC…':'Choose HEIC / HEIF photo'}/>
+    <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG output</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG output</button></div>
+    {format==='jpg'&&<div className="controlRow"><label>JPG quality <b>{quality}%</b></label><input type="range" min="40" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>}
+    {file&&<button className="secondaryButton" onClick={()=>run()} disabled={busy}><RefreshCw size={15}/> Reconvert</button>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>The converted file is a fresh image and does not preserve the original HEIC metadata. Very large phone photos can use substantial browser memory.</span></div>
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+type CropRect={x:number;y:number;w:number;h:number};
+
+function CropImage(){
+  const bitmapRef=useRef<ImageBitmap|null>(null);
+  const canvasRef=useRef<HTMLCanvasElement|null>(null);
+  const dragStart=useRef<{x:number;y:number}|null>(null);
+  const [file,setFile]=useState<File|null>(null);
+  const [crop,setCrop]=useState<CropRect>({x:0,y:0,w:1,h:1});
+  const [ratio,setRatio]=useState<'free'|'1:1'|'4:3'|'16:9'|'9:16'>('free');
+  const [result,setResult]=useState<Result|null>(null);
+  const [error,setError]=useState('');
+
+  function redraw(){
+    const bitmap=bitmapRef.current,canvas=canvasRef.current;
+    if(!bitmap||!canvas)return;
+    canvas.width=bitmap.width;canvas.height=bitmap.height;
+    const ctx=canvas.getContext('2d')!;
+    ctx.drawImage(bitmap,0,0);
+    ctx.fillStyle='rgba(2,5,8,.58)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(crop.w>0&&crop.h>0){
+      ctx.drawImage(bitmap,crop.x,crop.y,crop.w,crop.h,crop.x,crop.y,crop.w,crop.h);
+      ctx.strokeStyle='#4cAAff';ctx.lineWidth=Math.max(2,Math.round(canvas.width/500));ctx.strokeRect(crop.x,crop.y,crop.w,crop.h);
+    }
+  }
+  useEffect(redraw,[crop,file]);
+
+  async function choose(files:File[]){
+    if(!files[0])return;
+    setError('');setResult(null);
+    try{
+      const input=files[0];
+      if(!['image/jpeg','image/png','image/webp'].includes(input.type))throw new Error('Choose a JPG, PNG or WebP image.');
+      bitmapRef.current?.close();
+      const bitmap=await createImageBitmap(input);
+      bitmapRef.current=bitmap;setFile(input);setCrop({x:0,y:0,w:bitmap.width,h:bitmap.height});
+    }catch(e){setError(e instanceof Error?e.message:'Could not open this image.')}
+  }
+
+  function canvasPoint(e:PointerEvent<HTMLCanvasElement>){
+    const canvas=canvasRef.current!;
+    const box=canvas.getBoundingClientRect();
+    return {x:Math.max(0,Math.min(canvas.width,(e.clientX-box.left)*canvas.width/box.width)),y:Math.max(0,Math.min(canvas.height,(e.clientY-box.top)*canvas.height/box.height))};
+  }
+  function ratioValue(){return ratio==='1:1'?1:ratio==='4:3'?4/3:ratio==='16:9'?16/9:ratio==='9:16'?9/16:null}
+  function pointerDown(e:PointerEvent<HTMLCanvasElement>){if(!file)return;dragStart.current=canvasPoint(e);e.currentTarget.setPointerCapture(e.pointerId)}
+  function pointerMove(e:PointerEvent<HTMLCanvasElement>){
+    if(!dragStart.current||!bitmapRef.current)return;
+    const p=canvasPoint(e),s=dragStart.current;
+    let dx=p.x-s.x,dy=p.y-s.y;
+    const rv=ratioValue();
+    if(rv){
+      const sx=dx<0?-1:1,sy=dy<0?-1:1;
+      let w=Math.abs(dx),h=Math.abs(dy);
+      if(w/Math.max(1,h)>rv)w=h*rv;else h=w/rv;
+      dx=w*sx;dy=h*sy;
+    }
+    const x=Math.max(0,Math.min(s.x,s.x+dx)),y=Math.max(0,Math.min(s.y,s.y+dy));
+    const w=Math.min(bitmapRef.current.width-x,Math.abs(dx)),h=Math.min(bitmapRef.current.height-y,Math.abs(dy));
+    if(w>=1&&h>=1)setCrop({x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h)});
+  }
+  function pointerUp(){dragStart.current=null}
+
+  function applyRatio(next:typeof ratio){
+    setRatio(next);
+    const bitmap=bitmapRef.current;if(!bitmap||next==='free')return;
+    const rv=next==='1:1'?1:next==='4:3'?4/3:next==='16:9'?16/9:9/16;
+    let w=bitmap.width,h=Math.round(w/rv);
+    if(h>bitmap.height){h=bitmap.height;w=Math.round(h*rv)}
+    setCrop({x:Math.round((bitmap.width-w)/2),y:Math.round((bitmap.height-h)/2),w,h});
+  }
+
+  async function exportCrop(){
+    const bitmap=bitmapRef.current;
+    if(!bitmap||!file||crop.w<1||crop.h<1)return;
+    const canvas=document.createElement('canvas');canvas.width=crop.w;canvas.height=crop.h;
+    canvas.getContext('2d')!.drawImage(bitmap,crop.x,crop.y,crop.w,crop.h,0,0,crop.w,crop.h);
+    const type=['image/jpeg','image/png','image/webp'].includes(file.type)?file.type:'image/png';
+    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Crop export failed.')),type,type==='image/png'?undefined:.92));
+    const ext=type.split('/')[1].replace('jpeg','jpg');
+    setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-cropped.'+ext,before:file.size,after:blob.size});
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="image/jpeg,image/png,image/webp" onChange={choose} label={file?'Choose another image':'Choose image'}/>
+    {file&&<>
+      <div className="calcModeTabs unitTabs">{(['free','1:1','4:3','16:9','9:16'] as const).map(v=><button key={v} className={ratio===v?'active':''} onClick={()=>applyRatio(v)}>{v==='free'?'Free crop':v}</button>)}</div>
+      <div className="cropStage"><canvas ref={canvasRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp}/><span>Drag across the image to draw a new crop area.</span></div>
+      <div className="fieldGrid cropFields">
+        <label>X<input type="number" min="0" max={bitmapRef.current?.width||0} value={crop.x} onChange={e=>setCrop({...crop,x:+e.target.value})}/></label>
+        <label>Y<input type="number" min="0" max={bitmapRef.current?.height||0} value={crop.y} onChange={e=>setCrop({...crop,y:+e.target.value})}/></label>
+        <label>Width<input type="number" min="1" max={bitmapRef.current?.width||1} value={crop.w} onChange={e=>setCrop({...crop,w:+e.target.value})}/></label>
+        <label>Height<input type="number" min="1" max={bitmapRef.current?.height||1} value={crop.h} onChange={e=>setCrop({...crop,h:+e.target.value})}/></label>
+      </div>
+      <button className="primaryButton wide" onClick={exportCrop}>Crop & download image</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+function parsePageSet(input:string,pageCount:number){
+  const clean=input.trim().toLowerCase();
+  if(clean==='all')return new Set(Array.from({length:pageCount},(_,i)=>i));
+  const out=new Set<number>();
+  if(!clean)throw new Error('Enter page numbers such as 2, 5-9.');
+  for(const part of clean.split(',').map(v=>v.trim()).filter(Boolean)){
+    if(/^\d+$/.test(part)){
+      const n=Number(part);if(n<1||n>pageCount)throw new Error('Page '+n+' is outside this '+pageCount+'-page PDF.');out.add(n-1);continue;
+    }
+    const m=part.match(/^(\d+)\s*-\s*(\d+)$/);
+    if(!m)throw new Error('Use page syntax such as 2, 5-9, 12.');
+    const a=Number(m[1]),b=Number(m[2]);if(a<1||b<1||a>pageCount||b>pageCount)throw new Error('Range '+part+' is outside this '+pageCount+'-page PDF.');
+    const lo=Math.min(a,b),hi=Math.max(a,b);for(let n=lo;n<=hi;n++)out.add(n-1);
+  }
+  return out;
+}
+
+function PdfRotate(){
+  const [file,setFile]=useState<File|null>(null);
+  const [pageCount,setPageCount]=useState(0);
+  const [mode,setMode]=useState<'all'|'odd'|'even'|'custom'>('all');
+  const [custom,setCustom]=useState('1');
+  const [angle,setAngle]=useState<90|-90|180>(90);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function choose(files:File[]){
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
+    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.')}
+  }
+  async function run(){
+    if(!file)return;setBusy(true);setError('');setResult(null);
+    try{
+      const {PDFDocument,degrees}=await import('pdf-lib');
+      const doc=await PDFDocument.load(await file.arrayBuffer());const count=doc.getPageCount();
+      const selected=mode==='all'?new Set(Array.from({length:count},(_,i)=>i)):mode==='odd'?new Set(Array.from({length:count},(_,i)=>i).filter(i=>i%2===0)):mode==='even'?new Set(Array.from({length:count},(_,i)=>i).filter(i=>i%2===1)):parsePageSet(custom,count);
+      doc.getPages().forEach((page,i)=>{if(selected.has(i)){const next=((page.getRotation().angle+angle)%360+360)%360;page.setRotation(degrees(next))}});
+      const bytes=await doc.save();const blob=new Blob([bytes as BlobPart],{type:'application/pdf'});
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.pdf$/i,'')+'-rotated.pdf',before:file.size,after:blob.size});
+    }catch(e){setError(e instanceof Error?e.message:'Could not rotate this PDF.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' pages selected':'PDF selected'):'Choose PDF file'}/>
+    {file&&<>
+      <div className="calcModeTabs unitTabs">{(['all','odd','even','custom'] as const).map(v=><button key={v} className={mode===v?'active':''} onClick={()=>setMode(v)}>{v==='all'?'All pages':v==='odd'?'Odd pages':v==='even'?'Even pages':'Custom pages'}</button>)}</div>
+      {mode==='custom'&&<label className="singleField">Pages to rotate<input value={custom} onChange={e=>setCustom(e.target.value)} placeholder="2, 5-8"/></label>}
+      <div className="calcModeTabs unitTabs"><button className={angle===90?'active':''} onClick={()=>setAngle(90)}>90° clockwise</button><button className={angle===-90?'active':''} onClick={()=>setAngle(-90)}>90° counter-clockwise</button><button className={angle===180?'active':''} onClick={()=>setAngle(180)}>180°</button></div>
+      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Rotating…':'Rotate PDF'}</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+function PdfRemovePages(){
+  const [file,setFile]=useState<File|null>(null);
+  const [pageCount,setPageCount]=useState(0);
+  const [selection,setSelection]=useState('2');
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function choose(files:File[]){
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
+    catch{setPageCount(0);setError('Could not read this PDF. It may be encrypted or damaged.')}
+  }
+  const selectedCount=useMemo(()=>{try{return pageCount?parsePageSet(selection,pageCount).size:0}catch{return 0}},[selection,pageCount]);
+
+  async function run(){
+    if(!file)return;setBusy(true);setError('');setResult(null);
+    try{
+      const {PDFDocument}=await import('pdf-lib');
+      const src=await PDFDocument.load(await file.arrayBuffer());const count=src.getPageCount();const remove=parsePageSet(selection,count);
+      if(remove.size===0)throw new Error('Choose at least one page to remove.');
+      if(remove.size>=count)throw new Error('A PDF must keep at least one page.');
+      const keep=src.getPageIndices().filter(i=>!remove.has(i));
+      const out=await PDFDocument.create();const pages=await out.copyPages(src,keep);pages.forEach(p=>out.addPage(p));
+      const bytes=await out.save();const blob=new Blob([bytes as BlobPart],{type:'application/pdf'});
+      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.pdf$/i,'')+'-pages-removed.pdf',before:file.size,after:blob.size});
+    }catch(e){setError(e instanceof Error?e.message:'Could not remove pages from this PDF.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' page PDF':'PDF selected'):'Choose PDF file'}/>
+    {file&&<>
+      <label className="singleField">Pages to remove<input value={selection} onChange={e=>setSelection(e.target.value)} placeholder="2, 5-9, 12"/></label>
+      {pageCount>0&&<div className="toolNote"><ShieldCheck size={15}/><span>{selectedCount} page{selectedCount===1?'':'s'} selected for removal · {Math.max(0,pageCount-selectedCount)} page{pageCount-selectedCount===1?'':'s'} would remain.</span></div>}
+      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Removing pages…':'Remove pages'}</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
+}
+
+function PdfToImage(){
+  const [file,setFile]=useState<File|null>(null);
+  const [pageCount,setPageCount]=useState(0);
+  const [pages,setPages]=useState('all');
+  const [format,setFormat]=useState<'jpg'|'png'>('jpg');
+  const [scale,setScale]=useState(1.5);
+  const [result,setResult]=useState<Result|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  async function choose(files:File[]){
+    if(!files[0])return;setFile(files[0]);setResult(null);setError('');
+    try{const {PDFDocument}=await import('pdf-lib');const doc=await PDFDocument.load(await files[0].arrayBuffer());setPageCount(doc.getPageCount())}
+    catch{setPageCount(0);setError('Could not read this PDF. Password-protected or damaged PDFs are not supported in this converter.')}
+  }
+
+  async function run(){
+    if(!file)return;setBusy(true);setError('');setResult(null);
+    try{
+      const pdfjs=await import('pdfjs-dist');
+      pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
+      const loading=pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())});
+      const pdf=await loading.promise;const selected=[...parsePageSet(pages,pdf.numPages)].sort((a,b)=>a-b);
+      if(!selected.length)throw new Error('Choose at least one PDF page.');
+      const outputs:{name:string;blob:Blob}[]=[];
+      for(const index of selected){
+        const page=await pdf.getPage(index+1);const viewport=page.getViewport({scale});
+        const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+        const ctx=canvas.getContext('2d')!;
+        if(format==='jpg'){ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height)}
+        await page.render({canvasContext:ctx,viewport}).promise;
+        const mime=format==='jpg'?'image/jpeg':'image/png';
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Page rendering failed.')),mime,format==='jpg'?.9:undefined));
+        outputs.push({name:file.name.replace(/\.pdf$/i,'')+'-page-'+(index+1)+'.'+format,blob});
+        canvas.width=0;canvas.height=0;page.cleanup();
+      }
+      if(outputs.length===1){
+        const out=outputs[0];setResult({url:URL.createObjectURL(out.blob),name:out.name,after:out.blob.size});
+      }else{
+        const JSZip=(await import('jszip')).default;const zip=new JSZip();outputs.forEach(out=>zip.file(out.name,out.blob));
+        const blob=await zip.generateAsync({type:'blob'});setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.pdf$/i,'')+'-images.zip',after:blob.size});
+      }
+      await pdf.destroy();
+    }catch(e){setError(e instanceof Error?e.message:'Could not convert this PDF to images.')}
+    finally{setBusy(false)}
+  }
+
+  return <div className="toolUi">
+    <FileDrop accept="application/pdf,.pdf" onChange={choose} label={file?(pageCount?pageCount+' page PDF':'PDF selected'):'Choose PDF file'}/>
+    {file&&<>
+      <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG</button></div>
+      <div className="fieldGrid calculatorTwoFields">
+        <label>Pages<input value={pages} onChange={e=>setPages(e.target.value)} placeholder="all or 1-3, 5"/></label>
+        <label>Render scale<select value={scale} onChange={e=>setScale(+e.target.value)}><option value={1}>1× compact</option><option value={1.5}>1.5× standard</option><option value={2}>2× sharp</option><option value={3}>3× high detail</option></select></label>
+      </div>
+      <div className="toolNote"><ShieldCheck size={15}/><span>Pages render sequentially to limit memory use. Multiple outputs are bundled into a ZIP. Password-protected PDFs are not supported in this version.</span></div>
+      <button className="primaryButton wide" onClick={run} disabled={busy}>{busy?'Rendering pages…':'Convert PDF to '+format.toUpperCase()}</button>
+    </>}
+    {error&&<div className="toolError">{error}</div>}
+    {result&&<DownloadResult result={result}/>}
+  </div>;
 }
 
 function PdfTool({ tool }: { tool: Tool }) {
@@ -1050,6 +1419,6 @@ function Base64Tool(){
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(['emi','sip','fd','cagr','gst'].includes(tool.kind))ui=<CoreCalculator kind={tool.kind}/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><h2>{tool.name}</h2></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
