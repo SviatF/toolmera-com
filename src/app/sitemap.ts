@@ -4,7 +4,7 @@ import { categories, tools, toolUrl } from '@/data/tools';
 export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPages = ['tools','about','contact'];
+  const staticPages = ['tools','about','contact','methodology'];
 
   return [
     { url: 'https://toolmera.com/', priority: 1 },
