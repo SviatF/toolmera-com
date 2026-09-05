@@ -585,6 +585,241 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'sip-in', anchor: 'model India-focused monthly SIP growth' },
       { id: 'fd-in', anchor: 'estimate a fixed deposit maturity value' }
     ]
+  },
+  'length': {
+    title: 'Length Converter — Metric & Imperial Units',
+    description: 'Convert meters, kilometers, centimeters, millimeters, feet, inches, yards and miles instantly with clear conversion factors.',
+    intro: 'Convert common metric and imperial length measurements in real time with quick pair shortcuts and transparent conversion relationships.',
+    sections: [
+      {
+        title: 'Common length conversion factors',
+        paragraphs: [
+          'Length conversion works by expressing both units through a shared base. Toolmera uses meters internally for the supported length units, then converts the result into the unit you choose.',
+          'Several widely used relationships are exact definitions, including 1 inch = 2.54 centimeters and 1 foot = 0.3048 meters. Toolmera displays results rounded to a maximum of six decimal places.'
+        ],
+        facts: [
+          { label: '1 inch', value: '2.54 cm' },
+          { label: '1 foot', value: '0.3048 m' },
+          { label: '1 yard', value: '0.9144 m' },
+          { label: '1 mile', value: '1.609344 km' },
+          { label: '1 kilometer', value: '1000 m' }
+        ]
+      },
+      {
+        title: 'Metric vs. imperial length units',
+        paragraphs: [
+          'Metric length units scale in powers of ten: millimeters, centimeters, meters and kilometers. Feet, inches, yards and miles use different fixed relationships, so a converter is useful when switching between engineering, travel, construction or everyday measurement systems.',
+          'Use the quick-pair buttons for common conversions such as inches to centimeters, feet to meters, miles to kilometers and yards to meters.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How many centimeters are in one inch?', a: 'One inch is exactly 2.54 centimeters.' },
+      { q: 'How do I convert meters to feet?', a: 'Divide meters by 0.3048, or multiply by approximately 3.280839895. Toolmera applies the conversion automatically.' },
+      { q: 'Does Toolmera support yards?', a: 'Yes. Yards are available alongside meters, kilometers, centimeters, millimeters, feet, inches and miles.' },
+      { q: 'Why is the displayed result rounded?', a: 'Toolmera performs the conversion with JavaScript number arithmetic and displays the result to a maximum of six decimal places for readability.' }
+    ],
+    related: [
+      { id: 'temperature', anchor: 'convert Celsius, Fahrenheit and Kelvin' }
+    ]
+  },
+
+  'temperature': {
+    title: 'Temperature Converter — Celsius, Fahrenheit & Kelvin',
+    description: 'Convert Celsius, Fahrenheit and Kelvin instantly with standard formulas, quick reference values and absolute-zero validation.',
+    intro: 'Convert between Celsius, Fahrenheit and Kelvin in real time using the standard scale relationships, with a guard against values below absolute zero.',
+    sections: [
+      {
+        title: 'Temperature conversion formulas',
+        paragraphs: [
+          'Celsius, Fahrenheit and Kelvin use different zero points and scale relationships. Toolmera converts the input to Celsius first, then calculates the requested output scale.',
+          'The calculator rejects inputs that would represent a temperature below absolute zero.'
+        ],
+        facts: [
+          { label: 'Celsius → Fahrenheit', value: '°F = (°C × 9/5) + 32' },
+          { label: 'Fahrenheit → Celsius', value: '°C = (°F − 32) × 5/9' },
+          { label: 'Celsius → Kelvin', value: 'K = °C + 273.15' },
+          { label: 'Kelvin → Celsius', value: '°C = K − 273.15' }
+        ]
+      },
+      {
+        title: 'Useful temperature reference points',
+        paragraphs: [
+          'Reference values make it easier to sanity-check a conversion. Water freezes at 0 °C / 32 °F under standard reference conditions, while −40 is the point where Celsius and Fahrenheit have the same numeric value.',
+          'Kelvin starts at absolute zero, so negative Kelvin values are not physically valid in this converter.'
+        ],
+        facts: [
+          { label: 'Absolute zero', value: '0 K = −273.15 °C = −459.67 °F' },
+          { label: 'Water freezing point', value: '0 °C = 32 °F = 273.15 K' },
+          { label: '−40 point', value: '−40 °C = −40 °F' },
+          { label: 'Water boiling point', value: '100 °C = 212 °F = 373.15 K' }
+        ]
+      }
+    ],
+    faq: [
+      { q: 'At what temperature are Celsius and Fahrenheit equal?', a: 'They are equal at −40: −40 °C is exactly −40 °F.' },
+      { q: 'Can I enter a temperature below absolute zero?', a: 'No. Toolmera flags any input that converts to less than 0 K, which is below absolute zero.' },
+      { q: 'How do I convert Celsius to Fahrenheit?', a: 'Multiply Celsius by 9/5 and add 32.' },
+      { q: 'How do I convert Celsius to Kelvin?', a: 'Add 273.15 to the Celsius value.' }
+    ],
+    related: [
+      { id: 'length', anchor: 'convert metric and imperial length units' }
+    ]
+  },
+
+  'word-counter': {
+    title: 'Word Counter — Words, Characters & Reading Time',
+    description: 'Count words, characters with and without spaces, sentences, paragraphs and estimated reading time directly in your browser.',
+    intro: 'Paste or type text to see word count, character count, sentence and paragraph estimates, plus reading time.',
+    sections: [
+      {
+        title: 'What each text metric means',
+        paragraphs: [
+          'Word count uses the browser’s language-aware word segmenter when available, with a whitespace-token fallback. Character count uses Unicode code points, and the “No spaces” metric removes whitespace before counting.',
+          'Sentence count is a segmentation estimate rather than a grammar analysis. Paragraphs are separated by blank lines, while reading time is estimated at 220 words per minute.'
+        ],
+        facts: [
+          { label: 'Words', value: 'Language-aware segmentation when supported' },
+          { label: 'Characters', value: 'Unicode code points, including spaces' },
+          { label: 'No spaces', value: 'Characters after removing whitespace' },
+          { label: 'Reading time', value: 'Estimated at 220 words/minute' }
+        ]
+      },
+      {
+        title: 'When a word counter is useful',
+        paragraphs: [
+          'Word and character counts are useful for assignments, editorial limits, ad copy, social posts, product descriptions and interface text where a length target matters.',
+          'Because sentence detection and reading time are estimates, use those metrics as planning signals rather than exact linguistic measurements.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Are hyphenated words counted as one word or two?', a: 'When the browser language segmenter is available, segmentation follows that engine’s word rules. The fallback treats whitespace-separated text as words, so a hyphenated token without spaces remains one token.' },
+      { q: 'Does the character count include spaces?', a: 'The main Characters metric includes spaces. Toolmera also shows a separate No spaces count.' },
+      { q: 'How is reading time calculated?', a: 'Reading time is estimated at 220 words per minute and rounded up to the next whole minute when text is present.' },
+      { q: 'Is sentence count exact?', a: 'No. It is a segmentation estimate and should not be treated as a full grammar parse.' }
+    ],
+    related: [
+      { id: 'case-converter', anchor: 'change text case after checking its length' }
+    ]
+  },
+
+  'case-converter': {
+    title: 'Case Converter — Uppercase, Title, camelCase & More',
+    description: 'Convert text to uppercase, lowercase, simple title case, sentence case, camelCase, PascalCase, snake_case, kebab-case and CONSTANT_CASE.',
+    intro: 'Transform text between common capitalization and developer naming styles, then copy the result in one click.',
+    sections: [
+      {
+        title: 'Capitalization and naming styles explained',
+        paragraphs: [
+          'UPPERCASE and lowercase change letter case without restructuring the text. Sentence case lowercases the input and capitalizes the beginning of sentences. Simple Title Case capitalizes each word.',
+          'Developer naming modes reshape whitespace-separated words into camelCase, PascalCase, snake_case, kebab-case or CONSTANT_CASE for identifiers, configuration values and code conventions.'
+        ],
+        facts: [
+          { label: 'camelCase', value: 'exampleVariableName' },
+          { label: 'PascalCase', value: 'ExampleVariableName' },
+          { label: 'snake_case', value: 'example_variable_name' },
+          { label: 'kebab-case', value: 'example-variable-name' },
+          { label: 'CONSTANT_CASE', value: 'EXAMPLE_VARIABLE_NAME' }
+        ]
+      },
+      {
+        title: 'Simple Title Case is not an editorial style guide',
+        paragraphs: [
+          'Toolmera’s Simple Title Case capitalizes every word. It does not apply AP, Chicago, APA or MLA rules for articles, conjunctions, prepositions or other minor words.',
+          'If a publication requires a specific editorial style, use the conversion as a starting point and review the result against that style guide.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does Title Case keep small words such as “and” or “of” lowercase?', a: 'No. Toolmera’s Simple Title Case capitalizes every word and does not apply publication-specific minor-word rules.' },
+      { q: 'Can I convert text to camelCase or snake_case?', a: 'Yes. Toolmera supports camelCase, PascalCase, snake_case, kebab-case and CONSTANT_CASE in addition to editorial-style case changes.' },
+      { q: 'Can I copy the converted text?', a: 'Yes. Use the Copy button beside the output after applying a case mode.' },
+      { q: 'Can I undo a transformation?', a: 'You can apply another mode to the original text, but transformations that remove separators or original capitalization may not be perfectly reversible from the transformed output alone.' }
+    ],
+    related: [
+      { id: 'word-counter', anchor: 'check word and character counts' }
+    ]
+  },
+
+  'json': {
+    title: 'JSON Formatter & Validator — Beautify & Minify',
+    description: 'Format, validate and minify JSON locally with selectable indentation, clear parse errors and no Toolmera server upload.',
+    intro: 'Paste JSON to pretty-print or minify it, validate strict JSON syntax and inspect parse errors directly in your browser.',
+    sections: [
+      {
+        title: 'JSON syntax validation and common errors',
+        paragraphs: [
+          'Valid JSON follows strict syntax rules. Property names and string values use double quotes, trailing commas are invalid, and comments are not part of standard JSON. Toolmera validates input with the browser’s JSON.parse implementation.',
+          'When the browser error message includes a character position, Toolmera also derives a line and column to make the problem easier to locate. The tool reports malformed JSON; it does not automatically repair it.'
+        ],
+        facts: [
+          { label: 'Valid key', value: '"name": "Toolmera"' },
+          { label: 'Invalid key', value: "name: 'Toolmera'" },
+          { label: 'Trailing comma', value: 'Invalid in standard JSON' },
+          { label: 'Comments', value: 'Invalid in standard JSON' }
+        ]
+      },
+      {
+        title: 'Pretty print vs. minify',
+        paragraphs: [
+          'Pretty printing adds indentation and line breaks so nested objects and arrays are easier to inspect. Toolmera supports 2-space, 4-space and tab indentation.',
+          'Minifying removes optional whitespace to create a compact JSON string. Both operations parse the JSON first, so malformed input produces a validation error instead of a misleading reformatted result.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does Toolmera repair invalid JSON?', a: 'No. It validates with JSON.parse and reports the parse error. You must correct malformed JSON before it can be formatted or minified.' },
+      { q: 'Can I choose the indentation style?', a: 'Yes. The formatter supports 2 spaces, 4 spaces or tabs.' },
+      { q: 'Why are trailing commas rejected?', a: 'Trailing commas are not valid in standard JSON, even though some programming-language object syntaxes allow them.' },
+      { q: 'Is JSON processed locally?', a: 'Yes. The formatter, validator and minifier run in the browser and do not send the pasted JSON to a Toolmera processing server.' }
+    ],
+    related: [
+      { id: 'base64', anchor: 'encode a text payload as Base64' }
+    ],
+    sources: [
+      { label: 'RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format', href: 'https://www.rfc-editor.org/rfc/rfc8259' }
+    ]
+  },
+
+  'base64': {
+    title: 'Base64 Encode & Decode — UTF-8 & Base64URL',
+    description: 'Encode UTF-8 text to standard Base64 or Base64URL and decode it back locally in your browser.',
+    intro: 'Encode text to Base64 or Base64URL, decode UTF-8 text, and keep the entire operation in your browser.',
+    sections: [
+      {
+        title: 'What Base64 encoding does',
+        paragraphs: [
+          'Base64 represents bytes using a restricted set of ASCII characters so binary or UTF-8 data can travel through text-oriented systems. Toolmera converts text to UTF-8 bytes before encoding and converts decoded bytes back to UTF-8 text.',
+          'Base64 increases data size compared with the original bytes and provides no secrecy. It is an encoding format, not encryption.'
+        ],
+        facts: [
+          { label: 'Standard alphabet', value: 'A–Z, a–z, 0–9, +, /' },
+          { label: 'Padding', value: '= may be added at the end' },
+          { label: 'Base64URL', value: 'Uses - and _ instead of + and /' },
+          { label: 'Security', value: 'Encoding, not encryption' }
+        ]
+      },
+      {
+        title: 'Standard Base64 vs. Base64URL',
+        paragraphs: [
+          'Standard Base64 uses + and / characters and commonly uses = padding. Base64URL replaces + with - and / with _; unpadded Base64URL is common in URL-oriented formats.',
+          'Toolmera provides separate Standard Base64 and Base64URL modes. The current utility is text-focused: it does not upload or encode files and it does not generate Data URI wrappers.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does Base64 encrypt my data?', a: 'No. Base64 is reversible encoding and provides no confidentiality.' },
+      { q: 'Does Toolmera support emojis and non-English text?', a: 'Yes for valid UTF-8 text. Toolmera uses TextEncoder before encoding and TextDecoder when decoding.' },
+      { q: 'What is the difference between Base64 and Base64URL?', a: 'Base64URL uses - and _ in place of + and / and is designed to be friendlier in URL-oriented contexts.' },
+      { q: 'Can I encode an image or file?', a: 'Not in the current Toolmera utility. This page encodes and decodes text.' }
+    ],
+    related: [
+      { id: 'json', anchor: 'format and validate JSON before encoding' }
+    ],
+    sources: [
+      { label: 'RFC 4648 — Base-N Encodings', href: 'https://www.rfc-editor.org/rfc/rfc4648' }
+    ]
   }
 };
 
@@ -655,6 +890,72 @@ export const categorySeoContent: Record<string, {
         paragraphs: [
           'A useful calculator should make clear what is being calculated, not just return a number. Toolmera exposes the relevant formula, units, category thresholds or modeling assumptions where they matter.',
           'That is especially important for health and finance-related calculations, where a clean mathematical output can still be incomplete without context about what the result does and does not mean.'
+        ]
+      }
+    ]
+  },
+,
+  converters: {
+    title: 'Online Unit Converters — Length & Temperature',
+    description: 'Convert common length units and temperature scales instantly with clear formulas, references and browser-side calculations.',
+    intro: 'Convert length and temperature values instantly with focused utilities and transparent conversion relationships.',
+    sections: [
+      {
+        title: 'Which converter do you need?',
+        paragraphs: [
+          'Use Length Converter for meters, kilometers, centimeters, millimeters, feet, inches, yards and miles. Use Temperature Converter for Celsius, Fahrenheit and Kelvin.',
+          'Both tools update in the browser and expose the relationships behind the result instead of hiding the calculation behind a generic output.'
+        ]
+      },
+      {
+        title: 'Focused conversion tools, not a giant unit menu',
+        paragraphs: [
+          'Toolmera currently keeps this category deliberately narrow: one tool for common length units and one for the three major temperature scales. This makes each workflow faster to scan and easier to verify.',
+          'As new converters are added, they will live on their own task-specific pages rather than being mixed into one oversized control.'
+        ]
+      }
+    ]
+  },
+
+  text: {
+    title: 'Online Text Tools — Word Counter & Case Converter',
+    description: 'Count words, characters, sentences and paragraphs or transform text between editorial and developer case styles.',
+    intro: 'Analyze text length and structure or transform capitalization with browser-side text utilities.',
+    sections: [
+      {
+        title: 'Which text tool do you need?',
+        paragraphs: [
+          'Use Word Counter when you need words, characters, sentences, paragraphs or an estimated reading time. Use Case Converter when you need to change capitalization or transform words into developer naming styles.',
+          'The two tools cover different jobs: measurement versus transformation. Both work directly on the text you enter in the browser.'
+        ]
+      },
+      {
+        title: 'Know which metrics are exact and which are estimates',
+        paragraphs: [
+          'Character counts are direct string measurements, while word and sentence segmentation can depend on language and browser support. Reading time is always an estimate based on an assumed reading speed.',
+          'Toolmera labels those assumptions instead of presenting every text statistic as an absolute linguistic fact.'
+        ]
+      }
+    ]
+  },
+
+  developer: {
+    title: 'Developer Tools — JSON & Base64 Utilities',
+    description: 'Format, validate and minify JSON or encode and decode UTF-8 Base64 and Base64URL text directly in your browser.',
+    intro: 'Lightweight developer utilities for JSON inspection and Base64 text encoding, built around local browser execution.',
+    sections: [
+      {
+        title: 'Which developer tool do you need?',
+        paragraphs: [
+          'Use JSON Formatter to pretty-print, minify and validate strict JSON syntax. Use Base64 Encode / Decode to convert UTF-8 text to standard Base64 or Base64URL and back.',
+          'These tools are intentionally narrow: JSON formatting does not repair malformed data, and the Base64 utility is text-focused rather than a file encoder.'
+        ]
+      },
+      {
+        title: 'Local processing for developer payloads',
+        paragraphs: [
+          'Both current developer utilities execute their core transformations in the browser. JSON uses native parsing and serialization, while Base64 uses browser byte and text encoding APIs.',
+          'Local execution reduces the need to send pasted payloads to a Toolmera processing endpoint, but Base64 itself should never be confused with encryption or secret storage.'
         ]
       }
     ]
