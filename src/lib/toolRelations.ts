@@ -70,7 +70,8 @@ export function semanticRelatedTools(tool:Tool,allTools:Tool[],limit=4){
   const ids=graph[tool.id]||[];
   return ids
     .map(id=>allTools.find(item=>item.id===id))
-    .filter((item):item is Tool=>Boolean(item)&&item.id!==tool.id)
+    .filter((item):item is Tool=>item!==undefined)
+    .filter(item=>item.id!==tool.id)
     .slice(0,limit);
 }
 
