@@ -44,7 +44,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     faq: [
       { q: 'Will my transparent PNG stay transparent in WebP?', a: 'For static PNG files, transparent areas are retained when Toolmera re-encodes the image as WebP.' },
       { q: 'Does converting PNG to WebP reduce quality?', a: 'Toolmera uses an adjustable WebP quality setting. Higher settings preserve more detail; lower settings trade some detail for a smaller file.' },
-      { q: 'Can I convert several PNG files at once?', a: 'Not yet. The current converter processes one image at a time.' },
+      { q: 'Can I convert several PNG files at once?', a: 'Yes. The current batch workflow accepts up to four images at once and provides a separate download for each result.' },
       { q: 'Does Toolmera support animated PNG conversion?', a: 'The current converter is intended for static images. Animated PNG is not a supported workflow at this time.' }
     ],
     related: [
@@ -232,7 +232,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     faq: [
       { q: 'Will compression change the image dimensions?', a: 'No. The compressor keeps the current width and height. Use Resize Image if you need different pixel dimensions.' },
       { q: 'What happens when I compress a PNG?', a: 'The current Toolmera compressor exports PNG input as WebP because browser-based PNG does not expose the same adjustable lossy quality control.' },
-      { q: 'Can I compress multiple images at once?', a: 'Not yet. The current compressor processes one image at a time.' },
+      { q: 'Can I compress multiple images at once?', a: 'Yes. The current batch workflow accepts up to four images at once and shows a separate result for each file.' },
       { q: 'How do I get the smallest result?', a: 'If the image is larger than necessary, resize it first, then compress it. For PNG or JPG assets intended for the web, converting to WebP can also reduce size further.' }
     ],
     related: [
@@ -1141,7 +1141,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     faq: [
       { q: 'Can JPG keep WebP transparency?', a: 'No. JPG has no alpha channel, so Toolmera replaces transparent areas with the background color you choose.' },
       { q: 'Does WebP to JPG reduce quality?', a: 'JPG uses lossy compression. Higher quality settings retain more detail; lower settings can reduce file size more aggressively.' },
-      { q: 'Can I convert several WebP files at once?', a: 'Not yet. The current converter processes one WebP image at a time.' },
+      { q: 'Can I convert several WebP files at once?', a: 'Yes. You can queue up to four WebP images in the current batch converter.' },
       { q: 'Does the JPG keep WebP metadata?', a: 'No. The current Canvas-based conversion creates a fresh image from pixels and does not copy source EXIF or GPS metadata.' }
     ],
     related: [
@@ -1182,7 +1182,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { q: 'Can Toolmera convert HEIF as well as HEIC?', a: 'Yes. The current upload accepts HEIC and HEIF image files supported by the browser-side decoder.' },
       { q: 'Can I output PNG instead of JPG?', a: 'Yes. Use the output toggle to choose JPG or PNG before reconverting.' },
       { q: 'Does conversion keep camera metadata?', a: 'No. The current browser conversion creates a new image file and does not preserve the original HEIC metadata.' },
-      { q: 'Can I batch-convert many HEIC photos?', a: 'Not yet. The current Toolmera interface converts one HEIC or HEIF file at a time.' }
+      { q: 'Can I batch-convert many HEIC photos?', a: 'Yes. You can queue up to four HEIC or HEIF photos and convert them in one batch.' }
     ],
     related: [
       { id: 'compress-jpg', anchor: 'compress the converted JPG' },
@@ -1222,7 +1222,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { q: 'Will compression change my JPG dimensions?', a: 'No. Compress JPG keeps the current pixel width and height.' },
       { q: 'What happens if the compressed version is larger?', a: 'Toolmera keeps the original JPG bytes instead of giving you a larger re-encoded file.' },
       { q: 'Does the tool preserve EXIF metadata?', a: 'No. Canvas re-encoding creates a fresh JPEG from pixels and does not copy the original EXIF metadata.' },
-      { q: 'Can I compress several JPGs at once?', a: 'Not yet. The current interface processes one JPG or JPEG at a time.' }
+      { q: 'Can I compress several JPGs at once?', a: 'Yes. You can queue up to four JPG or JPEG images in one compression batch.' }
     ],
     related: [
       { id: 'compress-image', anchor: 'use the multi-format image compressor' },
