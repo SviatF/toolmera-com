@@ -4,7 +4,8 @@ import { Brand } from './Brand';
 
 const nav = [
   ['Image', '/image/'], ['PDF', '/pdf/'], ['Calculators', '/calculators/'],
-  ['Converters', '/converters/'], ['Text', '/text/'], ['Developer', '/developer/'],
+  ['Converters', '/converters/'], ['Generators', '/generators/'], ['Time', '/time/'],
+  ['Text', '/text/'], ['Developer', '/developer/'],
 ];
 
 export function Header() {
