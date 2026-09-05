@@ -1,7 +1,7 @@
 'use client';
 
-import { ChangeEvent, useMemo, useState } from 'react';
-import { Download, FileUp, RefreshCw, ShieldCheck } from 'lucide-react';
+import { DragEvent, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Download, FileUp, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import type { Tool } from '@/data/tools';
 
 type Result = { url: string; name: string; before?: number; after?: number };
@@ -12,7 +12,35 @@ function DownloadResult({ result }: { result: Result }) {
 }
 
 function FileDrop({ accept, multiple = false, onChange, label = 'Choose file' }: { accept: string; multiple?: boolean; onChange: (files: File[]) => void; label?: string }) {
-  return <label className="fileDrop"><FileUp size={28}/><strong>{label}</strong><span>or drag files here</span><input type="file" accept={accept} multiple={multiple} onChange={(e) => onChange(Array.from(e.target.files || []))}/></label>;
+  function drop(e: DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length) onChange(multiple ? files : files.slice(0,1));
+  }
+  return <label className="fileDrop" onDragOver={(e)=>e.preventDefault()} onDrop={drop}><FileUp size={28}/><strong>{label}</strong><span>or drag files here</span><input type="file" accept={accept} multiple={multiple} onChange={(e) => onChange(Array.from(e.target.files || []))}/></label>;
+}
+
+function FileQueue({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
+  function move(index: number, delta: number) {
+    const target = index + delta;
+    if (target < 0 || target >= files.length) return;
+    const next = [...files];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  }
+  function remove(index: number) {
+    onChange(files.filter((_,i)=>i!==index));
+  }
+  return <div className="fileQueue">
+    {files.map((file,index)=><div className="fileQueueItem" key={`${file.name}-${file.size}-${index}`}>
+      <span><b>{index + 1}</b><span><strong>{file.name}</strong><small>{Math.max(1,Math.round(file.size/1024))} KB</small></span></span>
+      <div>
+        <button type="button" aria-label="Move up" onClick={()=>move(index,-1)} disabled={index===0}><ChevronUp size={15}/></button>
+        <button type="button" aria-label="Move down" onClick={()=>move(index,1)} disabled={index===files.length-1}><ChevronDown size={15}/></button>
+        <button type="button" aria-label="Remove file" onClick={()=>remove(index)}><X size={15}/></button>
+      </div>
+    </div>)}
+  </div>;
 }
 
 async function imageToCanvas(file: File) {
@@ -99,14 +127,86 @@ function ImageResize() {
 }
 
 function PdfTool({ tool }: { tool: Tool }) {
-  const [files,setFiles]=useState<File[]>([]); const [result,setResult]=useState<Result|null>(null); const [range,setRange]=useState('1-1'); const [busy,setBusy]=useState(false);
-  async function run(){ if(!files.length)return; setBusy(true); const { PDFDocument } = await import('pdf-lib'); let out=await PDFDocument.create();
-    if(tool.kind==='pdf-merge'){ for(const file of files){ const src=await PDFDocument.load(await file.arrayBuffer()); const pages=await out.copyPages(src,src.getPageIndices()); pages.forEach(p=>out.addPage(p)); } }
-    if(tool.kind==='pdf-split'){ const src=await PDFDocument.load(await files[0].arrayBuffer()); const [a,b]=range.split('-').map(v=>Math.max(1,parseInt(v)||1)); const start=Math.min(a,b)-1,end=Math.max(a,b)-1; const indexes=src.getPageIndices().filter(i=>i>=start&&i<=end); const pages=await out.copyPages(src,indexes); pages.forEach(p=>out.addPage(p)); }
-    if(tool.kind==='images-to-pdf'){ for(const file of files){ const bytes=await file.arrayBuffer(); const img=file.type==='image/png'?await out.embedPng(bytes):await out.embedJpg(bytes); const page=out.addPage([img.width,img.height]); page.drawImage(img,{x:0,y:0,width:img.width,height:img.height}); } }
-    const bytes=await out.save(); const blob=new Blob([bytes as BlobPart],{type:'application/pdf'}); setResult({url:URL.createObjectURL(blob),name:`toolmera-${tool.slug}.pdf`,after:blob.size}); setBusy(false); }
+  const [files,setFiles]=useState<File[]>([]);
+  const [result,setResult]=useState<Result|null>(null);
+  const [range,setRange]=useState('1-1');
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+
+  function selectFiles(next: File[]) {
+    setFiles(next);
+    setResult(null);
+    setError('');
+  }
+
+  async function run(){
+    if(!files.length)return;
+    setBusy(true);
+    setError('');
+    setResult(null);
+    try {
+      const { PDFDocument } = await import('pdf-lib');
+      const out=await PDFDocument.create();
+
+      if(tool.kind==='pdf-merge'){
+        for(const file of files){
+          const src=await PDFDocument.load(await file.arrayBuffer());
+          const pages=await out.copyPages(src,src.getPageIndices());
+          pages.forEach(p=>out.addPage(p));
+        }
+      }
+
+      if(tool.kind==='pdf-split'){
+        const src=await PDFDocument.load(await files[0].arrayBuffer());
+        const match=range.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+        if(!match) throw new Error('Use one page range, for example 4-9.');
+        const a=Math.max(1,parseInt(match[1]));
+        const b=Math.max(1,parseInt(match[2]));
+        const start=Math.min(a,b)-1;
+        const end=Math.max(a,b)-1;
+        const indexes=src.getPageIndices().filter(i=>i>=start&&i<=end);
+        if(!indexes.length) throw new Error(`That range is outside this PDF. It has ${src.getPageCount()} pages.`);
+        const pages=await out.copyPages(src,indexes);
+        pages.forEach(p=>out.addPage(p));
+      }
+
+      if(tool.kind==='images-to-pdf'){
+        for(const file of files){
+          const bytes=await file.arrayBuffer();
+          const img=file.type==='image/png'?await out.embedPng(bytes):await out.embedJpg(bytes);
+          const page=out.addPage([img.width,img.height]);
+          page.drawImage(img,{x:0,y:0,width:img.width,height:img.height});
+        }
+      }
+
+      const bytes=await out.save();
+      const blob=new Blob([bytes as BlobPart],{type:'application/pdf'});
+      setResult({url:URL.createObjectURL(blob),name:`toolmera-${tool.slug}.pdf`,after:blob.size});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not process this file.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const accept=tool.kind==='images-to-pdf'?(tool.inputFormat||'image/*'):'application/pdf';
-  return <div className="toolUi"><FileDrop accept={accept} multiple={tool.kind!=='pdf-split'} onChange={setFiles} label={files.length?`${files.length} file${files.length>1?'s':''} selected`:'Choose files'}/>{tool.kind==='pdf-split'&&<label className="singleField">Page range<input value={range} onChange={e=>setRange(e.target.value)} placeholder="1-3"/></label>}<button className="primaryButton wide" onClick={run} disabled={!files.length||busy}>{busy?'Processing…':tool.name}</button>{result&&<DownloadResult result={result}/>}</div>;
+  const reorderable=tool.kind==='pdf-merge'||tool.kind==='images-to-pdf';
+
+  return <div className="toolUi">
+    <FileDrop accept={accept} multiple={tool.kind!=='pdf-split'} onChange={selectFiles} label={files.length?`${files.length} file${files.length>1?'s':''} selected`:'Choose files'}/>
+    {reorderable&&files.length>0&&<>
+      <div className="queueHead"><span>Output order</span><small>Use the arrows to arrange files before creating the PDF.</small></div>
+      <FileQueue files={files} onChange={selectFiles}/>
+    </>}
+    {tool.kind==='pdf-split'&&files.length>0&&<>
+      <label className="singleField">Page range<input value={range} onChange={e=>setRange(e.target.value)} placeholder="4-9"/></label>
+      <div className="toolNote"><ShieldCheck size={15}/><span>One continuous range per export, for example <b>4-9</b>. The source PDF is never modified.</span></div>
+    </>}
+    {tool.kind==='images-to-pdf'&&files.length>0&&<div className="toolNote"><ShieldCheck size={15}/><span>Each image becomes one PDF page sized to that image&apos;s own dimensions.</span></div>}
+    {error&&<div className="toolError">{error}</div>}
+    <button className="primaryButton wide" onClick={run} disabled={!files.length||busy}>{busy?'Processing…':tool.name}</button>
+    {result&&<DownloadResult result={result}/>}
+  </div>;
 }
 
 function MetricCard({ label, value, suffix='' }: {label:string;value:string|number;suffix?:string}){return <div className="metricCard"><span>{label}</span><strong>{value}{suffix}</strong></div>}
