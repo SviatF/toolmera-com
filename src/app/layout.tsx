@@ -13,6 +13,22 @@ export const metadata: Metadata = {
   twitter: { card: 'summary', title: 'Free Online Tools — Every Tool. One Place.', description: 'Fast, privacy-minded online tools for everyday work.' },
 };
 
+const themeInit = `
+(function(){
+  try {
+    var saved = localStorage.getItem('toolmera-theme');
+    document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+  } catch (e) {
+    document.documentElement.dataset.theme = 'light';
+  }
+})();
+`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><GoogleTagManager/><PublicAnalyticsEvents/>{children}</body></html>;
+  return (
+    <html lang="en" data-theme="light" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeInit }} /></head>
+      <body><GoogleTagManager/><PublicAnalyticsEvents/>{children}</body>
+    </html>
+  );
 }
