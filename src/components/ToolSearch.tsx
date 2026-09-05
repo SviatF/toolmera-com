@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Search } from 'lucide-react';
 import { Tool, toolUrl } from '@/data/tools';
+import { pushAnalyticsEvent } from '@/lib/analytics';
 
 export function ToolSearch({ tools }: { tools: Tool[] }) {
   const [query, setQuery] = useState('');
@@ -15,7 +16,16 @@ export function ToolSearch({ tools }: { tools: Tool[] }) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (matches[0]) window.location.href = toolUrl(matches[0]);
+    if (matches[0]) {
+      pushAnalyticsEvent({
+        event: 'search_used',
+        search_query: query.trim(),
+        result_tool: matches[0].name,
+        result_url: toolUrl(matches[0]),
+        result_position: 1,
+      });
+      window.location.href = toolUrl(matches[0]);
+    }
   }
 
   return (
@@ -27,7 +37,7 @@ export function ToolSearch({ tools }: { tools: Tool[] }) {
       </form>
       {matches.length > 0 && (
         <div className="searchResults">
-          {matches.map((tool) => <Link key={tool.id} href={toolUrl(tool)}><span>{tool.name}<small>{tool.categoryLabel}</small></span><ArrowRight size={16}/></Link>)}
+          {matches.map((tool,index) => <Link key={tool.id} href={toolUrl(tool)} onClick={()=>pushAnalyticsEvent({event:'search_used',search_query:query.trim(),result_tool:tool.name,result_url:toolUrl(tool),result_position:index+1})}><span>{tool.name}<small>{tool.categoryLabel}</small></span><ArrowRight size={16}/></Link>)}
         </div>
       )}
     </div>
