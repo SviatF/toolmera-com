@@ -276,6 +276,162 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'png-webp', anchor: 'convert a PNG to WebP after resizing' },
       { id: 'jpg-webp', anchor: 'convert a JPG to WebP after resizing' }
     ]
+  },
+  'merge-pdf': {
+    title: 'Merge PDF Free — Combine Files in Your Browser',
+    description: 'Merge PDF files for free in the order you choose. Everything runs in your browser and your documents are not uploaded to a Toolmera server.',
+    intro: 'Combine multiple PDFs into one file for free, arrange the file order before merging, and keep the entire workflow on your device.',
+    sections: [
+      {
+        title: 'Why merge PDFs instead of sending several files',
+        paragraphs: [
+          'Combining related documents into a single PDF removes the friction of managing several attachments. A reviewer opens one file instead of five, a printed packet stays together, and an archived record reads as one coherent document.',
+          'It is a practical step before submitting multi-part paperwork, sharing a report with appendices, or filing scanned documents that arrived as separate PDFs.'
+        ]
+      },
+      {
+        title: 'Setting the page order',
+        paragraphs: [
+          'Each source PDF keeps its internal page order. The order of the source files controls how those page groups appear in the final document.',
+          'Toolmera now shows the selected files as an output queue. Use the up and down controls to arrange them before merging; the tool then combines the PDFs exactly in that sequence.'
+        ]
+      },
+      {
+        title: 'What merging does — and does not — change',
+        paragraphs: [
+          'Toolmera copies the existing PDF pages into a new document rather than rendering them as images, so text, graphics and page formatting are carried into the merged file as PDF content.',
+          'Merge PDF works with PDF input only. If you need to include JPG or PNG images, convert those images to PDF first, then add the resulting PDF to the merge queue.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does the order of my PDF files matter?', a: 'Yes. The final PDF follows the file order shown in the Toolmera output queue. You can move files up or down before merging.' },
+      { q: 'Will merging change the quality or formatting of my PDFs?', a: 'Toolmera copies the existing PDF pages into the new document rather than re-rendering them as images, so the original page content is carried across.' },
+      { q: 'Can I merge more than two PDFs at once?', a: 'Yes. The current tool accepts multiple PDFs and does not impose a fixed Toolmera file-count limit, although very large jobs are naturally limited by the memory available in your browser.' },
+      { q: 'Can I merge JPG or PNG images directly with PDFs?', a: 'Not directly in Merge PDF. Convert the images first with JPG to PDF or PNG to PDF, then merge the resulting PDF files.' }
+    ],
+    related: [
+      { id: 'split-pdf', anchor: 'extract pages from a PDF instead' },
+      { id: 'jpg-pdf', anchor: 'convert JPG images to PDF first' },
+      { id: 'png-pdf', anchor: 'convert PNG images to PDF first' }
+    ]
+  },
+
+  'split-pdf': {
+    title: 'Split PDF Free — Extract Pages in Your Browser',
+    description: 'Extract one continuous page range from a PDF for free in your browser. The original document stays untouched.',
+    intro: 'Pull one continuous page range out of a PDF into a new file for free, processed locally in your browser.',
+    sections: [
+      {
+        title: 'How to choose the pages you want',
+        paragraphs: [
+          'The current Toolmera splitter supports one continuous range per export. Enter a range such as 4-9 to create a new PDF containing pages 4 through 9.',
+          'If you need two separate ranges, export them in separate passes. Multiple comma-separated ranges and thumbnail page selection are not part of the current tool yet.'
+        ]
+      },
+      {
+        title: 'Common reasons to split a PDF',
+        paragraphs: [
+          'Splitting is useful when only part of a larger document needs to be shared: one chapter from a report, a signature page from a contract, a specific exhibit, or a smaller section from a scanned document.',
+          'It is also useful when a large PDF needs to be broken into smaller, more relevant files for email, review or archiving.'
+        ]
+      },
+      {
+        title: 'The original file is never changed',
+        paragraphs: [
+          'Toolmera reads the source PDF and creates a new document from the selected pages. The original file on your device is not modified, reordered or deleted.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I extract more than one page range at once?', a: 'Not in the current version. Toolmera exports one continuous range per pass, such as 4-9.' },
+      { q: 'Will splitting reduce PDF quality?', a: 'Toolmera copies the selected PDF pages into a new document instead of turning them into screenshots, so the page content is carried across as PDF content.' },
+      { q: 'Does splitting change my original PDF?', a: 'No. It creates a new PDF from the selected pages and leaves the original file untouched.' },
+      { q: 'Can I preview page thumbnails before extracting?', a: 'Not yet. Pages are currently selected by entering a page range.' }
+    ],
+    related: [
+      { id: 'merge-pdf', anchor: 'merge PDF files into one document' }
+    ]
+  },
+
+  'jpg-pdf': {
+    title: 'JPG to PDF Free — Combine Photos into One PDF',
+    description: 'Convert one or more JPG images into a single PDF for free in your browser, with control over the page order.',
+    intro: 'Combine JPG photos or scans into one PDF for free, arrange their page order, and process everything on your device.',
+    sections: [
+      {
+        title: 'Turning multiple photos into one document',
+        paragraphs: [
+          'A common use for JPG to PDF is turning several photographed pages into one ordered document: forms, receipts, notes, IDs or scanned paperwork captured as separate images.',
+          'Each selected JPG becomes one page in the final PDF. Toolmera shows the output queue before conversion so you can move images up or down and set the document order first.'
+        ]
+      },
+      {
+        title: 'How Toolmera sizes each PDF page',
+        paragraphs: [
+          'The current converter sizes each PDF page to the pixel dimensions of the JPG placed on it. It does not force every image into A4, Letter or another fixed paper size.',
+          'That keeps the image fitted to its own page without adding margins, but a PDF made from mixed portrait and landscape images can therefore contain pages with different shapes and sizes.'
+        ]
+      },
+      {
+        title: 'What happens to JPG quality',
+        paragraphs: [
+          'Toolmera embeds the JPG image data into the PDF without sending the image through the browser canvas for another JPEG export. That avoids an extra lossy image-conversion step during PDF creation.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What order will my JPG images appear in the PDF?', a: 'They appear in the order shown in the Toolmera output queue. Use the up and down controls before converting to arrange the pages.' },
+      { q: 'Can I mix photos with different sizes and orientations?', a: 'Yes. Each image becomes a page sized to that image, so portrait and landscape pages can coexist in the same PDF.' },
+      { q: 'Will JPG to PDF recompress my photo?', a: 'The current Toolmera implementation embeds the JPG into the PDF rather than re-exporting it through canvas as another JPG.' },
+      { q: 'Can I mix JPG and PNG files in the same conversion?', a: 'Not in this tool. JPG to PDF accepts JPG images; use PNG to PDF for PNG files, then Merge PDF if you need to combine the resulting documents.' }
+    ],
+    related: [
+      { id: 'png-pdf', anchor: 'convert PNG images to PDF instead' },
+      { id: 'merge-pdf', anchor: 'combine this PDF with other PDFs' },
+      { id: 'compress-image', anchor: 'shrink photos before creating the PDF' },
+      { id: 'resize-image', anchor: 'resize photos before creating the PDF' }
+    ]
+  },
+
+  'png-pdf': {
+    title: 'PNG to PDF Free — Combine Images in Your Browser',
+    description: 'Convert one or more PNG images into a single PDF for free in your browser and arrange the page order before export.',
+    intro: 'Build a PDF from PNG screenshots, diagrams or designs for free, with the output order you set and no server upload.',
+    sections: [
+      {
+        title: 'What happens to transparent backgrounds',
+        paragraphs: [
+          'Toolmera embeds the PNG as an image object in the PDF, including its alpha transparency data. On a normal blank PDF page there is nothing behind that image, so transparent areas usually appear as the page background, which PDF viewers commonly display as white.',
+          'The converter does not currently offer a PDF-page background color picker.'
+        ]
+      },
+      {
+        title: 'Why PNG works well for screenshots and diagrams',
+        paragraphs: [
+          'PNG is lossless, which makes it well suited to screenshots, UI mockups, diagrams and graphics with fine text or hard edges. Turning several of those images into one PDF creates a single file that is easier to attach, print, review or archive.',
+          'Each PNG becomes one PDF page and the output queue lets you arrange the page sequence before creating the document.'
+        ]
+      },
+      {
+        title: 'How Toolmera sizes PNG pages',
+        paragraphs: [
+          'Each PDF page is sized to the dimensions of the PNG placed on it. Images with different sizes or orientations can therefore produce PDF pages with different dimensions; A4, Letter, margin and padding controls are not currently included.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Will a transparent PNG stay transparent in the PDF?', a: 'The embedded PNG retains its alpha transparency. On an otherwise blank PDF page, transparent areas normally show the page background, which most viewers display as white.' },
+      { q: 'Will converting a PNG to PDF blur screenshots or diagrams?', a: 'The current implementation embeds the PNG into the PDF without a lossy JPEG conversion step, so the source image remains lossless.' },
+      { q: 'Can I combine PNGs of different sizes in one PDF?', a: 'Yes. Each image gets a page sized to that image, so page dimensions can vary within the PDF.' },
+      { q: 'Can I mix PNG and JPG images in one conversion?', a: 'Not in this tool. Use the separate JPG to PDF converter for JPG files, then combine documents with Merge PDF if needed.' }
+    ],
+    related: [
+      { id: 'jpg-pdf', anchor: 'convert JPG images to PDF instead' },
+      { id: 'merge-pdf', anchor: 'combine this PDF with other PDFs' },
+      { id: 'png-webp', anchor: 'convert large PNGs to WebP for web use' },
+      { id: 'compress-image', anchor: 'reduce image size before creating the PDF' }
+    ]
   }
 };
 
@@ -304,6 +460,28 @@ export const categorySeoContent: Record<string, {
           'Image processing happens in the browser for these tools, so your files do not need to be sent to a Toolmera server just to convert, compress or resize them.'
         ]
       }
+    ],
+,
+  pdf: {
+    title: 'Free PDF Tools — Merge, Split & Convert Online',
+    description: 'Free browser-based PDF tools to merge PDFs, extract page ranges, and convert JPG or PNG images into PDF files.',
+    intro: 'Merge, split and create PDF files for free with focused tools that run directly in your browser.',
+    sections: [
+      {
+        title: 'Which PDF tool do you need?',
+        paragraphs: [
+          'Use Merge PDF when several existing PDF files should become one document. If an image needs to join that workflow, convert it first with JPG to PDF or PNG to PDF, then add the resulting PDF to the merge queue.',
+          'Use Split PDF when you have one PDF and only need one continuous range of pages. Use JPG to PDF or PNG to PDF when your source material is a set of photos, scans, screenshots or diagrams rather than an existing PDF.'
+        ]
+      },
+      {
+        title: 'PDF tools that solve one task each',
+        paragraphs: [
+          'Each Toolmera PDF utility focuses on one job: file order for merging, a clear page range for splitting, and page order plus image-to-page sizing for JPG and PNG conversion.',
+          'These PDF operations run in the browser, so documents and images do not need to be uploaded to a Toolmera server just to be combined, extracted or turned into a PDF.'
+        ]
+      }
     ]
+  }
   }
 };
