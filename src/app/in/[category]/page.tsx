@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
 import { toolsForCategory } from '@/data/tools';
+import { freeTitle } from '@/lib/seo';
 
 const labels:Record<string,string>={finance:'India Finance Calculators',tax:'India Tax Tools'};
 const descriptions:Record<string,string>={
@@ -15,7 +16,7 @@ const descriptions:Record<string,string>={
 
 export function generateStaticParams(){return [{category:'finance'},{category:'tax'}]}
 export async function generateMetadata({params}:{params:Promise<{category:string}>}):Promise<Metadata>{
-  const {category}=await params;return{title:labels[category]||'India Tools',description:descriptions[category]||'Free India tools from Toolmera.',alternates:{canonical:`https://toolmera.com/in/${category}/`}}
+  const {category}=await params;return{title:freeTitle(labels[category]||'India Tools'),description:descriptions[category]||'Free India tools from Toolmera.',alternates:{canonical:`https://toolmera.com/in/${category}/`}}
 }
 
 export default async function IndiaCategory({params}:{params:Promise<{category:string}>}){
