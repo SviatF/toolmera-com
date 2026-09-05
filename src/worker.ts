@@ -21,6 +21,15 @@ type GscRow = {
   position?: number;
 };
 
+type Ga4Header = { name?: string };
+type Ga4Value = { value?: string };
+type Ga4Row = { dimensionValues?: Ga4Value[]; metricValues?: Ga4Value[] };
+type Ga4Report = {
+  dimensionHeaders?: Ga4Header[];
+  metricHeaders?: Ga4Header[];
+  rows?: Ga4Row[];
+};
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -50,7 +59,7 @@ function pemToArrayBuffer(pem: string) {
   return bytes.buffer;
 }
 
-async function googleAccessToken(env: Env) {
+async function googleAccessToken(env: Env, scopes: string[]) {
   if (!env.GOOGLE_CLIENT_EMAIL || !env.GOOGLE_PRIVATE_KEY) {
     throw new Error('Google service account is not configured.');
   }
@@ -59,7 +68,7 @@ async function googleAccessToken(env: Env) {
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claims = b64url(JSON.stringify({
     iss: env.GOOGLE_CLIENT_EMAIL,
-    scope: 'https://www.googleapis.com/auth/webmasters.readonly',
+    scope: scopes.join(' '),
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
@@ -179,6 +188,186 @@ function percentChange(current: number, previous: number) {
   return ((current - previous) / previous) * 100;
 }
 
+
+function ga4DateWindow(range:string){
+  const days=range==='today'?1:range==='7d'?7:range==='3m'?90:28;
+  const end=new Date();
+  const start=new Date(end);
+  start.setUTCDate(start.getUTCDate()-days+1);
+
+  const previousEnd=new Date(start);
+  previousEnd.setUTCDate(previousEnd.getUTCDate()-1);
+  const previousStart=new Date(previousEnd);
+  previousStart.setUTCDate(previousStart.getUTCDate()-days+1);
+
+  return {
+    days,
+    startDate:isoDate(start),
+    endDate:isoDate(end),
+    previousStartDate:isoDate(previousStart),
+    previousEndDate:isoDate(previousEnd),
+  };
+}
+
+async function ga4RunReport(
+  token:string,
+  propertyId:string,
+  startDate:string,
+  endDate:string,
+  dimensions:string[],
+  metrics:string[],
+  limit=100,
+){
+  const response=await fetch(
+    \`https://analyticsdata.googleapis.com/v1beta/properties/\${propertyId}:runReport\`,
+    {
+      method:'POST',
+      headers:{
+        authorization:\`Bearer \${token}\`,
+        'content-type':'application/json',
+      },
+      body:JSON.stringify({
+        dateRanges:[{startDate,endDate}],
+        dimensions:dimensions.map(name=>({name})),
+        metrics:metrics.map(name=>({name})),
+        limit,
+        keepEmptyRows:false,
+      }),
+    },
+  );
+
+  if(!response.ok){
+    const detail=await response.text();
+    throw new Error(\`GA4 Data API failed: \${response.status} \${detail.slice(0,700)}\`);
+  }
+  return await response.json() as Ga4Report;
+}
+
+function ga4Rows(report:Ga4Report){
+  const dimensions=(report.dimensionHeaders||[]).map(h=>h.name||'');
+  const metrics=(report.metricHeaders||[]).map(h=>h.name||'');
+  return (report.rows||[]).map(row=>{
+    const out:Record<string,string|number>={};
+    dimensions.forEach((name,index)=>{out[name]=row.dimensionValues?.[index]?.value||''});
+    metrics.forEach((name,index)=>{
+      const raw=row.metricValues?.[index]?.value||'0';
+      out[name]=Number(raw);
+    });
+    return out;
+  });
+}
+
+function ga4Summary(report:Ga4Report){
+  const row=ga4Rows(report)[0]||{};
+  return {
+    users:Number(row.totalUsers||0),
+    sessions:Number(row.sessions||0),
+    pageViews:Number(row.screenPageViews||0),
+    engagedSessions:Number(row.engagedSessions||0),
+    engagementRate:Number(row.engagementRate||0),
+    averageSessionDuration:Number(row.averageSessionDuration||0),
+  };
+}
+
+async function handleGa4(request:Request,env:Env){
+  if(!env.GA4_PROPERTY_ID||!env.GOOGLE_CLIENT_EMAIL||!env.GOOGLE_PRIVATE_KEY){
+    return json({
+      connected:false,
+      code:'NOT_CONFIGURED',
+      message:'Google Analytics 4 service account is not configured yet.',
+    },503);
+  }
+
+  const url=new URL(request.url);
+  const range=url.searchParams.get('range')||'28d';
+  const window=ga4DateWindow(range);
+  const token=await googleAccessToken(env,['https://www.googleapis.com/auth/analytics.readonly']);
+  const propertyId=env.GA4_PROPERTY_ID;
+
+  const [
+    summaryReport,
+    previousReport,
+    landingReport,
+    countryReport,
+    eventReport,
+    trendReport,
+  ]=await Promise.all([
+    ga4RunReport(token,propertyId,window.startDate,window.endDate,[],
+      ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1),
+    ga4RunReport(token,propertyId,window.previousStartDate,window.previousEndDate,[],
+      ['totalUsers','sessions','screenPageViews','engagedSessions','engagementRate','averageSessionDuration'],1),
+    ga4RunReport(token,propertyId,window.startDate,window.endDate,['landingPagePlusQueryString'],
+      ['sessions','totalUsers','screenPageViews','engagementRate'],100),
+    ga4RunReport(token,propertyId,window.startDate,window.endDate,['country'],
+      ['totalUsers','sessions','screenPageViews'],100),
+    ga4RunReport(token,propertyId,window.startDate,window.endDate,['eventName'],
+      ['eventCount','totalUsers'],100),
+    ga4RunReport(token,propertyId,window.startDate,window.endDate,['date'],
+      ['totalUsers','sessions','screenPageViews'],100),
+  ]);
+
+  const current=ga4Summary(summaryReport);
+  const previous=ga4Summary(previousReport);
+
+  const landing=ga4Rows(landingReport)
+    .map(row=>({
+      page:String(row.landingPagePlusQueryString||'(not set)'),
+      sessions:Number(row.sessions||0),
+      users:Number(row.totalUsers||0),
+      pageViews:Number(row.screenPageViews||0),
+      engagementRate:Number(row.engagementRate||0),
+    }))
+    .sort((a,b)=>b.sessions-a.sessions);
+
+  const countries=ga4Rows(countryReport)
+    .map(row=>({
+      country:String(row.country||'(not set)'),
+      users:Number(row.totalUsers||0),
+      sessions:Number(row.sessions||0),
+      pageViews:Number(row.screenPageViews||0),
+    }))
+    .sort((a,b)=>b.users-a.users);
+
+  const events=ga4Rows(eventReport)
+    .map(row=>({
+      event:String(row.eventName||'(not set)'),
+      count:Number(row.eventCount||0),
+      users:Number(row.totalUsers||0),
+    }))
+    .sort((a,b)=>b.count-a.count);
+
+  const trend=ga4Rows(trendReport)
+    .map(row=>({
+      date:String(row.date||''),
+      users:Number(row.totalUsers||0),
+      sessions:Number(row.sessions||0),
+      pageViews:Number(row.screenPageViews||0),
+    }))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  return json({
+    connected:true,
+    source:'Google Analytics 4',
+    propertyId,
+    range,
+    window,
+    summary:{
+      ...current,
+      changes:{
+        users:percentChange(current.users,previous.users),
+        sessions:percentChange(current.sessions,previous.sessions),
+        pageViews:percentChange(current.pageViews,previous.pageViews),
+        engagementRate:percentChange(current.engagementRate,previous.engagementRate),
+      },
+    },
+    landingPages:landing,
+    countries,
+    events,
+    trend,
+    fetchedAt:new Date().toISOString(),
+  });
+}
+
 async function sitemapCount(env: Env) {
   try {
     const response = await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
@@ -196,7 +385,17 @@ function hasAccess(request: Request, env: Env) {
 }
 
 async function handleStatus(env: Env) {
-  const googleConfigured = Boolean(env.GOOGLE_CLIENT_EMAIL && env.GOOGLE_PRIVATE_KEY && env.GSC_SITE_URL);
+  const gscMissing=[
+    !env.GOOGLE_CLIENT_EMAIL?'GOOGLE_CLIENT_EMAIL':null,
+    !env.GOOGLE_PRIVATE_KEY?'GOOGLE_PRIVATE_KEY':null,
+    !env.GSC_SITE_URL?'GSC_SITE_URL':null,
+  ].filter(Boolean);
+  const ga4Missing=[
+    !env.GOOGLE_CLIENT_EMAIL?'GOOGLE_CLIENT_EMAIL':null,
+    !env.GOOGLE_PRIVATE_KEY?'GOOGLE_PRIVATE_KEY':null,
+    !env.GA4_PROPERTY_ID?'GA4_PROPERTY_ID':null,
+  ].filter(Boolean);
+  const googleConfigured = gscMissing.length===0;
   return json({
     mode: googleConfigured ? 'live-ready' : 'setup',
     domain: 'toolmera.com',
@@ -206,10 +405,12 @@ async function handleStatus(env: Env) {
       gsc: {
         configured: googleConfigured,
         siteUrl: env.GSC_SITE_URL || null,
+        missing: gscMissing,
       },
       ga4: {
-        configured: Boolean(env.GOOGLE_CLIENT_EMAIL && env.GOOGLE_PRIVATE_KEY && env.GA4_PROPERTY_ID),
+        configured: ga4Missing.length===0,
         propertyId: env.GA4_PROPERTY_ID ? 'configured' : null,
+        missing: ga4Missing,
       },
       cloudflare: {
         configured: Boolean(env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ZONE_ID),
@@ -233,7 +434,7 @@ async function handleGsc(request: Request, env: Env) {
   const url = new URL(request.url);
   const range = url.searchParams.get('range') || '28d';
   const window = dateWindow(range);
-  const token = await googleAccessToken(env);
+  const token = await googleAccessToken(env, ['https://www.googleapis.com/auth/webmasters.readonly']);
   const site = env.GSC_SITE_URL;
 
   const [
@@ -330,6 +531,7 @@ export default {
       try {
         if (url.pathname === '/api/admin/status') return handleStatus(env);
         if (url.pathname === '/api/admin/gsc') return handleGsc(request, env);
+        if (url.pathname === '/api/admin/ga4') return handleGa4(request, env);
         return json({ error: 'Not found' }, 404);
       } catch (error) {
         return json({
