@@ -82,6 +82,12 @@ export default async function ToolPage({params}:{params:Promise<{category:string
       </div>
     </section>
 
+    {seo?.sources?.length&&<section className="shell sourcePanel">
+      <span className="sectionKicker">SOURCES</span>
+      <p>Reference material used for this page:</p>
+      <div>{seo.sources.map(source=><a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<ArrowRight size={14}/></a>)}</div>
+    </section>}
+
     {seo?.related?.length&&<section className="shell workflowLinks">
       <span className="sectionKicker">NEXT STEP</span>
       <h2>Continue your workflow</h2>
