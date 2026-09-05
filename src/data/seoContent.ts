@@ -1443,7 +1443,7 @@ export const categorySeoContent: Record<string, {
       {
         title: 'Image tools that solve one task each',
         paragraphs: [
-          'Toolmera keeps each image page focused on a real task: format compatibility, output quality, transparency, palette reduction, crop geometry or pixel dimensions.'
+          'Toolmera keeps each image page focused on a real task: format compatibility, output quality, transparency, palette reduction, crop geometry or pixel dimensions.',
           'Current image workflows in this category process locally in the browser. Heavier decoders and encoders are loaded only when the relevant tool is opened.'
         ]
       }
@@ -1451,21 +1451,21 @@ export const categorySeoContent: Record<string, {
   },
 
   pdf: {
-    title: 'Free PDF Tools — Merge, Split & Convert Online',
+    title: 'Free PDF Tools — Merge, Split, Rotate & Convert Online',
     description: 'Free browser-based PDF tools to merge, split, rotate and remove pages, convert images to PDF, or render PDF pages as JPG or PNG.',
-    intro: 'Organize PDF pages, create PDFs from images, or render PDF pages back to images with focused browser-based tools.'
+    intro: 'Organize PDF pages, create PDFs from images, or render PDF pages back to images with focused browser-based tools.',
     sections: [
       {
         title: 'Which PDF tool do you need?',
         paragraphs: [
-          'Use Merge PDF to combine documents, Split PDF to extract one continuous range, Rotate PDF to fix page orientation, and Remove PDF Pages to delete mixed page selections.'
+          'Use Merge PDF to combine documents, Split PDF to extract one continuous range, Rotate PDF to fix page orientation, and Remove PDF Pages to delete mixed page selections.',
           'Use JPG to PDF or PNG to PDF when images need to become a document. Use PDF to JPG when document pages need to become JPG or PNG images again.'
         ]
       },
       {
         title: 'PDF tools that solve one task each',
         paragraphs: [
-          'Each Toolmera PDF utility focuses on one operation with explicit page controls: ordering, range selection, rotation, deletion or page rendering.'
+          'Each Toolmera PDF utility focuses on one operation with explicit page controls: ordering, range selection, rotation, deletion or page rendering.',
           'The current PDF tools execute in the browser. Structural operations use pdf-lib, while PDF-to-image rendering loads a dedicated client-side renderer only when needed.'
         ]
       }
