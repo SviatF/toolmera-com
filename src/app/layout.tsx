@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import favicon from '@/lib/favcion (1).webp';
 import './globals.css';
 import { GoogleTagManager } from '@/components/GoogleTagManager';
+import { PublicAnalyticsEvents } from '@/components/PublicAnalyticsEvents';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://toolmera.com'),
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><GoogleTagManager/>{children}</body></html>;
+  return <html lang="en"><body><GoogleTagManager/><PublicAnalyticsEvents/>{children}</body></html>;
 }
