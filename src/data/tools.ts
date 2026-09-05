@@ -10,6 +10,12 @@ export type ToolKind =
   | 'percentage'
   | 'bmi'
   | 'interest'
+  | 'loan'
+  | 'roi'
+  | 'discount'
+  | 'simple-interest'
+  | 'date-difference'
+  | 'average'
   | 'unit-length'
   | 'unit-temperature'
   | 'word-counter'
@@ -155,6 +161,30 @@ export const tools: Tool[] = [
   {
     id: 'cagr', name: 'CAGR Calculator', short: 'Calculate compound annual growth rate.', category: 'calculators', categoryLabel: 'Calculators', slug: 'cagr-calculator', kind: 'cagr', accent: 'green',
     title: 'CAGR Calculator — Compound Annual Growth Rate', description: 'Calculate compound annual growth rate from a beginning value, ending value and time period.', intro: 'Measure the annualized growth rate between a beginning value and an ending value over multiple years.', benefits: ['Annualized growth rate', 'Transparent formula', 'Instant result'], faq: commonFaq,
+  },
+  {
+    id: 'loan', name: 'Loan Calculator', short: 'Estimate monthly payments, total interest and repayment.', category: 'calculators', categoryLabel: 'Calculators', slug: 'loan-calculator', kind: 'loan', accent: 'blue', badge: 'Popular',
+    title: 'Free Loan Calculator — Monthly Payments & Interest', description: 'Calculate fixed-rate monthly loan payments, total interest, total repayment and an amortization schedule.', intro: 'Estimate a fixed-rate loan payment and see how principal and interest change across the repayment schedule.', benefits: ['Monthly payment', 'Total interest', 'Amortization schedule'], faq: commonFaq,
+  },
+  {
+    id: 'roi', name: 'ROI Calculator', short: 'Calculate return on investment and net gain or loss.', category: 'calculators', categoryLabel: 'Calculators', slug: 'roi-calculator', kind: 'roi', accent: 'green',
+    title: 'Free ROI Calculator — Return on Investment', description: 'Calculate ROI percentage, net gain or loss and optional annualized return from a starting and ending value.', intro: 'Measure total return on investment and compare it with an annualized rate when a holding period is provided.', benefits: ['ROI percentage', 'Net gain or loss', 'Annualized return'], faq: commonFaq,
+  },
+  {
+    id: 'discount', name: 'Discount Calculator', short: 'Calculate sale price, savings and stacked discounts.', category: 'calculators', categoryLabel: 'Calculators', slug: 'discount-calculator', kind: 'discount', accent: 'pink',
+    title: 'Free Discount Calculator — Sale Price & Savings', description: 'Calculate final price, total savings and effective discount for percentage, fixed and stacked discounts.', intro: 'Work out sale prices instantly, including sequential discounts such as 20% off plus an extra 10% off.', benefits: ['Final sale price', 'Stacked discounts', 'Effective savings'], faq: commonFaq,
+  },
+  {
+    id: 'simple-interest', name: 'Simple Interest Calculator', short: 'Calculate non-compounding interest and total amount.', category: 'calculators', categoryLabel: 'Calculators', slug: 'simple-interest-calculator', kind: 'simple-interest', accent: 'amber',
+    title: 'Free Simple Interest Calculator — Interest & Balance', description: 'Calculate simple interest and total amount across years, months or days with transparent assumptions.', intro: 'Calculate non-compounding interest using principal, annual rate and a flexible time period.', benefits: ['Simple interest', 'Years, months or days', '365/360 day basis'], faq: commonFaq,
+  },
+  {
+    id: 'date-difference', name: 'Date Difference Calculator', short: 'Calculate days, weeks and calendar duration between dates.', category: 'calculators', categoryLabel: 'Calculators', slug: 'date-difference-calculator', kind: 'date-difference', accent: 'cyan', badge: 'Popular',
+    title: 'Free Date Difference Calculator — Days Between Dates', description: 'Calculate calendar duration, total days, weeks, hours and business days between two dates.', intro: 'Measure the time between two dates with an optional inclusive end date and weekday-only business-day count.', benefits: ['Calendar duration', 'Total & business days', 'Inclusive end-date option'], faq: commonFaq,
+  },
+  {
+    id: 'average', name: 'Average Calculator', short: 'Calculate mean, median, mode, range and sum.', category: 'calculators', categoryLabel: 'Calculators', slug: 'average-calculator', kind: 'average', accent: 'violet',
+    title: 'Free Average Calculator — Mean, Median, Mode & Range', description: 'Calculate mean, median, mode, range, sum, count, minimum and maximum from a list of numbers.', intro: 'Paste a dataset and get a compact statistical summary instantly.', benefits: ['Mean, median & mode', 'Range, min & max', 'Flexible number input'], faq: commonFaq,
   },
   {
     id: 'gst-in', name: 'GST Calculator', short: 'Add or remove GST from an amount.', category: 'tax', categoryLabel: 'India Tax', country: 'in', slug: 'gst-calculator', kind: 'gst', accent: 'pink', badge: 'India',
