@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { ArrowUpRight, Calculator, Code2, FileText, ImageIcon, TextCursorInput, Repeat2 } from 'lucide-react';
+import { ArrowUpRight, Calculator, Clock3, Code2, FileText, ImageIcon, QrCode, TextCursorInput, Repeat2 } from 'lucide-react';
 import { Tool, toolUrl } from '@/data/tools';
 
-const icons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, text: TextCursorInput, developer: Code2, finance: Calculator, tax: Calculator };
+const icons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, generators: QrCode, time: Clock3, text: TextCursorInput, developer: Code2, finance: Calculator, tax: Calculator };
 
 export function ToolCard({ tool }: { tool: Tool }) {
   const Icon = icons[tool.category] || Calculator;
