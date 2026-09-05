@@ -715,15 +715,16 @@ function AverageCalculator(){
 
   async function copySummary(){
     if(!('mean' in result))return;
+    const stats=result as {mean:number;median:number;modes:number[];range:number;count:number;sum:number;min:number;max:number};
     const summary=[
-      'Mean: '+statNumber(result.mean),
-      'Median: '+statNumber(result.median),
-      'Mode: '+(result.modes.length?result.modes.map(statNumber).join(', '):'No mode'),
-      'Range: '+statNumber(result.range),
-      'Count: '+result.count,
-      'Sum: '+statNumber(result.sum),
-      'Min: '+statNumber(result.min),
-      'Max: '+statNumber(result.max)
+      'Mean: '+statNumber(stats.mean),
+      'Median: '+statNumber(stats.median),
+      'Mode: '+(stats.modes.length?stats.modes.map(statNumber).join(', '):'No mode'),
+      'Range: '+statNumber(stats.range),
+      'Count: '+stats.count,
+      'Sum: '+statNumber(stats.sum),
+      'Min: '+statNumber(stats.min),
+      'Max: '+statNumber(stats.max)
     ].join('\n');
     await navigator.clipboard.writeText(summary);
     setCopied(true);window.setTimeout(()=>setCopied(false),1400);
