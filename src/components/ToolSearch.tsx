@@ -10,7 +10,7 @@ export function ToolSearch({ tools }: { tools: Tool[] }) {
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return tools.filter((tool) => `${tool.name} ${tool.short} ${tool.categoryLabel}`.toLowerCase().includes(q)).slice(0, 7);
+    return tools.filter((tool) => `${tool.name} ${tool.short} ${tool.description} ${tool.slug} ${tool.categoryLabel} ${tool.benefits.join(' ')}`.toLowerCase().includes(q)).slice(0, 7);
   }, [query, tools]);
 
   function submit(e: FormEvent) {
@@ -22,7 +22,7 @@ export function ToolSearch({ tools }: { tools: Tool[] }) {
     <div className="searchWrap" id="tool-search">
       <form className="heroSearch" onSubmit={submit}>
         <Search size={22} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search tools… e.g. PNG to WebP, EMI calculator" aria-label="Search tools" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search tools… e.g. QR code, PDF to JPG, loan calculator" aria-label="Search tools" />
         <button type="submit">Search <ArrowRight size={17} /></button>
       </form>
       {matches.length > 0 && (
