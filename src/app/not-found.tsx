@@ -1,0 +1,2 @@
+import Link from 'next/link';import { Header } from '@/components/Header';import { Footer } from '@/components/Footer';
+export default function NotFound(){return <><Header/><main className="shell notFound"><span className="eyebrow neonText">404</span><h1>That tool is not here.</h1><p>Try the homepage search or browse one of our tool categories.</p><Link className="primaryButton" href="/">Back to Toolmera</Link></main><Footer/></>}

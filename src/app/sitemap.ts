@@ -1,0 +1,3 @@
+import type { MetadataRoute } from 'next';
+import { categories, tools, toolUrl } from '@/data/tools';
+export default function sitemap():MetadataRoute.Sitemap{const now=new Date();return[{url:'https://toolmera.com/',lastModified:now,priority:1},{url:'https://toolmera.com/in/',lastModified:now,priority:.8},{url:'https://toolmera.com/in/finance/',lastModified:now,priority:.8},{url:'https://toolmera.com/in/tax/',lastModified:now,priority:.8},...categories.map(c=>({url:`https://toolmera.com/${c.slug}/`,lastModified:now,priority:.8})),...tools.map(t=>({url:`https://toolmera.com${toolUrl(t)}`,lastModified:now,priority:.9}))]}

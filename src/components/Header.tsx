@@ -1,0 +1,25 @@
+import Link from 'next/link';
+import { Search, Grid2X2 } from 'lucide-react';
+import { Brand } from './Brand';
+
+const nav = [
+  ['Image', '/image/'], ['PDF', '/pdf/'], ['Calculators', '/calculators/'],
+  ['Converters', '/converters/'], ['Text', '/text/'], ['Developer', '/developer/'],
+];
+
+export function Header() {
+  return (
+    <header className="siteHeader">
+      <div className="shell headerInner">
+        <Brand />
+        <nav className="desktopNav" aria-label="Primary">
+          {nav.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
+        </nav>
+        <div className="headerActions">
+          <Link className="iconButton" href="/#tool-search" aria-label="Search tools"><Search size={18} /></Link>
+          <Link className="allToolsButton" href="/#categories"><Grid2X2 size={16} /> All tools</Link>
+        </div>
+      </div>
+    </header>
+  );
+}
