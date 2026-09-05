@@ -1,6 +1,7 @@
 export type ToolSeoSection = {
   title: string;
   paragraphs: string[];
+  facts?: { label: string; value: string }[];
 };
 
 export type ToolSeoContent = {
