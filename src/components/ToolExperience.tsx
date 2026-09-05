@@ -172,7 +172,7 @@ function ImageConvert({tool}:{tool:Tool}){
     const output:Result[]=[];
     try{
       for(let i=0;i<files.length;i++){
-        const file=files[i];setBusyLabel(\`Converting \${i+1} of \${files.length} to \${outputName}…\`);
+        const file=files[i];setBusyLabel(`Converting ${i+1} of ${files.length} to ${outputName}…`);
         const {bitmap,canvas,ctx}=await imageToCanvas(file);
         if(tool.outputFormat==='image/jpeg'){ctx.fillStyle=background;ctx.fillRect(0,0,canvas.width,canvas.height)}
         ctx.drawImage(bitmap,0,0);
@@ -219,7 +219,7 @@ function ImageCompress(){
     const output:Result[]=[];
     try{
       for(let i=0;i<files.length;i++){
-        const file=files[i];setBusyLabel(\`Compressing \${i+1} of \${files.length}…\`);
+        const file=files[i];setBusyLabel(`Compressing ${i+1} of ${files.length}…`);
         const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
         const type=file.type==='image/png'?'image/webp':(file.type||'image/jpeg');
         const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Compression failed.')),type,quality/100));
@@ -309,7 +309,7 @@ function ImageCompressJpg(){
     const output:Result[]=[];
     try{
       for(let i=0;i<files.length;i++){
-        const file=files[i];setBusyLabel(\`Compressing JPG \${i+1} of \${files.length}…\`);
+        const file=files[i];setBusyLabel(`Compressing JPG ${i+1} of ${files.length}…`);
         const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
         const encoded=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG compression failed.')),'image/jpeg',quality/100));
         const out=encoded.size<file.size?encoded:file;
@@ -351,7 +351,7 @@ function ImageCompressPng(){
       const mod=await import('@upng/upng-js');
       const UPNG=(mod.default||mod) as unknown as {encode:(frames:ArrayBuffer[],w:number,h:number,cnum:number)=>ArrayBuffer};
       for(let i=0;i<files.length;i++){
-        const file=files[i];setBusyLabel(\`Optimizing PNG \${i+1} of \${files.length}…\`);
+        const file=files[i];setBusyLabel(`Optimizing PNG ${i+1} of ${files.length}…`);
         const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
         const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
         const rgba=pixels.data.buffer.slice(pixels.data.byteOffset,pixels.data.byteOffset+pixels.data.byteLength) as ArrayBuffer;
@@ -394,7 +394,7 @@ function HeicConverter(){
     try{
       const mod=await import('heic2any');const convert=mod.default;
       for(let i=0;i<files.length;i++){
-        const file=files[i];setBusyLabel(\`Converting HEIC \${i+1} of \${files.length} to \${format.toUpperCase()}…\`);
+        const file=files[i];setBusyLabel(`Converting HEIC ${i+1} of ${files.length} to ${format.toUpperCase()}…`);
         const converted=await convert({blob:file,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
         const blob=Array.isArray(converted)?converted[0]:converted;if(!blob)throw new Error('A HEIC file did not produce a usable image.');
         output.push({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+format,before:file.size,after:blob.size});
