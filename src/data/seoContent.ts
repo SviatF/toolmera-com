@@ -820,6 +820,40 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     sources: [
       { label: 'RFC 4648 — Base-N Encodings', href: 'https://www.rfc-editor.org/rfc/rfc4648' }
     ]
+  },
+  'cagr': {
+    title: 'CAGR Calculator — Compound Annual Growth Rate',
+    description: 'Calculate CAGR from a beginning value, ending value and number of years, with the formula and assumptions explained clearly.',
+    intro: 'Calculate the compound annual growth rate between a starting value and an ending value over a multi-year period.',
+    sections: [
+      {
+        title: 'CAGR formula',
+        paragraphs: [
+          'CAGR expresses a multi-year change as the constant annual rate that would connect the beginning value to the ending value if growth compounded at the same rate each year.',
+          'Toolmera uses CAGR = ((Ending Value ÷ Beginning Value)^(1 ÷ Years) − 1) × 100.'
+        ],
+        facts: [
+          { label: 'Formula', value: '((Ending ÷ Beginning)^(1/Years) − 1) × 100' },
+          { label: 'Result', value: 'Annualized percentage rate' }
+        ]
+      },
+      {
+        title: 'What CAGR does not show',
+        paragraphs: [
+          'CAGR smooths the full period into one annualized rate. It does not show the actual year-by-year path, volatility or intermediate cash flows.',
+          'If money is added or withdrawn during the period, a cash-flow-aware measure such as XIRR may be more appropriate than a simple CAGR calculation.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What does CAGR mean?', a: 'CAGR means compound annual growth rate. It is the constant annualized rate that links a beginning value to an ending value over a specified number of years.' },
+      { q: 'Is CAGR the same as total return?', a: 'No. Total return measures the overall change across the full period, while CAGR converts that change into an annualized compounded rate.' },
+      { q: 'Does CAGR show yearly volatility?', a: 'No. CAGR smooths the full period into one rate and does not describe the actual path between the beginning and ending values.' },
+      { q: 'Can CAGR handle deposits or withdrawals?', a: 'Not correctly by itself. When there are intermediate cash flows, a cash-flow-aware calculation such as XIRR is usually more appropriate.' }
+    ],
+    related: [
+      { id: 'compound', anchor: 'model compound growth with contributions' }
+    ]
   }
 };
 
@@ -874,15 +908,15 @@ export const categorySeoContent: Record<string, {
   },
 
   calculators: {
-    title: 'Free Online Calculators — Age, Percentage, BMI & Interest',
-    description: 'Fast online calculators for calendar age, percentages, adult BMI and compound interest with clear formulas and assumptions.',
+    title: 'Free Online Calculators — Age, Percentage, BMI, CAGR & Interest',
+    description: 'Fast online calculators for calendar age, percentages, adult BMI, CAGR and compound interest with clear formulas and assumptions.',
     intro: 'Math, health and everyday calculators built around clear inputs, transparent formulas and useful results.',
     sections: [
       {
         title: 'Which calculator do you need?',
         paragraphs: [
           'Use Age Calculator for calendar age between two dates, total days and a next-birthday countdown. Use Percentage Calculator for four common percentage questions: part of a total, percent of a number, change and difference.',
-          'Use BMI Calculator for an adult screening estimate in metric or imperial units. Use Compound Interest Calculator to model growth with a starting amount, compounding frequency and optional monthly contributions.'
+          'Use BMI Calculator for an adult screening estimate in metric or imperial units. Use CAGR Calculator for annualized multi-year growth, and Compound Interest Calculator to model growth with a starting amount, compounding frequency and optional monthly contributions.'
         ]
       },
       {
