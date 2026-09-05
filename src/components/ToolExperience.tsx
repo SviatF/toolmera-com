@@ -24,7 +24,8 @@ function FileDrop({
   label = 'Choose file',
   files = [],
   busy = false,
-  busyLabel = 'Processing…'
+  busyLabel = 'Processing…',
+  maxFiles
 }: {
   accept: string;
   multiple?: boolean;
@@ -33,6 +34,7 @@ function FileDrop({
   files?: File[];
   busy?: boolean;
   busyLabel?: string;
+  maxFiles?: number;
 }) {
   const [dragActive,setDragActive]=useState(false);
   const dragDepth=useRef(0);
@@ -67,7 +69,7 @@ function FileDrop({
             <span className="fileReadyIcon"><Check size={19}/></span>
             <div className="fileReadyCopy"><strong>{files.length===1?'File ready':files.length+' files ready'}</strong><small>{files.length===1?files[0].name:files.map(f=>f.name).slice(0,2).join(' · ')+(files.length>2?' · +'+(files.length-2)+' more':'')}</small></div>
             <span className="fileReadySize">{files.length===1?prettyFileSize(files[0].size):prettyFileSize(files.reduce((sum,f)=>sum+f.size,0))}</span>
-            <span className="fileReplaceHint">{multiple?'Drop new files or click to replace':'Drop another file or click to replace'}</span>
+            <span className="fileReplaceHint">{multiple?(maxFiles?`Drop more files or click to add · ${files.length}/${maxFiles}`:'Drop more files or click to add'):'Drop another file or click to replace'}</span>
           </div>
         : <><FileUp size={30}/><strong>{dragActive?'Drop file here':label}</strong><span>{dragActive?'Release to add it':'or drag & drop from your folder'}</span></>}
     <input type="file" accept={accept} multiple={multiple} disabled={busy} onChange={(e)=>{pick(Array.from(e.target.files||[]));e.currentTarget.value=''}}/>
@@ -97,6 +99,50 @@ function FileQueue({ files, onChange }: { files: File[]; onChange: (files: File[
   </div>;
 }
 
+
+const MAX_BATCH_FILES=4;
+
+function mergeBatchFiles(current:File[],incoming:File[],max=MAX_BATCH_FILES){
+  const seen=new Set(current.map(f=>[f.name,f.size,f.lastModified].join(':')));
+  const next=[...current];
+  let overflow=false;
+  for(const file of incoming){
+    const key=[file.name,file.size,file.lastModified].join(':');
+    if(seen.has(key))continue;
+    if(next.length>=max){overflow=true;break}
+    seen.add(key);next.push(file);
+  }
+  if(incoming.length>Math.max(0,max-current.length))overflow=true;
+  return {files:next,overflow};
+}
+
+function BatchFileList({files,onRemove,max=MAX_BATCH_FILES}:{files:File[];onRemove:(index:number)=>void;max?:number}){
+  if(!files.length)return null;
+  return <div className="batchFilePanel">
+    <div className="batchFileHead"><span>Files to process</span><small>{files.length}/{max} selected</small></div>
+    <div className="batchFileList">
+      {files.map((file,index)=><div className="batchFileItem" key={[file.name,file.size,file.lastModified,index].join('-')}>
+        <b>{index+1}</b>
+        <span><strong>{file.name}</strong><small>{prettyFileSize(file.size)} · Ready</small></span>
+        <button type="button" aria-label={'Remove '+file.name} onClick={()=>onRemove(index)}><X size={15}/></button>
+      </div>)}
+    </div>
+  </div>;
+}
+
+function DownloadResults({results}:{results:Result[]}){
+  if(!results.length)return null;
+  if(results.length===1)return <DownloadResult result={results[0]}/>;
+  return <div className="batchResults">
+    <div className="batchResultsHead"><span><Check size={16}/> {results.length} files ready</span><small>Download each converted file below</small></div>
+    {results.map((result,index)=><div className="batchResultItem" key={result.url}>
+      <b>{index+1}</b>
+      <span><strong>{result.name}</strong><small>{result.before&&result.after?prettyFileSize(result.before)+' → '+prettyFileSize(result.after):prettyFileSize(result.after||0)}</small></span>
+      <a className="secondaryButton" href={result.url} download={result.name}><Download size={15}/> Download</a>
+    </div>)}
+  </div>;
+}
+
 async function imageToCanvas(file: File) {
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement('canvas');
@@ -105,93 +151,97 @@ async function imageToCanvas(file: File) {
   return { bitmap, canvas, ctx };
 }
 
-function ImageConvert({ tool }: { tool: Tool }) {
+function ImageConvert({tool}:{tool:Tool}){
   const [quality,setQuality]=useState(82);
-  const [result,setResult]=useState<Result|null>(null);
+  const [results,setResults]=useState<Result[]>([]);
   const [busy,setBusy]=useState(false);
-  const [file,setFile]=useState<File|null>(null);
+  const [busyLabel,setBusyLabel]=useState('Processing…');
+  const [files,setFiles]=useState<File[]>([]);
   const [background,setBackground]=useState('#ffffff');
   const [error,setError]=useState('');
 
-  function choose(files:File[]){
-    if(!files[0])return;
-    setFile(files[0]);setResult(null);setError('');
+  function choose(incoming:File[]){
+    const merged=mergeBatchFiles(files,incoming);
+    setFiles(merged.files);setResults([]);setError(merged.overflow?'Maximum 4 files per batch. Remove one to add another.':'');
   }
+  function remove(index:number){setFiles(files.filter((_,i)=>i!==index));setResults([]);setError('')}
 
   async function run(){
-    if(!file)return;
-    setBusy(true);setResult(null);setError('');
+    if(!files.length)return;
+    setBusy(true);setResults([]);setError('');
+    const output:Result[]=[];
     try{
-      const {bitmap,canvas,ctx}=await imageToCanvas(file);
-      if(tool.outputFormat==='image/jpeg'){
-        ctx.fillStyle=background;ctx.fillRect(0,0,canvas.width,canvas.height);
+      for(let i=0;i<files.length;i++){
+        const file=files[i];setBusyLabel(\`Converting \${i+1} of \${files.length} to \${outputName}…\`);
+        const {bitmap,canvas,ctx}=await imageToCanvas(file);
+        if(tool.outputFormat==='image/jpeg'){ctx.fillStyle=background;ctx.fillRect(0,0,canvas.width,canvas.height)}
+        ctx.drawImage(bitmap,0,0);
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Conversion failed.')),tool.outputFormat,quality/100));
+        const ext=tool.outputFormat?.split('/')[1].replace('jpeg','jpg')||'image';
+        output.push({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+ext,before:file.size,after:blob.size});
+        bitmap.close();
       }
-      ctx.drawImage(bitmap,0,0);
-      const blob=await new Promise<Blob>((resolve,reject)=>
-        canvas.toBlob(b=>b?resolve(b):reject(new Error('Conversion failed.')),tool.outputFormat,quality/100)
-      );
-      const ext=tool.outputFormat?.split('/')[1].replace('jpeg','jpg')||'image';
-      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+ext,before:file.size,after:blob.size});
-      bitmap.close();
-    }catch(e){setError(e instanceof Error?e.message:'Could not convert this image.')}
+      setResults(output);
+    }catch(e){setError(e instanceof Error?e.message:'Could not convert one of these images.')}
     finally{setBusy(false)}
   }
 
-  const outputName=(tool.outputFormat?.split('/')[1].replace('jpeg','JPG').toUpperCase()||'IMAGE');
+  const outputName=tool.outputFormat?.split('/')[1].replace('jpeg','JPG').toUpperCase()||'IMAGE';
   return <div className="toolUi">
-    <FileDrop
-      accept={tool.inputFormat||'image/*'}
-      onChange={choose}
-      label={'Choose '+tool.name.split(' to ')[0]+' file'}
-      files={file?[file]:[]}
-      busy={busy}
-      busyLabel={'Converting to '+outputName+'…'}
-    />
-    {file&&<>
+    <FileDrop accept={tool.inputFormat||'image/*'} multiple onChange={choose} label={'Choose '+tool.name.split(' to ')[0]+' files'} files={files} busy={busy} busyLabel={busyLabel} maxFiles={MAX_BATCH_FILES}/>
+    {!busy&&<BatchFileList files={files} onRemove={remove}/>}
+    {files.length>0&&!busy&&<>
       <div className="controlRow">
         <label>Quality <b>{quality}%</b></label>
         <input type="range" min="35" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/>
         {tool.outputFormat==='image/jpeg'&&<label className="colorControl">Background <input type="color" value={background} onChange={e=>setBackground(e.target.value)}/><b>{background.toUpperCase()}</b></label>}
       </div>
-      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Converting…':'Convert to '+outputName}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run}>Convert {files.length} file{files.length===1?'':'s'} to {outputName}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
-    {result&&<DownloadResult result={result}/>}
+    <DownloadResults results={results}/>
   </div>;
 }
 
-function ImageCompress() {
+function ImageCompress(){
   const [quality,setQuality]=useState(75);
-  const [file,setFile]=useState<File|null>(null);
-  const [result,setResult]=useState<Result|null>(null);
+  const [files,setFiles]=useState<File[]>([]);
+  const [results,setResults]=useState<Result[]>([]);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Compressing…');
   const [error,setError]=useState('');
 
-  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+  function choose(incoming:File[]){const merged=mergeBatchFiles(files,incoming);setFiles(merged.files);setResults([]);setError(merged.overflow?'Maximum 4 files per batch. Remove one to add another.':'')}
+  function remove(index:number){setFiles(files.filter((_,i)=>i!==index));setResults([]);setError('')}
 
   async function run(){
-    if(!file)return;
-    setBusy(true);setResult(null);setError('');
+    if(!files.length)return;setBusy(true);setResults([]);setError('');
+    const output:Result[]=[];
     try{
-      const {bitmap,canvas,ctx}=await imageToCanvas(file);
-      ctx.drawImage(bitmap,0,0);
-      const type=file.type==='image/png'?'image/webp':(file.type||'image/jpeg');
-      const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Compression failed.')),type,quality/100));
-      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.'+type.split('/')[1].replace('jpeg','jpg'),before:file.size,after:blob.size});
-      bitmap.close();
-    }catch(e){setError(e instanceof Error?e.message:'Could not compress this image.')}
+      for(let i=0;i<files.length;i++){
+        const file=files[i];setBusyLabel(\`Compressing \${i+1} of \${files.length}…\`);
+        const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
+        const type=file.type==='image/png'?'image/webp':(file.type||'image/jpeg');
+        const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Compression failed.')),type,quality/100));
+        output.push({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.'+type.split('/')[1].replace('jpeg','jpg'),before:file.size,after:blob.size});
+        bitmap.close();
+      }
+      setResults(output);
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress one of these images.')}
     finally{setBusy(false)}
   }
 
+  const hasPng=files.some(file=>file.type==='image/png');
   return <div className="toolUi">
-    <FileDrop accept="image/png,image/jpeg,image/webp" onChange={choose} files={file?[file]:[]} busy={busy} busyLabel="Compressing image…"/>
-    {file?.type==='image/png'&&<div className="toolNote"><ShieldCheck size={15}/><span>PNG input is exported as WebP in the current general compressor for stronger browser-side size reduction.</span></div>}
-    {file&&<>
+    <FileDrop accept="image/png,image/jpeg,image/webp" multiple onChange={choose} files={files} busy={busy} busyLabel={busyLabel} maxFiles={MAX_BATCH_FILES}/>
+    {!busy&&<BatchFileList files={files} onRemove={remove}/>}
+    {hasPng&&<div className="toolNote"><ShieldCheck size={15}/><span>PNG input is exported as WebP in the current general compressor for stronger browser-side size reduction.</span></div>}
+    {files.length>0&&!busy&&<>
       <div className="controlRow"><label>Compression quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>
-      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Compressing…':'Compress image'}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run}>Compress {files.length} file{files.length===1?'':'s'}</button>
     </>}
     {error&&<div className="toolError">{error}</div>}
-    {result&&<DownloadResult result={result}/>}
+    <DownloadResults results={results}/>
   </div>;
 }
 
@@ -245,112 +295,126 @@ function ImageResize() {
 
 function ImageCompressJpg(){
   const [quality,setQuality]=useState(80);
-  const [file,setFile]=useState<File|null>(null);
-  const [result,setResult]=useState<Result|null>(null);
+  const [files,setFiles]=useState<File[]>([]);
+  const [results,setResults]=useState<Result[]>([]);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Compressing JPG…');
   const [error,setError]=useState('');
 
-  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+  function choose(incoming:File[]){const valid=incoming.filter(f=>f.type==='image/jpeg'||/\.jpe?g$/i.test(f.name));const merged=mergeBatchFiles(files,valid);setFiles(merged.files);setResults([]);setError(valid.length!==incoming.length?'Only JPG/JPEG files were added.':merged.overflow?'Maximum 4 files per batch. Remove one to add another.':'')}
+  function remove(index:number){setFiles(files.filter((_,i)=>i!==index));setResults([]);setError('')}
 
   async function run(){
-    if(!file)return;
-    setBusy(true);setError('');setResult(null);
+    if(!files.length)return;setBusy(true);setResults([]);setError('');
+    const output:Result[]=[];
     try{
-      if(file.type!=='image/jpeg'&&!/\.jpe?g$/i.test(file.name))throw new Error('Choose a JPG or JPEG image.');
-      const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
-      const encoded=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG compression failed.')),'image/jpeg',quality/100));
-      const output=encoded.size<file.size?encoded:file;
-      setResult({url:URL.createObjectURL(output),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.jpg',before:file.size,after:output.size});
-      bitmap.close();
-    }catch(e){setError(e instanceof Error?e.message:'Could not compress this JPG.')}
+      for(let i=0;i<files.length;i++){
+        const file=files[i];setBusyLabel(\`Compressing JPG \${i+1} of \${files.length}…\`);
+        const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
+        const encoded=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG compression failed.')),'image/jpeg',quality/100));
+        const out=encoded.size<file.size?encoded:file;
+        output.push({url:URL.createObjectURL(out),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.jpg',before:file.size,after:out.size});bitmap.close();
+      }
+      setResults(output);
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress one of these JPG files.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/jpeg,.jpg,.jpeg" onChange={choose} label="Choose JPG file" files={file?[file]:[]} busy={busy} busyLabel="Compressing JPG…"/>
-    {file&&<>
+    <FileDrop accept="image/jpeg,.jpg,.jpeg" multiple onChange={choose} label="Choose JPG files" files={files} busy={busy} busyLabel={busyLabel} maxFiles={MAX_BATCH_FILES}/>
+    {!busy&&<BatchFileList files={files} onRemove={remove}/>}
+    {files.length>0&&!busy&&<>
       <div className="controlRow"><label>JPEG quality <b>{quality}%</b></label><input type="range" min="30" max="95" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>
-      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Compressing…':'Compress JPG'}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run}>Compress {files.length} JPG{files.length===1?'':'s'}</button>
     </>}
-    <div className="toolNote"><ShieldCheck size={15}/><span>If re-encoding would make the file larger, Toolmera keeps the original JPG bytes instead.</span></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>If re-encoding would make a file larger, Toolmera keeps the original JPG bytes for that file instead.</span></div>
     {error&&<div className="toolError">{error}</div>}
-    {result&&<DownloadResult result={result}/>}
+    <DownloadResults results={results}/>
   </div>;
 }
 
 function ImageCompressPng(){
   const [colors,setColors]=useState(256);
-  const [file,setFile]=useState<File|null>(null);
-  const [result,setResult]=useState<Result|null>(null);
+  const [files,setFiles]=useState<File[]>([]);
+  const [results,setResults]=useState<Result[]>([]);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Optimizing PNG…');
   const [error,setError]=useState('');
 
-  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+  function choose(incoming:File[]){const valid=incoming.filter(f=>f.type==='image/png'||/\.png$/i.test(f.name));const merged=mergeBatchFiles(files,valid);setFiles(merged.files);setResults([]);setError(valid.length!==incoming.length?'Only PNG files were added.':merged.overflow?'Maximum 4 files per batch. Remove one to add another.':'')}
+  function remove(index:number){setFiles(files.filter((_,i)=>i!==index));setResults([]);setError('')}
 
   async function run(){
-    if(!file)return;
-    setBusy(true);setError('');setResult(null);
+    if(!files.length)return;setBusy(true);setResults([]);setError('');
+    const output:Result[]=[];
     try{
-      if(file.type!=='image/png'&&!/\.png$/i.test(file.name))throw new Error('Choose a PNG image.');
-      const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
-      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
       const mod=await import('@upng/upng-js');
       const UPNG=(mod.default||mod) as unknown as {encode:(frames:ArrayBuffer[],w:number,h:number,cnum:number)=>ArrayBuffer};
-      const rgba=pixels.data.buffer.slice(pixels.data.byteOffset,pixels.data.byteOffset+pixels.data.byteLength) as ArrayBuffer;
-      const encoded=UPNG.encode([rgba],canvas.width,canvas.height,colors);
-      const blob=new Blob([encoded],{type:'image/png'});
-      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.png',before:file.size,after:blob.size});
-      bitmap.close();
-    }catch(e){setError(e instanceof Error?e.message:'Could not compress this PNG.')}
+      for(let i=0;i<files.length;i++){
+        const file=files[i];setBusyLabel(\`Optimizing PNG \${i+1} of \${files.length}…\`);
+        const {bitmap,canvas,ctx}=await imageToCanvas(file);ctx.drawImage(bitmap,0,0);
+        const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const rgba=pixels.data.buffer.slice(pixels.data.byteOffset,pixels.data.byteOffset+pixels.data.byteLength) as ArrayBuffer;
+        const encoded=UPNG.encode([rgba],canvas.width,canvas.height,colors);const blob=new Blob([encoded],{type:'image/png'});
+        output.push({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'-compressed.png',before:file.size,after:blob.size});bitmap.close();
+      }
+      setResults(output);
+    }catch(e){setError(e instanceof Error?e.message:'Could not compress one of these PNG files.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept="image/png,.png" onChange={choose} label="Choose PNG file" files={file?[file]:[]} busy={busy} busyLabel="Optimizing PNG…"/>
-    {file&&<>
+    <FileDrop accept="image/png,.png" multiple onChange={choose} label="Choose PNG files" files={files} busy={busy} busyLabel={busyLabel} maxFiles={MAX_BATCH_FILES}/>
+    {!busy&&<BatchFileList files={files} onRemove={remove}/>}
+    {files.length>0&&!busy&&<>
       <div className="calcModeTabs unitTabs">{[256,128,64].map(v=><button key={v} className={colors===v?'active':''} onClick={()=>setColors(v)}>{v} colors</button>)}</div>
-      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Optimizing…':'Compress PNG'}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run}>Compress {files.length} PNG{files.length===1?'':'s'}</button>
     </>}
-    <div className="toolNote"><ShieldCheck size={15}/><span>PNG stays PNG. Palette quantization can reduce color precision, so compare the result before replacing an original asset.</span></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>PNG stays PNG. Palette quantization can reduce color precision, so compare each result before replacing an original asset.</span></div>
     {error&&<div className="toolError">{error}</div>}
-    {result&&<DownloadResult result={result}/>}
+    <DownloadResults results={results}/>
   </div>;
 }
 
 function HeicConverter(){
-  const [file,setFile]=useState<File|null>(null);
+  const [files,setFiles]=useState<File[]>([]);
   const [format,setFormat]=useState<'jpg'|'png'>('jpg');
   const [quality,setQuality]=useState(85);
-  const [result,setResult]=useState<Result|null>(null);
+  const [results,setResults]=useState<Result[]>([]);
   const [busy,setBusy]=useState(false);
+  const [busyLabel,setBusyLabel]=useState('Converting HEIC…');
   const [error,setError]=useState('');
 
-  function choose(files:File[]){if(files[0]){setFile(files[0]);setResult(null);setError('')}}
+  function choose(incoming:File[]){const valid=incoming.filter(f=>/\.(heic|heif)$/i.test(f.name)||['image/heic','image/heif'].includes(f.type));const merged=mergeBatchFiles(files,valid);setFiles(merged.files);setResults([]);setError(valid.length!==incoming.length?'Only HEIC/HEIF files were added.':merged.overflow?'Maximum 4 files per batch. Remove one to add another.':'')}
+  function remove(index:number){setFiles(files.filter((_,i)=>i!==index));setResults([]);setError('')}
 
   async function run(){
-    if(!file)return;
-    setBusy(true);setError('');setResult(null);
+    if(!files.length)return;setBusy(true);setResults([]);setError('');
+    const output:Result[]=[];
     try{
-      if(!/\.(heic|heif)$/i.test(file.name)&&!['image/heic','image/heif'].includes(file.type))throw new Error('Choose a HEIC or HEIF photo.');
       const mod=await import('heic2any');const convert=mod.default;
-      const converted=await convert({blob:file,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
-      const blob=Array.isArray(converted)?converted[0]:converted;
-      if(!blob)throw new Error('This HEIC container did not produce a usable image.');
-      setResult({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+format,before:file.size,after:blob.size});
-    }catch(e){setError(e instanceof Error?e.message:'Could not decode this HEIC file.')}
+      for(let i=0;i<files.length;i++){
+        const file=files[i];setBusyLabel(\`Converting HEIC \${i+1} of \${files.length} to \${format.toUpperCase()}…\`);
+        const converted=await convert({blob:file,toType:format==='jpg'?'image/jpeg':'image/png',quality:quality/100});
+        const blob=Array.isArray(converted)?converted[0]:converted;if(!blob)throw new Error('A HEIC file did not produce a usable image.');
+        output.push({url:URL.createObjectURL(blob),name:file.name.replace(/\.[^.]+$/,'')+'.'+format,before:file.size,after:blob.size});
+      }
+      setResults(output);
+    }catch(e){setError(e instanceof Error?e.message:'Could not decode one of these HEIC files.')}
     finally{setBusy(false)}
   }
 
   return <div className="toolUi">
-    <FileDrop accept=".heic,.heif,image/heic,image/heif" onChange={choose} label="Choose HEIC / HEIF photo" files={file?[file]:[]} busy={busy} busyLabel={'Converting HEIC to '+format.toUpperCase()+'…'}/>
-    {file&&<>
+    <FileDrop accept=".heic,.heif,image/heic,image/heif" multiple onChange={choose} label="Choose HEIC / HEIF photos" files={files} busy={busy} busyLabel={busyLabel} maxFiles={MAX_BATCH_FILES}/>
+    {!busy&&<BatchFileList files={files} onRemove={remove}/>}
+    {files.length>0&&!busy&&<>
       <div className="calcModeTabs unitTabs"><button className={format==='jpg'?'active':''} onClick={()=>setFormat('jpg')}>JPG output</button><button className={format==='png'?'active':''} onClick={()=>setFormat('png')}>PNG output</button></div>
       {format==='jpg'&&<div className="controlRow"><label>JPG quality <b>{quality}%</b></label><input type="range" min="40" max="100" value={quality} onChange={e=>setQuality(+e.target.value)}/></div>}
-      <button className="primaryButton wide filePrimaryAction" onClick={run} disabled={busy}>{busy?'Converting…':'Convert to '+format.toUpperCase()}</button>
+      <button className="primaryButton wide filePrimaryAction" onClick={run}>Convert {files.length} file{files.length===1?'':'s'} to {format.toUpperCase()}</button>
     </>}
-    <div className="toolNote"><ShieldCheck size={15}/><span>The converted file is a fresh image and does not preserve the original HEIC metadata. Very large phone photos can use substantial browser memory.</span></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>The converted files are fresh images and do not preserve the original HEIC metadata. Very large phone photos can use substantial browser memory.</span></div>
     {error&&<div className="toolError">{error}</div>}
-    {result&&<DownloadResult result={result}/>}
+    <DownloadResults results={results}/>
   </div>;
 }
 
