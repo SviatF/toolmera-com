@@ -56,6 +56,38 @@ type CfGraphqlResponse = {
   errors?: { message?: string }[];
 };
 
+type BingEnvelope<T> = { d?: T[] };
+type BingTrafficRow = {
+  Clicks?: number;
+  Impressions?: number;
+  Date?: string;
+};
+type BingQueryRow = {
+  AvgClickPosition?: number;
+  AvgImpressionPosition?: number;
+  Clicks?: number;
+  Date?: string;
+  Impressions?: number;
+  Query?: string;
+};
+type BingCrawlRow = {
+  AllOtherCodes?: number;
+  BlockedByRobotsTxt?: number;
+  Code2xx?: number;
+  Code301?: number;
+  Code302?: number;
+  Code4xx?: number;
+  Code5xx?: number;
+  ConnectionTimeout?: number;
+  ContainsMalware?: number;
+  CrawledPages?: number;
+  CrawlErrors?: number;
+  Date?: string;
+  DnsFailures?: number;
+  InIndex?: number;
+  InLinks?: number;
+};
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -579,6 +611,120 @@ async function handleCloudflare(env:Env){
   });
 }
 
+
+function bingDate(value?:string){
+  if(!value)return null;
+  const match=value.match(/\/Date\((\d+)/);
+  if(match)return new Date(Number(match[1]));
+  const parsed=new Date(value);
+  return Number.isNaN(parsed.getTime())?null:parsed;
+}
+
+async function bingGet<T>(method:string,apiKey:string,siteUrl:string){
+  const endpoint=new URL('https://ssl.bing.com/webmaster/api.svc/json/'+method);
+  endpoint.searchParams.set('apikey',apiKey);
+  endpoint.searchParams.set('siteUrl',siteUrl);
+
+  const response=await fetch(endpoint.toString(),{
+    headers:{accept:'application/json'}
+  });
+  const raw=await response.text();
+  if(!response.ok)throw new Error('Bing Webmaster API '+method+' failed: '+response.status+' '+raw.slice(0,900));
+
+  let data:BingEnvelope<T>;
+  try{data=JSON.parse(raw) as BingEnvelope<T>}
+  catch{throw new Error('Bing Webmaster API '+method+' returned invalid JSON.')}
+  return data.d||[];
+}
+
+async function handleBing(request:Request,env:Env){
+  if(!env.BING_API_KEY){
+    return json({
+      connected:false,
+      code:'NOT_CONFIGURED',
+      message:'Bing Webmaster Tools API key is not configured yet.'
+    },503);
+  }
+
+  const siteUrl='https://toolmera.com/';
+  const url=new URL(request.url);
+  const range=url.searchParams.get('range')||'28d';
+  const window=dateWindow(range);
+  const start=new Date(window.startDate+'T00:00:00Z');
+  const end=new Date(window.endDate+'T23:59:59Z');
+
+  const traffic=await bingGet<BingTrafficRow>('GetRankAndTrafficStats',env.BING_API_KEY,siteUrl);
+  const pages=await bingGet<BingQueryRow>('GetPageStats',env.BING_API_KEY,siteUrl);
+  const queries=await bingGet<BingQueryRow>('GetQueryStats',env.BING_API_KEY,siteUrl);
+  const crawl=await bingGet<BingCrawlRow>('GetCrawlStats',env.BING_API_KEY,siteUrl);
+
+  const trafficRows=traffic
+    .map(row=>({...row,_date:bingDate(row.Date)}))
+    .filter(row=>!row._date||(row._date>=start&&row._date<=end))
+    .sort((a,b)=>(a._date?.getTime()||0)-(b._date?.getTime()||0));
+
+  const clicks=trafficRows.reduce((sum,row)=>sum+Number(row.Clicks||0),0);
+  const impressions=trafficRows.reduce((sum,row)=>sum+Number(row.Impressions||0),0);
+
+  const latestCrawl=[...crawl]
+    .map(row=>({...row,_date:bingDate(row.Date)}))
+    .sort((a,b)=>(b._date?.getTime()||0)-(a._date?.getTime()||0))[0];
+
+  return json({
+    connected:true,
+    source:'Bing Webmaster Tools',
+    siteUrl,
+    range,
+    window,
+    summary:{
+      clicks,
+      impressions,
+      ctr:impressions?clicks/impressions:0,
+      indexedPages:Number(latestCrawl?.InIndex||0),
+      crawledPages:Number(latestCrawl?.CrawledPages||0),
+      crawlErrors:Number(latestCrawl?.CrawlErrors||0),
+      inLinks:Number(latestCrawl?.InLinks||0)
+    },
+    trend:trafficRows.map(row=>({
+      date:row._date?isoDate(row._date):'',
+      clicks:Number(row.Clicks||0),
+      impressions:Number(row.Impressions||0)
+    })),
+    pages:pages
+      .map(row=>({
+        page:String(row.Query||''),
+        clicks:Number(row.Clicks||0),
+        impressions:Number(row.Impressions||0),
+        avgPosition:Number(row.AvgImpressionPosition||0)
+      }))
+      .filter(row=>!row.page.includes('/admin'))
+      .sort((a,b)=>b.impressions-a.impressions)
+      .slice(0,100),
+    queries:queries
+      .map(row=>({
+        query:String(row.Query||''),
+        clicks:Number(row.Clicks||0),
+        impressions:Number(row.Impressions||0),
+        avgPosition:Number(row.AvgImpressionPosition||0)
+      }))
+      .sort((a,b)=>b.impressions-a.impressions)
+      .slice(0,100),
+    crawl:latestCrawl?{
+      date:latestCrawl._date?isoDate(latestCrawl._date):null,
+      code2xx:Number(latestCrawl.Code2xx||0),
+      code301:Number(latestCrawl.Code301||0),
+      code302:Number(latestCrawl.Code302||0),
+      code4xx:Number(latestCrawl.Code4xx||0),
+      code5xx:Number(latestCrawl.Code5xx||0),
+      blockedByRobotsTxt:Number(latestCrawl.BlockedByRobotsTxt||0),
+      dnsFailures:Number(latestCrawl.DnsFailures||0),
+      connectionTimeout:Number(latestCrawl.ConnectionTimeout||0),
+      containsMalware:Number(latestCrawl.ContainsMalware||0)
+    }:null,
+    fetchedAt:new Date().toISOString()
+  });
+}
+
 async function sitemapCount(env: Env) {
   try {
     const response = await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
@@ -610,6 +756,9 @@ async function handleStatus(env: Env) {
     !env.CLOUDFLARE_ZONE_ID?'CLOUDFLARE_ZONE_ID':null,
     !env.CLOUDFLARE_API_TOKEN?'CLOUDFLARE_API_TOKEN':null,
   ].filter(Boolean);
+  const bingMissing=[
+    !env.BING_API_KEY?'BING_API_KEY':null,
+  ].filter(Boolean);
   const googleConfigured = gscMissing.length===0;
   return json({
     mode: googleConfigured ? 'live-ready' : 'setup',
@@ -632,7 +781,8 @@ async function handleStatus(env: Env) {
         missing: cloudflareMissing,
       },
       bing: {
-        configured: Boolean(env.BING_API_KEY),
+        configured: bingMissing.length===0,
+        missing: bingMissing,
       },
     },
   });
@@ -746,6 +896,7 @@ export default {
         if(url.pathname==='/api/admin/gsc')return await handleGsc(request,env);
         if(url.pathname==='/api/admin/ga4')return await handleGa4(request,env);
         if(url.pathname==='/api/admin/cloudflare')return await handleCloudflare(env);
+        if(url.pathname==='/api/admin/bing')return await handleBing(request,env);
         return json({error:'Not found'},404);
       }
 
