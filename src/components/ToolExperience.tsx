@@ -2680,8 +2680,185 @@ function TimeDurationCalculator(){
 }
 
 
+type WebsiteAnalysisResponse={
+  error?:string;
+  mode?:string;
+  inputUrl?:string;
+  page?:{
+    requestedUrl:string;
+    finalUrl:string;
+    status:number;
+    statusText:string;
+    elapsedMs:number;
+    htmlBytes:number;
+    redirects:{url:string;status:number;location:string|null}[];
+    headers:{server:string;contentType:string;cacheControl:string;contentEncoding:string;xRobotsTag:string;location:string};
+  };
+  meta?:{
+    title:string;titleLength:number;description:string;descriptionLength:number;canonical:string;robots:string;viewport:string;lang:string;charset:string;generator:string;
+    openGraph:{title:string;description:string;image:string;url:string;type:string};
+    twitter:{card:string;title:string;description:string;image:string};
+    headings:{h1:string[];h2:string[];h3:string[]};
+    links:{total:number;internal:number;external:number};
+    images:{total:number;missingAlt:number};
+    schemaTypes:string[];
+  };
+  robots?:{url:string;status:number;available:boolean;blocksAll:boolean;sitemaps:string[];userAgents:number;disallows:number;allows:number;preview:string}|null;
+  sitemap?:{url:string;status:number;available:boolean;type:string;urlCount:number;sitemapCount:number;lastmodCount:number;sampleUrls:string[]}|null;
+  security?:{https:boolean;grade:string;present:number;total:number;headers:{hsts:string;csp:string;xFrameOptions:string;xContentTypeOptions:string;referrerPolicy:string;permissionsPolicy:string}};
+  ssl?:{https:boolean;secureConnection:boolean;hsts:boolean;httpRedirectToHttps:boolean|null};
+  technologies?:string[];
+  seoScore?:number;
+};
+
+const websiteModeById:Record<string,string>={
+  'website-analyzer':'full',
+  'seo-checker':'seo',
+  'meta-tag-checker':'meta',
+  'http-status-checker':'status',
+  'redirect-checker':'redirect',
+  'robots-checker':'robots',
+  'sitemap-checker':'sitemap',
+  'ssl-checker':'ssl',
+  'security-headers-checker':'security',
+  'technology-checker':'technology'
+};
+
+function WebsiteSignal({label,value,ok}:{label:string;value:React.ReactNode;ok?:boolean|null}){
+  return <div className="websiteSignal"><span>{label}</span><strong>{value||'Not detected'}</strong>{typeof ok==='boolean'&&<b className={ok?'signalPass':'signalWarn'}>{ok?'PASS':'CHECK'}</b>}</div>;
+}
+
+function WebsiteAnalysisTool({tool}:{tool:Tool}){
+  const [url,setUrl]=useState('');
+  const [result,setResult]=useState<WebsiteAnalysisResponse|null>(null);
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState('');
+  const mode=websiteModeById[tool.id]||'full';
+
+  const analyze=async(e:React.FormEvent)=>{
+    e.preventDefault();
+    setLoading(true);setError('');setResult(null);
+    try{
+      const response=await fetch('/api/tools/website-analysis',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({url,mode})
+      });
+      const data=await response.json() as WebsiteAnalysisResponse;
+      if(!response.ok||data.error)throw new Error(data.error||'Website analysis failed.');
+      setResult(data);
+    }catch(err){
+      setError(err instanceof Error?err.message:'Website analysis failed.');
+    }finally{setLoading(false)}
+  };
+
+  const page=result?.page,meta=result?.meta,robots=result?.robots,sitemap=result?.sitemap,security=result?.security,ssl=result?.ssl;
+  const securityRows=security?[
+    ['HSTS',security.headers.hsts],
+    ['Content-Security-Policy',security.headers.csp],
+    ['X-Frame-Options',security.headers.xFrameOptions],
+    ['X-Content-Type-Options',security.headers.xContentTypeOptions],
+    ['Referrer-Policy',security.headers.referrerPolicy],
+    ['Permissions-Policy',security.headers.permissionsPolicy],
+  ]:[];
+
+  return <div className="toolUi">
+    <form className="websiteAnalyzerForm" onSubmit={analyze}>
+      <label className="websiteUrlField"><span>Public website URL</span><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com/page" inputMode="url" autoComplete="url"/></label>
+      <button className="primaryButton websiteAnalyzeButton" disabled={loading||!url.trim()}>{loading?<><RefreshCw size={16} className="spin"/> Analyzing…</>:<>Analyze website</>}</button>
+    </form>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Toolmera fetches only public HTTP/HTTPS pages. Local/private hosts and non-standard ports are blocked, redirects are capped, and response bodies are size-limited.</span></div>
+    {error&&<div className="toolError">{error}</div>}
+
+    {result&&<>
+      {(mode==='full'||mode==='seo')&&page&&meta&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics">
+          <MetricCard label="SEO score" value={(result.seoScore??0)+'/100'}/>
+          <MetricCard label="HTTP status" value={page.status}/>
+          <MetricCard label="H1 tags" value={meta.headings.h1.length}/>
+          <MetricCard label="Missing ALT" value={meta.images.missingAlt}/>
+        </div>
+        <div className="websiteReportGrid">
+          <section className="websiteReportPanel"><span className="sectionKicker">ON-PAGE SEO</span><h3>Search signals</h3>
+            <div className="websiteSignalList">
+              <WebsiteSignal label="Title" value={meta.title?meta.title+' · '+meta.titleLength+' chars':'Missing'} ok={meta.titleLength>=20&&meta.titleLength<=65}/>
+              <WebsiteSignal label="Meta description" value={meta.description?meta.description+' · '+meta.descriptionLength+' chars':'Missing'} ok={meta.descriptionLength>=60&&meta.descriptionLength<=180}/>
+              <WebsiteSignal label="Canonical" value={meta.canonical||'Missing'} ok={Boolean(meta.canonical)}/>
+              <WebsiteSignal label="Meta robots" value={meta.robots||'No restrictive directive detected'} ok={!/\bnoindex\b/i.test(meta.robots)}/>
+              <WebsiteSignal label="Viewport" value={meta.viewport||'Missing'} ok={Boolean(meta.viewport)}/>
+              <WebsiteSignal label="Schema types" value={meta.schemaTypes.join(', ')||'None detected'} ok={meta.schemaTypes.length>0}/>
+            </div>
+          </section>
+          <section className="websiteReportPanel"><span className="sectionKicker">CRAWL FILES</span><h3>Indexability context</h3>
+            <div className="websiteSignalList">
+              <WebsiteSignal label="robots.txt" value={robots?robots.status+' · '+(robots.blocksAll?'site-wide block detected':'no site-wide block detected'):'Could not verify'} ok={Boolean(robots?.available&&!robots.blocksAll)}/>
+              <WebsiteSignal label="XML sitemap" value={sitemap?sitemap.status+' · '+(sitemap.urlCount||sitemap.sitemapCount)+' entries':'Could not verify'} ok={Boolean(sitemap?.available)}/>
+              <WebsiteSignal label="Internal links" value={meta.links.internal}/>
+              <WebsiteSignal label="External links" value={meta.links.external}/>
+              <WebsiteSignal label="Images" value={meta.images.total+' total · '+meta.images.missingAlt+' missing/empty ALT'}/>
+              <WebsiteSignal label="Final URL" value={page.finalUrl}/>
+            </div>
+          </section>
+        </div>
+        {mode==='full'&&security&&<div className="websiteReportGrid">
+          <section className="websiteReportPanel"><span className="sectionKicker">SECURITY</span><h3>Headers grade {security.grade}</h3><div className="websiteSignalList">{securityRows.map(([label,value])=><WebsiteSignal key={label} label={label} value={value||'Missing'} ok={Boolean(value)}/>)}</div></section>
+          <section className="websiteReportPanel"><span className="sectionKicker">TECHNOLOGY</span><h3>Public fingerprints</h3>{result.technologies?.length?<div className="technologyTags">{result.technologies.map(t=><span key={t}>{t}</span>)}</div>:<p className="websiteMuted">No supported technology fingerprints were detected in the fetched HTML or response headers.</p>}</section>
+        </div>}
+      </div>}
+
+      {mode==='meta'&&meta&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="Title chars" value={meta.titleLength}/><MetricCard label="Description chars" value={meta.descriptionLength}/><MetricCard label="H1 tags" value={meta.headings.h1.length}/><MetricCard label="Schema types" value={meta.schemaTypes.length}/></div>
+        <div className="websiteReportGrid">
+          <section className="websiteReportPanel"><span className="sectionKicker">SEO META</span><h3>Search metadata</h3><div className="websiteSignalList">
+            <WebsiteSignal label="Title" value={meta.title||'Missing'}/><WebsiteSignal label="Description" value={meta.description||'Missing'}/><WebsiteSignal label="Canonical" value={meta.canonical||'Missing'}/><WebsiteSignal label="Robots" value={meta.robots||'Not set'}/><WebsiteSignal label="Viewport" value={meta.viewport||'Missing'}/><WebsiteSignal label="Language" value={meta.lang||'Not declared'}/><WebsiteSignal label="Charset" value={meta.charset||'Not declared'}/>
+          </div></section>
+          <section className="websiteReportPanel"><span className="sectionKicker">SOCIAL META</span><h3>Open Graph & Twitter</h3><div className="websiteSignalList">
+            <WebsiteSignal label="og:title" value={meta.openGraph.title||'Missing'}/><WebsiteSignal label="og:description" value={meta.openGraph.description||'Missing'}/><WebsiteSignal label="og:image" value={meta.openGraph.image||'Missing'}/><WebsiteSignal label="twitter:card" value={meta.twitter.card||'Missing'}/><WebsiteSignal label="twitter:title" value={meta.twitter.title||'Missing'}/><WebsiteSignal label="twitter:image" value={meta.twitter.image||'Missing'}/>
+          </div></section>
+        </div>
+      </div>}
+
+      {mode==='status'&&page&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="HTTP status" value={page.status}/><MetricCard label="Response time" value={page.elapsedMs+' ms'}/><MetricCard label="Redirect hops" value={Math.max(0,page.redirects.length-1)}/><MetricCard label="HTML read" value={prettyFileSize(page.htmlBytes)}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">LIVE RESPONSE</span><h3>HTTP details</h3><div className="websiteSignalList"><WebsiteSignal label="Requested URL" value={page.requestedUrl}/><WebsiteSignal label="Final URL" value={page.finalUrl}/><WebsiteSignal label="Content-Type" value={page.headers.contentType||'Not sent'}/><WebsiteSignal label="Server" value={page.headers.server||'Not disclosed'}/><WebsiteSignal label="Cache-Control" value={page.headers.cacheControl||'Not sent'}/><WebsiteSignal label="X-Robots-Tag" value={page.headers.xRobotsTag||'Not sent'}/></div></section>
+      </div>}
+
+      {mode==='redirect'&&page&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="Redirect hops" value={Math.max(0,page.redirects.length-1)}/><MetricCard label="Final status" value={page.status}/><MetricCard label="Response time" value={page.elapsedMs+' ms'}/><MetricCard label="Chain result" value={page.redirects.length>1?'Redirected':'Direct'}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">REDIRECT CHAIN</span><h3>Every HTTP hop</h3><div className="redirectChain">{page.redirects.map((hop,i)=><div key={hop.url+'-'+i}><b>{i+1}</b><span><strong>{hop.status}</strong><small>{hop.url}</small>{hop.location&&<em>→ {hop.location}</em>}</span></div>)}</div></section>
+      </div>}
+
+      {mode==='robots'&&robots&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="HTTP status" value={robots.status}/><MetricCard label="Blocks all" value={robots.blocksAll?'YES':'NO'}/><MetricCard label="User-agent rules" value={robots.userAgents}/><MetricCard label="Sitemaps" value={robots.sitemaps.length}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">ROBOTS.TXT</span><h3>{robots.url}</h3><div className="websiteSignalList"><WebsiteSignal label="Availability" value={robots.available?'Reachable':'Not reachable'} ok={robots.available}/><WebsiteSignal label="Site-wide Disallow: /" value={robots.blocksAll?'Detected':'Not detected'} ok={!robots.blocksAll}/><WebsiteSignal label="Allow directives" value={robots.allows}/><WebsiteSignal label="Disallow directives" value={robots.disallows}/><WebsiteSignal label="Declared sitemaps" value={robots.sitemaps.join(', ')||'None declared'}/></div><pre className="websiteRaw">{robots.preview||'robots.txt is empty.'}</pre></section>
+      </div>}
+
+      {mode==='sitemap'&&sitemap&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="HTTP status" value={sitemap.status}/><MetricCard label="Type" value={sitemap.type}/><MetricCard label="URL entries" value={sitemap.urlCount}/><MetricCard label="Child sitemaps" value={sitemap.sitemapCount}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">XML SITEMAP</span><h3>{sitemap.url}</h3><div className="websiteSignalList"><WebsiteSignal label="Availability" value={sitemap.available?'Reachable':'Not reachable'} ok={sitemap.available}/><WebsiteSignal label="lastmod tags" value={sitemap.lastmodCount}/><WebsiteSignal label="Entry count" value={sitemap.urlCount||sitemap.sitemapCount}/></div>{sitemap.sampleUrls.length>0&&<div className="websiteUrlSamples">{sitemap.sampleUrls.map(x=><span key={x}>{x}</span>)}</div>}</section>
+      </div>}
+
+      {mode==='ssl'&&page&&ssl&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="HTTPS" value={ssl.https?'YES':'NO'}/><MetricCard label="HSTS" value={ssl.hsts?'YES':'NO'}/><MetricCard label="HTTP → HTTPS" value={ssl.httpRedirectToHttps===null?'UNKNOWN':ssl.httpRedirectToHttps?'YES':'NO'}/><MetricCard label="HTTP status" value={page.status}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">HTTPS CHECK</span><h3>Transport security signals</h3><div className="websiteSignalList"><WebsiteSignal label="Final URL uses HTTPS" value={ssl.https?'Yes':'No'} ok={ssl.https}/><WebsiteSignal label="Secure HTTPS connection completed" value={ssl.secureConnection?'Yes':'No'} ok={ssl.secureConnection}/><WebsiteSignal label="Strict-Transport-Security" value={security?.headers.hsts||'Missing'} ok={ssl.hsts}/><WebsiteSignal label="HTTP redirects to HTTPS" value={ssl.httpRedirectToHttps===null?'Could not verify':ssl.httpRedirectToHttps?'Yes':'No'} ok={ssl.httpRedirectToHttps}/></div><p className="websiteMuted">This checker verifies live HTTPS reachability and transport headers. It does not claim certificate issuer or expiry data because those details are not exposed by the current edge fetch interface.</p></section>
+      </div>}
+
+      {mode==='security'&&security&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="Grade" value={security.grade}/><MetricCard label="Headers present" value={security.present+'/'+security.total}/><MetricCard label="HTTPS" value={security.https?'YES':'NO'}/><MetricCard label="Missing headers" value={security.total-security.present}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">SECURITY HEADERS</span><h3>Browser-facing protections</h3><div className="websiteSignalList">{securityRows.map(([label,value])=><WebsiteSignal key={label} label={label} value={value||'Missing'} ok={Boolean(value)}/>)}</div></section>
+      </div>}
+
+      {mode==='technology'&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics"><MetricCard label="Detected" value={result.technologies?.length||0}/><MetricCard label="HTTP status" value={page?.status||'—'}/><MetricCard label="Server" value={page?.headers.server||'Hidden'}/><MetricCard label="Generator" value={meta?.generator||'None'}/></div>
+        <section className="websiteReportPanel"><span className="sectionKicker">TECH STACK</span><h3>Detected public technologies</h3>{result.technologies?.length?<div className="technologyTags">{result.technologies.map(t=><span key={t}>{t}</span>)}</div>:<p className="websiteMuted">No supported CMS, framework, analytics, CDN or integration fingerprints were detected. That does not prove the site uses no technologies; some stacks deliberately hide public fingerprints.</p>}</section>
+      </div>}
+    </>}
+  </div>;
+}
+
+
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='character-counter')ui=<CharacterCounter/>; else if(tool.kind==='remove-duplicate-lines')ui=<RemoveDuplicateLines/>; else if(tool.kind==='sort-lines')ui=<SortLines/>; else if(tool.kind==='text-diff')ui=<TextDiffChecker/>; else if(tool.kind==='json-to-csv')ui=<JsonToCsv/>; else if(tool.kind==='xml-formatter')ui=<XmlFormatter/>; else if(tool.kind==='date-calculator')ui=<DateCalculator/>; else if(tool.kind==='time-duration')ui=<TimeDurationCalculator/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
-  return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='character-counter')ui=<CharacterCounter/>; else if(tool.kind==='remove-duplicate-lines')ui=<RemoveDuplicateLines/>; else if(tool.kind==='sort-lines')ui=<SortLines/>; else if(tool.kind==='text-diff')ui=<TextDiffChecker/>; else if(tool.kind==='json-to-csv')ui=<JsonToCsv/>; else if(tool.kind==='xml-formatter')ui=<XmlFormatter/>; else if(tool.kind==='date-calculator')ui=<DateCalculator/>; else if(tool.kind==='time-duration')ui=<TimeDurationCalculator/>; else if(tool.kind==='website-analysis')ui=<WebsiteAnalysisTool tool={tool}/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> {tool.kind==='website-analysis'?'Live public URL analysis':'Browser-first processing'}</span></div>{ui}</section>
 }
