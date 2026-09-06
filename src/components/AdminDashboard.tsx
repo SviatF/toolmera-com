@@ -73,6 +73,18 @@ type Ga4Data={
   fetchedAt:string;
 };
 
+type CloudflareData={
+  connected:true;
+  source:string;
+  window:{start:string;end:string;label:string};
+  summary:{requests:number;visits:number;bandwidthBytes:number;errorRequests:number;errorRate:number};
+  countries:{country:string;requests:number;visits:number;bandwidthBytes:number}[];
+  paths:{path:string;requests:number;visits:number;bandwidthBytes:number}[];
+  statuses:{status:number;requests:number}[];
+  trend:{hour:string;requests:number;visits:number;bandwidthBytes:number}[];
+  fetchedAt:string;
+};
+
 type Opportunity={
   id:string;
   page:string;
@@ -165,9 +177,11 @@ export function AdminDashboard(){
   const [status,setStatus]=useState<AdminStatus|null>(null);
   const [gsc,setGsc]=useState<GscData|null>(null);
   const [ga4,setGa4]=useState<Ga4Data|null>(null);
+  const [cloudflare,setCloudflare]=useState<CloudflareData|null>(null);
   const [loading,setLoading]=useState(true);
   const [gscLoading,setGscLoading]=useState(false);
   const [ga4Loading,setGa4Loading]=useState(false);
+  const [cloudflareLoading,setCloudflareLoading]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState('');
   const [selected,setSelected]=useState<Opportunity|null>(null);
@@ -222,15 +236,29 @@ export function AdminDashboard(){
     }finally{setGa4Loading(false)}
   },[range]);
 
+  const loadCloudflare=useCallback(async()=>{
+    setCloudflareLoading(true);
+    try{
+      const response=await fetch('/api/admin/cloudflare',{cache:'no-store'});
+      if(response.status===503){setCloudflare(null);return}
+      const data=await response.json() as CloudflareData|{detail?:string;message?:string};
+      if(!response.ok)throw new Error('detail' in data&&data.detail?data.detail:'Could not load Cloudflare Analytics data.');
+      setCloudflare(data as CloudflareData);setError('');
+    }catch(e){
+      setCloudflare(null);setError(e instanceof Error?e.message:'Could not load Cloudflare Analytics data.');
+    }finally{setCloudflareLoading(false)}
+  },[]);
+
   useEffect(()=>{
     (async()=>{
       const s=await loadStatus();
       const jobs:Promise<unknown>[]=[];
       if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
       if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
+      if(s?.integrations.cloudflare.configured)jobs.push(loadCloudflare());
       await Promise.all(jobs);
     })();
-  },[loadStatus,loadGsc,loadGa4,range]);
+  },[loadStatus,loadGsc,loadGa4,loadCloudflare,range]);
 
   const refresh=async()=>{
     setError('');
@@ -238,6 +266,7 @@ export function AdminDashboard(){
     const jobs:Promise<unknown>[]=[];
     if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
     if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
+    if(s?.integrations.cloudflare.configured)jobs.push(loadCloudflare());
     await Promise.all(jobs);
   };
 
@@ -250,6 +279,7 @@ export function AdminDashboard(){
     const configured=status?.integrations[key]?.configured;
     if(key==='gsc'&&gsc)return <Pill tone="green">Live</Pill>;
     if(key==='ga4'&&ga4)return <Pill tone="green">Live</Pill>;
+    if(key==='cloudflare'&&cloudflare)return <Pill tone="green">Live</Pill>;
     return configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>;
   };
 
@@ -274,8 +304,8 @@ export function AdminDashboard(){
         <div><span className="adminKicker">TOOLMERA.COM</span><h1>{nav.find(n=>n.id===view)?.label}</h1></div>
         <div className="adminTopActions">
           <div className={gsc?'adminSourceStatus live':'adminSourceStatus'}><span></span>{gsc?'GSC live':status?.integrations.gsc.configured?'GSC configured':'Waiting for GSC'}</div>
-          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
-          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading)?'spinIcon':''}/> Refresh</button>
+          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading||cloudflareLoading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
+          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||cloudflareLoading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading||cloudflareLoading)?'spinIcon':''}/> Refresh</button>
           <a href="https://toolmera.com/" target="_blank" rel="noreferrer">Open site <ExternalLink size={14}/></a>
         </div>
       </header>
@@ -319,6 +349,21 @@ export function AdminDashboard(){
           <div className="adminPanel">
             <div className="adminPanelHead"><div><span>GA4 LANDING PAGES</span><h2>Top user entry pages</h2></div>{ga4?<Pill tone="green">Live</Pill>:<Pill>Pending</Pill>}</div>
             {ga4&&ga4.landingPages.length?<div className="compactTable">{ga4.landingPages.slice(0,8).map(p=><div key={p.page}><span>{p.page}</span><strong>{number(p.sessions)} sessions</strong><span>{number(p.users)} users</span></div>)}</div>:<EmptyState title="No landing-page data yet" body="This site is new, so the table can remain empty until Analytics has collected traffic."/>}
+          </div>
+        </section>
+
+        <section className="adminGrid adminGridMain">
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>CLOUDFLARE EDGE</span><h2>Traffic health · last 24h</h2></div>{cloudflare?<Pill tone="green">Live</Pill>:status?.integrations.cloudflare.configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>}</div>
+            {cloudflare?<div className="compactTable">
+              <div><span>Edge requests</span><strong>{number(cloudflare.summary.requests)}</strong><span>{number(cloudflare.summary.visits)} visits</span></div>
+              <div><span>Bandwidth</span><strong>{(cloudflare.summary.bandwidthBytes/1024/1024).toFixed(1)} MB</strong><span>{pct(cloudflare.summary.errorRate)} error rate</span></div>
+              <div><span>4xx / 5xx requests</span><strong>{number(cloudflare.summary.errorRequests)}</strong><span>HTTP edge responses</span></div>
+            </div>:<EmptyState title="Connect Cloudflare Analytics" body="Add a read-only Cloudflare Analytics API token and the Toolmera Zone ID to see edge requests, bandwidth, top paths and response errors." action={<button className="adminSecondary" onClick={()=>setView('integrations')}>Open integrations <ChevronRight size={15}/></button>}/>}
+          </div>
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>TOP EDGE PATHS</span><h2>Most requested URLs</h2></div>{cloudflare?<Pill tone="green">Live</Pill>:<Pill>Pending</Pill>}</div>
+            {cloudflare&&cloudflare.paths.length?<div className="compactTable">{cloudflare.paths.slice(0,8).map(p=><div key={p.path}><span>{p.path}</span><strong>{number(p.requests)} requests</strong><span>{number(p.visits)} visits</span></div>)}</div>:<EmptyState title="No Cloudflare path data yet" body="This panel will populate after the Cloudflare Analytics connection is live."/ >}
           </div>
         </section>
 
@@ -374,13 +419,13 @@ export function AdminDashboard(){
         <div className="errorList">
           {!status?.integrations.gsc.configured&&<div><Pill tone="amber">Setup</Pill><span><strong>Google Search Console not connected</strong><small>Missing runtime configuration: {status?.integrations.gsc.missing?.join(', ')||'Google service-account configuration'}.</small></span></div>}
           {!status?.integrations.ga4.configured&&<div><Pill>Pending</Pill><span><strong>GA4 Data API not connected</strong><small>Missing runtime configuration: {status?.integrations.ga4.missing?.join(', ')||'GA4 service-account configuration'}.</small></span></div>}
-          {!status?.integrations.cloudflare.configured&&<div><Pill>Pending</Pill><span><strong>Cloudflare Analytics API not connected</strong><small>Add a read-only Cloudflare API token and Zone ID later.</small></span></div>}
+          {!status?.integrations.cloudflare.configured&&<div><Pill>Pending</Pill><span><strong>Cloudflare Analytics API not connected</strong><small>Missing runtime configuration: {status?.integrations.cloudflare.missing?.join(', ')||'CLOUDFLARE_ZONE_ID, CLOUDFLARE_API_TOKEN'}.</small></span></div>}
           {!error&&status?.integrations.gsc.configured&&<div><Pill tone="green">Healthy</Pill><span><strong>Admin API reachable</strong><small>{gsc?'GSC data loaded successfully.':'GSC credentials are present; waiting for data or access.'}</small></span></div>}
           {error&&<div><Pill tone="red">Error</Pill><span><strong>Admin API / source error</strong><small>{error}</small></span></div>}
         </div>
       </section>}
 
-      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?'Requires read-only Zone API token':'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
+      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?(cloudflare?'Last 24h edge analytics · live':'Requires Zone ID + read-only Analytics token'):'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
 
       {view==='settings'&&<section className="adminGrid adminGridMain">
         <div className="adminPanel settingsPanel"><div className="adminPanelHead"><div><span>PROJECT</span><h2>Live configuration</h2></div></div><label>Tracked domain<input value="toolmera.com" readOnly/></label><label>GSC property<input value={status?.integrations.gsc.siteUrl||'Not connected'} readOnly/></label><label>Sitemap<input value="https://toolmera.com/sitemap.xml" readOnly/></label><label>Default report<select value={range} onChange={e=>setRange(e.target.value)}><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select></label></div>
