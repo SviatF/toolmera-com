@@ -75,8 +75,9 @@ const graph:Record<string,string[]>={
   'time-duration':['date-difference','date-calculator','time-zone','unix-timestamp'],
 
   // Website analysis — one audit workflow with specialist intent pages.
-  'website-analyzer':['seo-checker','meta-tag-checker','http-status-checker','redirect-checker','robots-checker','sitemap-checker','security-headers-checker','technology-checker'],
-  'seo-checker':['website-analyzer','meta-tag-checker','robots-checker','sitemap-checker','http-status-checker'],
+  'website-analyzer':['website-traffic-checker','seo-checker','meta-tag-checker','http-status-checker','redirect-checker','robots-checker','sitemap-checker','security-headers-checker','technology-checker'],
+  'website-traffic-checker':['website-analyzer','seo-checker','technology-checker','http-status-checker'],
+  'seo-checker':['website-analyzer','website-traffic-checker','meta-tag-checker','robots-checker','sitemap-checker','http-status-checker'],
   'meta-tag-checker':['seo-checker','website-analyzer','http-status-checker','redirect-checker'],
   'http-status-checker':['redirect-checker','ssl-checker','seo-checker','website-analyzer'],
   'redirect-checker':['http-status-checker','ssl-checker','website-analyzer','seo-checker'],
@@ -287,6 +288,11 @@ export function howToForTool(tool:Tool):HowToStep[]{
         {title:'Enter a public website URL',description:'Paste the homepage or specific page you want to audit. Toolmera accepts public HTTP and HTTPS URLs only.'},
         {title:'Run the live website analysis',description:'Toolmera fetches the public response and checks metadata, headings, crawl files, security headers, redirects and supported technology fingerprints.'},
         {title:'Prioritize the report',description:'Start with failed crawl or indexability checks, then review on-page SEO, security and technology details.'},
+      ],
+      'website-traffic-checker':[
+        {title:'Enter a website or competitor domain',description:'Paste a public homepage or domain. Toolmera normalizes the hostname and checks the public popularity dataset for recent rank history.'},
+        {title:'Read the latest and 30-day traffic popularity signals',description:'Compare the latest popularity rank with the 30-day average, best rank, worst rank and net movement. Lower rank numbers indicate stronger relative popularity.'},
+        {title:'Use the rank as a traffic proxy, not a visit counter',description:'Treat the result as comparative public popularity data. It is not Google Analytics, does not reveal private sessions, and does not fabricate monthly visit totals.'},
       ],
       'seo-checker':[
         {title:'Paste the page you want to audit',description:'Use the exact live URL whose on-page and technical SEO signals you want to inspect.'},

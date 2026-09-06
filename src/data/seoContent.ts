@@ -2116,14 +2116,68 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     faq: [
       { q: 'Is the Toolmera Website Analyzer free?', a: 'Yes. You can analyze public HTTP and HTTPS pages without creating an account.' },
       { q: 'Can I analyze a competitor website?', a: 'Yes, if the page is publicly reachable. The tool only reads public responses and does not access private analytics or restricted server data.' },
-      { q: 'Does the analyzer show real website traffic?', a: 'No. Toolmera does not fabricate traffic estimates. Real traffic requires first-party analytics or a dedicated third-party traffic intelligence dataset.' },
+      { q: 'Does the analyzer show website traffic?', a: 'The full analyzer focuses on technical website signals. Use the dedicated Website Traffic Checker for public 30-day popularity rank and trend data; exact monthly visits still require first-party analytics or a licensed traffic dataset.' },
       { q: 'Does the tool render JavaScript?', a: 'The current analyzer reads the server-returned HTML and headers. Content injected only after client-side JavaScript runs may not appear in the report.' },
       { q: 'Is the SEO score a Google ranking score?', a: 'No. It is a Toolmera diagnostic score based on verifiable technical and on-page checks, not a prediction from Google.' }
     ],
-    related: [{ id: 'seo-checker', anchor: 'run a focused SEO audit' }, { id: 'security-headers-checker', anchor: 'check browser security headers' }, { id: 'technology-checker', anchor: 'detect website technologies' }, { id: 'redirect-checker', anchor: 'trace redirect chains' }],
+    related: [{ id: 'website-traffic-checker', anchor: 'check website traffic popularity' }, { id: 'seo-checker', anchor: 'run a focused SEO audit' }, { id: 'security-headers-checker', anchor: 'check browser security headers' }, { id: 'technology-checker', anchor: 'detect website technologies' }],
     sources: [
       { label: 'Google Search Essentials', href: 'https://developers.google.com/search/docs/essentials' },
       { label: 'Google canonicalization guidance', href: 'https://developers.google.com/search/docs/crawling-indexing/canonicalization' }
+    ]
+  },
+
+  'website-traffic-checker': {
+    title: 'Free Website Traffic Checker — Check Site Traffic & Popularity Rank',
+    description: 'Check website traffic popularity for free with a live domain rank, 30-day trend, average rank, best and worst rank, and public reachability signals.',
+    intro: 'Use this free website traffic checker to compare the public popularity of a website or competitor domain without inventing monthly visit numbers. Toolmera reports recent domain-rank history and labels it clearly as a traffic/popularity proxy rather than first-party analytics.',
+    sections: [
+      {
+        title: 'Check website traffic for free without fake monthly visit estimates',
+        paragraphs: [
+          'A competitor website does not publish its Google Analytics sessions, users or pageviews in its HTML. That means a truly free website traffic checker cannot know exact monthly visits unless the site owner connects first-party analytics or the checker licenses a commercial clickstream dataset.',
+          'Toolmera takes a stricter approach: it reports public popularity evidence that can be verified without pretending the result is an exact visit count. This is useful when the real question is whether a domain appears broadly popular, whether its relative visibility is improving, or how two competitors compare over time.'
+        ]
+      },
+      {
+        title: 'How the 30-day website traffic popularity rank works',
+        paragraphs: [
+          'The checker uses recent Tranco domain-rank history. Tranco combines multiple web-popularity rankings over a rolling period to produce a more stable research-oriented ranking. A lower rank number indicates stronger relative popularity; rank 5,000 is therefore stronger than rank 50,000.',
+          'Toolmera summarizes the latest rank, 30-day average, best rank, worst rank and net movement. These numbers are best interpreted as relative website-popularity signals, not as a conversion from rank into sessions or unique visitors.'
+        ]
+      },
+      {
+        title: 'Free competitor website traffic checker for relative trend analysis',
+        paragraphs: [
+          'For competitor research, run the same domains periodically and compare their latest rank, average rank and direction of travel. A sustained improvement can be a useful signal that a domain is gaining relative prominence, while a worsening rank can justify deeper checks in search visibility, content output, backlinks, brand demand or technical availability.',
+          'This workflow is especially useful for long-tail questions such as “how popular is this website,” “is a competitor website growing,” “check website traffic rank,” and “compare website popularity free” where a transparent relative signal is more defensible than an unsupported monthly-visits number.'
+        ]
+      },
+      {
+        title: 'What “not ranked” means in a website traffic check',
+        paragraphs: [
+          'If a domain has no returned top-list rank, that does not mean the website has zero traffic. Smaller, newer, regional or highly niche sites may receive real visitors without appearing in a top-domain popularity dataset.',
+          'Treat an unranked result as limited public ranking evidence. You can still use Toolmera’s Website Analyzer, SEO Checker, HTTP Status Checker and Technology Checker to inspect the site’s public technical signals.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Is this website traffic checker free?', a: 'Yes. The checker uses public ranking signals and does not require a paid Toolmera account.' },
+      { q: 'Does Toolmera show exact monthly website visits?', a: 'No. Exact sessions, users and pageviews require first-party analytics or a licensed traffic-intelligence dataset. Toolmera does not invent those numbers.' },
+      { q: 'Can I check a competitor website traffic level?', a: 'Yes. Enter a public competitor domain to see its recent popularity rank, 30-day average, best and worst rank, and rank movement when data is available.' },
+      { q: 'Is traffic rank the same as Google Analytics traffic?', a: 'No. A popularity rank is a comparative public signal. Google Analytics measures first-party visits on a site that has installed and connected analytics.' },
+      { q: 'What does a lower traffic rank mean?', a: 'Lower rank numbers indicate stronger relative popularity in the ranking dataset. Rank 10,000 is stronger than rank 100,000.' },
+      { q: 'Why does a website show “not ranked”?', a: 'The domain may fall outside the ranked population or have insufficient public popularity evidence. It does not prove the site receives zero visits.' }
+    ],
+    related: [
+      { id: 'website-analyzer', anchor: 'run a complete website audit' },
+      { id: 'seo-checker', anchor: 'check on-page and technical SEO' },
+      { id: 'technology-checker', anchor: 'detect a competitor technology stack' },
+      { id: 'http-status-checker', anchor: 'verify the website is reachable' }
+    ],
+    sources: [
+      { label: 'Tranco — research-oriented top sites ranking', href: 'https://tranco-list.eu/' },
+      { label: 'Tranco ranking methodology', href: 'https://tranco-list.eu/methodology' }
     ]
   },
 
@@ -2669,14 +2723,14 @@ export const categorySeoContent: Record<string, {
   },
 
   'website-analysis': {
-    title: 'Free Website Analysis Tools — SEO, HTTP, Security & Tech Checkers',
-    description: 'Free website analysis tools for SEO audits, meta tags, HTTP status, redirects, robots.txt, XML sitemaps, HTTPS, security headers and technology detection.',
-    intro: 'Analyze public websites with focused free tools for SEO, crawlability, HTTP behavior, transport security and public technology signals. Use the complete Website Analyzer for a broad report or open a specialist checker when you need one narrow answer.',
+    title: 'Free Website Analysis Tools — Traffic, SEO, HTTP, Security & Tech',
+    description: 'Free website analysis tools for traffic popularity checks, SEO audits, meta tags, HTTP status, redirects, robots.txt, sitemaps, security and technology detection.',
+    intro: 'Analyze public websites with focused free tools for traffic popularity, SEO, crawlability, HTTP behavior, transport security and technology signals. Use Website Traffic Checker for relative popularity data, Website Analyzer for a broad audit, or a specialist checker when you need one narrow answer.',
     sections: [
       {
         title: 'Free website analysis tools built around real audit tasks',
         paragraphs: [
-          'Start with Website Analyzer when you want one report covering metadata, headings, links, crawl files, security headers and detected technologies. Use SEO Checker for on-page and indexability signals, or Meta Tag Checker when titles, descriptions, canonicals and social tags are the specific problem.',
+          'Start with Website Traffic Checker when the question is relative website popularity or competitor traffic trend, and use Website Analyzer when you want one report covering metadata, headings, links, crawl files, security headers and detected technologies. Use SEO Checker for on-page and indexability signals, or Meta Tag Checker when titles, descriptions, canonicals and social tags are the specific problem.',
           'For infrastructure debugging, HTTP Status Checker and Redirect Checker expose response behavior; Robots.txt Checker and Sitemap Checker focus on crawler discovery; SSL Checker and Security Headers Checker review transport and browser-facing protection; Technology Checker identifies supported public stack fingerprints.'
         ]
       },
