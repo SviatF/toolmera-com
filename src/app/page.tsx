@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3 } from 'lucide-react';
+import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3, Globe2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
-const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, generators: QrCode, time: Clock3, text: TextCursorInput, developer: Code2 };
+const categoryIcons: Record<string, typeof ImageIcon> = { image: ImageIcon, pdf: FileText, calculators: Calculator, converters: Repeat2, generators: QrCode, time: Clock3, text: TextCursorInput, developer: Code2, 'website-analysis': Globe2 };
 
 export default function Home() {
   const websiteSchema = {
@@ -31,7 +31,7 @@ export default function Home() {
     "@type":"WebSite",
     name:"Toolmera",
     url:"https://toolmera.com/",
-    description:"Free online tools for files, calculators, converters, generators, time and developer tasks."
+    description:"Free online tools for files, calculators, converters, generators, time, developer tasks and website analysis."
   };
   const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
