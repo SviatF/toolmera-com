@@ -2666,7 +2666,7 @@ export const categorySeoContent: Record<string, {
         ]
       }
     ]
-  }
+  },
 
   'website-analysis': {
     title: 'Free Website Analysis Tools — SEO, HTTP, Security & Tech Checkers',
