@@ -417,10 +417,10 @@ export function AdminDashboard(){
   const integrationsLive=[Boolean(gsc),Boolean(ga4),Boolean(cloudflare),Boolean(bing)].filter(Boolean).length;
   const systemHealth=error?'Degraded':integrationsLive===4?'Operational':'Connecting';
   const technicalWarnings=[
-    cloudflare&&cloudflare.summary.errorRate>.02?Cloudflare edge error rate is ${pct(cloudflare.summary.errorRate)}:null,
-    bing&&bing.summary.crawlErrors>0?Bing reports ${number(bing.summary.crawlErrors)} crawl errors:null,
-    indexingSummary.fetchIssues>0?Google inspection found ${number(indexingSummary.fetchIssues)} fetch issues:null,
-    indexingSummary.canonicalIssues>0?Google inspection found ${number(indexingSummary.canonicalIssues)} canonical mismatches:null,
+    cloudflare&&cloudflare.summary.errorRate>.02?'Cloudflare edge error rate is '+pct(cloudflare.summary.errorRate):null,
+    bing&&bing.summary.crawlErrors>0?'Bing reports '+number(bing.summary.crawlErrors)+' crawl errors':null,
+    indexingSummary.fetchIssues>0?'Google inspection found '+number(indexingSummary.fetchIssues)+' fetch issues':null,
+    indexingSummary.canonicalIssues>0?'Google inspection found '+number(indexingSummary.canonicalIssues)+' canonical mismatches':null,
   ].filter(Boolean) as string[];
 
   const sourceState=(key:keyof AdminStatus['integrations'])=>{
@@ -443,7 +443,7 @@ export function AdminDashboard(){
   return <div className="adminApp">
     <aside className="adminSidebar">
       <div className="adminBrand"><span className="adminBrandMark">A</span><div><strong>TOOLMERA</strong><small>SEO Intelligence</small></div></div>
-      <div className={gsc?'adminDemo adminLive':'adminDemo'}><span></span>{gsc?' Live data':' Setup mode'}</div>
+      <div className={systemHealth==='Operational'?'adminDemo adminLive':'adminDemo'}><span></span>{systemHealth==='Operational'?' System operational':systemHealth==='Degraded'?' Attention required':' Connecting sources'}</div>
       <nav>{nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={17}/><span>{item.label}</span></button>})}</nav>
       <div className="adminSidebarFoot"><ShieldCheck size={16}/><div><strong>Private dashboard</strong><span>/admin/ · noindex</span></div></div>
     </aside>
@@ -452,7 +452,7 @@ export function AdminDashboard(){
       <header className="adminTopbar">
         <div><span className="adminKicker">TOOLMERA.COM</span><h1>{nav.find(n=>n.id===view)?.label}</h1></div>
         <div className="adminTopActions">
-          <div className={gsc?'adminSourceStatus live':'adminSourceStatus'}><span></span>{gsc?'GSC live':status?.integrations.gsc.configured?'GSC configured':'Waiting for GSC'}</div>
+          <div className={systemHealth==='Operational'?'adminSourceStatus live':'adminSourceStatus'}><span></span>{systemHealth==='Operational'?'All systems live':systemHealth==='Degraded'?'System attention':integrationsLive+'/4 sources live'}</div>
           <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading||cloudflareLoading||bingLoading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
           <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||cloudflareLoading||bingLoading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading||cloudflareLoading||bingLoading)?'spinIcon':''}/> Refresh</button>
           <a href="https://toolmera.com/" target="_blank" rel="noreferrer">Open site <ExternalLink size={14}/></a>
@@ -470,7 +470,7 @@ export function AdminDashboard(){
           <Metric label="Users" value={ga4?number(ga4.summary.users):'—'} change={ga4?.summary.changes.users} icon={UsersRound} sub={status?.integrations.ga4.configured?'Waiting for GA4 data':'Connect GA4'}/>
           <Metric label="Sessions" value={ga4?number(ga4.summary.sessions):'—'} change={ga4?.summary.changes.sessions} icon={Activity} sub={status?.integrations.ga4.configured?'Waiting for GA4 data':'Connect GA4'}/>
           <Metric label="Sitemap URLs" value={status?.sitemapUrls!=null?number(status.sitemapUrls):'—'} icon={FileSearch} sub="Live sitemap count"/>
-          <Metric label="Indexed URLs" value="—" icon={Link2} sub="URL Inspection integration"/>
+          <Metric label="Google indexed" value={indexingSummary.inspected?number(indexingSummary.indexed):'—'} icon={Link2} sub={indexingSummary.inspected?number(indexingSummary.inspected)+' inspected · cached':'Run URL Inspection scan'}/>
         </section>
 
         <section className="adminGrid adminGridMain">
@@ -543,14 +543,34 @@ export function AdminDashboard(){
 
       {view==='indexing'&&<>
         <section className="adminMetrics indexMetrics">
-          <Metric label="Sitemap URLs" value={status?.sitemapUrls!=null?number(status.sitemapUrls):'—'} icon={FileSearch} sub="Read from sitemap.xml"/>
-          <Metric label="Indexed URLs" value="—" icon={Link2} sub="Requires URL Inspection API"/>
-          <Metric label="Not indexed" value="—" icon={CircleAlert} sub="Requires URL Inspection API"/>
-          <Metric label="Canonical issues" value="—" icon={Link2} sub="Requires URL Inspection API"/>
+          <Metric label="Sitemap URLs" value={status?.sitemapUrls!=null?number(status.sitemapUrls):'—'} icon={FileSearch} sub="Read live from sitemap.xml"/>
+          <Metric label="Google indexed" value={indexingSummary.inspected?number(indexingSummary.indexed):'—'} icon={Link2} sub={indexingSummary.inspected?number(indexingSummary.inspected)+' inspected':'Run inspection scan'}/>
+          <Metric label="Not indexed" value={indexingSummary.inspected?number(indexingSummary.notIndexed):'—'} icon={CircleAlert} sub="Google URL Inspection verdict"/>
+          <Metric label="Canonical issues" value={indexingSummary.inspected?number(indexingSummary.canonicalIssues):'—'} icon={Link2} sub="Declared vs Google canonical"/>
         </section>
-        <section className="adminPanel">
-          <div className="adminPanelHead"><div><span>REAL STATUS ONLY</span><h2>Indexing diagnostics</h2></div><Pill tone="amber">Pending URL Inspection</Pill></div>
-          <div className="securityNote"><FileSearch size={24}/><div><strong>We are not estimating indexed pages.</strong><p>The Search Analytics API does not provide authoritative bulk index coverage. This section stays empty until URL Inspection / Search Console indexing data is connected, so the dashboard never invents coverage numbers.</p></div></div>
+
+        <section className="adminPanel indexingControlPanel">
+          <div className="adminPanelHead"><div><span>GOOGLE URL INSPECTION</span><h2>Live sitemap inspection</h2></div>{indexingLoading?<Pill tone="blue">Scanning</Pill>:indexingSummary.inspected?<Pill tone="green">Cached live scan</Pill>:<Pill tone="amber">Not scanned</Pill>}</div>
+          <div className="indexingControlRow">
+            <div><strong>Inspect every canonical URL in sitemap.xml</strong><p>The scan checks Google&apos;s indexed version, crawl/fetch state and canonical selection. Results are cached in this browser to avoid wasting API quota.</p>{indexingScannedAt&&<small>Last scan: {new Date(indexingScannedAt).toLocaleString()}</small>}</div>
+            <button className="adminPrimary inspectionButton" onClick={runIndexingScan} disabled={indexingLoading}><FileSearch size={15}/>{indexingLoading?'Inspecting…':indexingSummary.inspected?'Refresh inspection':'Run live inspection'}</button>
+          </div>
+          {indexingLoading&&<div className="inspectionProgress"><div><span style={{width:(indexingProgress.total?Math.min(100,indexingProgress.done/indexingProgress.total*100):3)+'%'}}/></div><small>{indexingProgress.done} / {indexingProgress.total||status?.sitemapUrls||'…'} URLs inspected</small></div>}
+        </section>
+
+        <section className="adminPanel indexingTablePanel">
+          <div className="adminPanelHead"><div><span>INDEX COVERAGE</span><h2>URL-level diagnostics</h2></div>{indexingSummary.fetchIssues?<Pill tone="amber">{indexingSummary.fetchIssues} fetch issues</Pill>:indexingSummary.inspected?<Pill tone="green">Fetch healthy</Pill>:<Pill>Waiting</Pill>}</div>
+          {indexing.length?<div className="inspectionTable">
+            <div className="inspectionHead"><span>URL</span><span>Verdict</span><span>Coverage</span><span>Fetch</span><span>Canonical</span><span>Last crawl</span></div>
+            {indexing.map(row=><div key={row.url} className={row.error?'inspectionError':''}>
+              <strong>{row.url.replace('https://toolmera.com','')||'/'}</strong>
+              <span><Pill tone={row.indexed?'green':row.verdict==='ERROR'?'red':'amber'}>{row.error?'Error':row.indexed?'Indexed':row.verdict}</Pill></span>
+              <span title={row.coverageState}>{row.coverageState}</span>
+              <span>{row.pageFetchState==='SUCCESSFUL'?<Pill tone="green">Successful</Pill>:<Pill tone="amber">{row.pageFetchState.replaceAll('_',' ')}</Pill>}</span>
+              <span>{row.canonicalMatch===false?<Pill tone="amber">Mismatch</Pill>:row.googleCanonical?<Pill tone="green">Aligned</Pill>:<Pill>Unknown</Pill>}</span>
+              <span>{row.lastCrawlTime?new Date(row.lastCrawlTime).toLocaleDateString():'—'}</span>
+            </div>)}
+          </div>:<EmptyState title="No URL Inspection scan yet" body="Run the live inspection once to populate authoritative Google index-status data for every URL in the current sitemap."/>}
         </section>
       </>}
 
@@ -561,11 +581,17 @@ export function AdminDashboard(){
 
       {(view==='pages'||view==='queries')&&<>
         <div className="adminToolbar"><div className="adminSearch"><Search size={16}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder={view==='pages'?'Filter live pages…':'Filter live queries…'}/></div></div>
-        <section className="adminPanel"><div className="adminPanelHead"><div><span>{view==='pages'?'GSC PAGE PERFORMANCE':'GSC SEARCH DEMAND'}</span><h2>{view==='pages'?'Landing pages':'Search queries'}</h2></div>{gsc?<Pill tone="green">Live</Pill>:<Pill>Not connected</Pill>}</div>
-          {!gsc?<EmptyState title="Connect Google Search Console" body="This table intentionally contains no sample rows. Live data will populate it automatically."/>:
-          view==='pages'?<div className="adminTable pagesTable"><div className="tableHead"><span>URL</span><span>Source</span><span>Clicks</span><span>Impressions</span><span>CTR</span><span>Position</span><span>Status</span></div>{pages.map(p=><div key={p.page}><strong>{p.page.replace('https://toolmera.com','')||'/'}</strong><span>GSC</span><span>{number(p.clicks)}</span><span>{number(p.impressions)}</span><span>{pct(p.ctr)}</span><span>{pos(p.position)}</span><Pill tone="green">Live</Pill></div>)}</div>:
-          <div className="adminTable queryTable"><div className="tableHead"><span>Query</span><span>Source</span><span>Clicks</span><span>Impressions</span><span>CTR</span><span>Position</span><span>Status</span></div>{queries.map(q=><div key={q.query}><strong>{q.query}</strong><span>GSC</span><span>{number(q.clicks)}</span><span>{number(q.impressions)}</span><span>{pct(q.ctr)}</span><span>{pos(q.position)}</span><Pill tone="green">Live</Pill></div>)}</div>}
-        </section>
+        {view==='pages'?<section className="adminPanel">
+          <div className="adminPanelHead"><div><span>CROSS-SOURCE PAGE INTELLIGENCE</span><h2>Pages / tools</h2></div><Pill tone="green">{integrationsLive}/4 live</Pill></div>
+          {crossPages.length?<div className="crossPageTable"><div className="crossPageHead"><span>URL</span><span>GSC</span><span>GA4</span><span>Cloudflare</span><span>Bing</span></div>
+            {crossPages.filter(row=>row.path.toLowerCase().includes(filter.toLowerCase())).map(row=><div key={row.path}><strong>{row.path}</strong><span>{number(row.gscClicks)} clicks · {number(row.gscImpressions)} imp.<small>{row.gscPosition?'Pos. '+row.gscPosition.toFixed(1):'No GSC rank yet'}</small></span><span>{number(row.ga4Sessions)} sessions<small>{number(row.ga4Users)} users</small></span><span>{number(row.cfRequests)} requests<small>Last 24h edge</small></span><span>{number(row.bingClicks)} clicks · {number(row.bingImpressions)} imp.<small>Bing weekly data</small></span></div>)}
+          </div>:<EmptyState title="No page-level data yet" body="Page rows populate automatically from GSC, GA4, Cloudflare and Bing as each source collects traffic."/>}
+        </section>:<>
+          <section className="adminPanel"><div className="adminPanelHead"><div><span>GOOGLE SEARCH CONSOLE</span><h2>Search queries</h2></div>{gsc?<Pill tone="green">Live</Pill>:<Pill>Not connected</Pill>}</div>
+            {gsc?<div className="adminTable queryTable"><div className="tableHead"><span>Query</span><span>Source</span><span>Clicks</span><span>Impressions</span><span>CTR</span><span>Position</span><span>Status</span></div>{queries.map(q=><div key={q.query}><strong>{q.query}</strong><span>GSC</span><span>{number(q.clicks)}</span><span>{number(q.impressions)}</span><span>{pct(q.ctr)}</span><span>{pos(q.position)}</span><Pill tone="green">Live</Pill></div>)}</div>:<EmptyState title="No Google query data yet" body="GSC query rows will appear automatically after Google records impressions."/>}
+          </section>
+          {bing&&<section className="adminPanel" style={{marginTop:14}}><div className="adminPanelHead"><div><span>BING WEBMASTER TOOLS</span><h2>Bing queries</h2></div><Pill tone="green">Live</Pill></div>{bing.queries.length?<div className="compactTable">{bing.queries.filter(q=>q.query.toLowerCase().includes(filter.toLowerCase())).slice(0,50).map(q=><div key={q.query}><span>{q.query}</span><strong>{number(q.clicks)} clicks</strong><span>{number(q.impressions)} imp. · Pos. {q.avgPosition?q.avgPosition.toFixed(1):'—'}</span></div>)}</div>:<EmptyState title="No Bing query data yet" body="Bing search-performance data is updated on its own reporting cadence."/>}</section>}
+        </>}
       </>}
 
       {view==='countries'&&<><section className="adminPanel">
@@ -576,25 +602,47 @@ export function AdminDashboard(){
         <div className="adminPanelHead"><div><span>GOOGLE ANALYTICS 4</span><h2>User geography</h2></div><Pill tone="green">Live</Pill></div>
         {ga4.countries.length?<div className="countryList">{ga4.countries.map((c,i)=><div key={c.country}><b>{i+1}</b><span><strong>{c.country}</strong><small>{number(c.pageViews)} page views</small></span><span>{number(c.users)} users</span><span>{number(c.sessions)} sessions</span></div>)}</div>:<EmptyState title="No GA4 country data yet" body="Analytics has not collected enough traffic for country-level rows yet."/>}
       </section>}
+      {cloudflare&&<section className="adminPanel" style={{marginTop:14}}>
+        <div className="adminPanelHead"><div><span>CLOUDFLARE EDGE</span><h2>Request geography · last 24h</h2></div><Pill tone="green">Live</Pill></div>
+        {cloudflare.countries.length?<div className="countryList">{cloudflare.countries.map((row,i)=><div key={row.country}><b>{i+1}</b><span><strong>{row.country}</strong><small>{(row.bandwidthBytes/1024/1024).toFixed(1)} MB served</small></span><span>{number(row.requests)} requests</span><span>{number(row.visits)} visits</span></div>)}</div>:<EmptyState title="No Cloudflare country data yet" body="Edge request geography will populate as traffic reaches the site."/>}
+      </section>}
       </>}
 
-      {view==='errors'&&<section className="adminPanel">
-        <div className="adminPanelHead"><div><span>INTEGRATION HEALTH</span><h2>Errors & warnings</h2></div></div>
-        <div className="errorList">
-          {!status?.integrations.gsc.configured&&<div><Pill tone="amber">Setup</Pill><span><strong>Google Search Console not connected</strong><small>Missing runtime configuration: {status?.integrations.gsc.missing?.join(', ')||'Google service-account configuration'}.</small></span></div>}
-          {!status?.integrations.ga4.configured&&<div><Pill>Pending</Pill><span><strong>GA4 Data API not connected</strong><small>Missing runtime configuration: {status?.integrations.ga4.missing?.join(', ')||'GA4 service-account configuration'}.</small></span></div>}
-          {!status?.integrations.cloudflare.configured&&<div><Pill>Pending</Pill><span><strong>Cloudflare Analytics API not connected</strong><small>Missing runtime configuration: {status?.integrations.cloudflare.missing?.join(', ')||'CLOUDFLARE_ZONE_ID, CLOUDFLARE_API_TOKEN'}.</small></span></div>}
-          {!status?.integrations.bing.configured&&<div><Pill>Pending</Pill><span><strong>Bing Webmaster Tools not connected</strong><small>Missing runtime configuration: {status?.integrations.bing.missing?.join(', ')||'BING_API_KEY'}.</small></span></div>}
-          {!error&&status?.integrations.gsc.configured&&<div><Pill tone="green">Healthy</Pill><span><strong>Admin API reachable</strong><small>{gsc?'GSC data loaded successfully.':'GSC credentials are present; waiting for data or access.'}</small></span></div>}
-          {error&&<div><Pill tone="red">Error</Pill><span><strong>Admin API / source error</strong><small>{error}</small></span></div>}
-        </div>
-      </section>}
+      {view==='errors'&&<>
+        <section className="adminHealthHero">
+          <div className={systemHealth==='Operational'?'healthOrb healthy':'healthOrb attention'}>{systemHealth==='Operational'?<CheckCircle2 size={28}/>:<CircleAlert size={28}/>}</div>
+          <div><span>SYSTEM HEALTH</span><h2>{systemHealth}</h2><p>{integrationsLive}/4 data sources live · {technicalWarnings.length} technical warning{technicalWarnings.length===1?'':'s'}</p></div>
+          <Pill tone={systemHealth==='Operational'?'green':systemHealth==='Degraded'?'red':'amber'}>{systemHealth}</Pill>
+        </section>
+
+        <section className="healthSourceGrid">
+          {[['GSC',Boolean(gsc),'Search performance API'],['GA4',Boolean(ga4),'Analytics Data API'],['Cloudflare',Boolean(cloudflare),'Edge GraphQL Analytics'],['Bing',Boolean(bing),'Webmaster API']].map(([name,live,desc])=><div key={String(name)} className="healthSourceCard"><span className={live?'healthDot live':'healthDot'}></span><div><strong>{String(name)}</strong><small>{String(desc)}</small></div><Pill tone={live?'green':'amber'}>{live?'Live':'Check'}</Pill></div>)}
+        </section>
+
+        <section className="adminGrid adminGridMain">
+          <div className="adminPanel"><div className="adminPanelHead"><div><span>TECHNICAL SIGNALS</span><h2>Errors & warnings</h2></div>{technicalWarnings.length?<Pill tone="amber">{technicalWarnings.length} warnings</Pill>:<Pill tone="green">Clear</Pill>}</div>
+            <div className="errorList">
+              {error&&<div><Pill tone="red">API</Pill><span><strong>Admin source error</strong><small>{error}</small></span></div>}
+              {technicalWarnings.map(item=><div key={item}><Pill tone="amber">Watch</Pill><span><strong>{item}</strong><small>Review the relevant source panel before changing production configuration.</small></span></div>)}
+              {!error&&!technicalWarnings.length&&<div><Pill tone="green">Healthy</Pill><span><strong>No active integration or technical warnings</strong><small>All connected data sources are responding and no live threshold is currently tripped.</small></span></div>}
+            </div>
+          </div>
+          <div className="adminPanel"><div className="adminPanelHead"><div><span>CRAWL HEALTH</span><h2>Search-engine diagnostics</h2></div></div>
+            <div className="compactTable">
+              <div><span>Bing crawl errors</span><strong>{bing?number(bing.summary.crawlErrors):'—'}</strong><span>{bing?number(bing.summary.crawledPages)+' crawled pages':'Waiting for Bing'}</span></div>
+              <div><span>Google fetch issues</span><strong>{indexingSummary.inspected?number(indexingSummary.fetchIssues):'—'}</strong><span>{indexingSummary.inspected?number(indexingSummary.inspected)+' inspected URLs':'Run URL Inspection'}</span></div>
+              <div><span>Canonical mismatches</span><strong>{indexingSummary.inspected?number(indexingSummary.canonicalIssues):'—'}</strong><span>Google vs declared canonical</span></div>
+              <div><span>Cloudflare 4xx/5xx</span><strong>{cloudflare?number(cloudflare.summary.errorRequests):'—'}</strong><span>{cloudflare?pct(cloudflare.summary.errorRate)+' of edge requests':'Waiting for edge data'}</span></div>
+            </div>
+          </div>
+        </section>
+      </>}
 
       {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?(cloudflare?'Last 24h edge analytics · live':'Requires Zone ID + read-only Analytics token'):key==='bing'?(bing?'toolmera.com · live':'Import from GSC + API key'):'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
 
       {view==='settings'&&<section className="adminGrid adminGridMain">
         <div className="adminPanel settingsPanel"><div className="adminPanelHead"><div><span>PROJECT</span><h2>Live configuration</h2></div></div><label>Tracked domain<input value="toolmera.com" readOnly/></label><label>GSC property<input value={status?.integrations.gsc.siteUrl||'Not connected'} readOnly/></label><label>Sitemap<input value="https://toolmera.com/sitemap.xml" readOnly/></label><label>Default report<select value={range} onChange={e=>setRange(e.target.value)}><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select></label></div>
-        <div className="adminPanel"><div className="adminPanelHead"><div><span>SECURITY</span><h2>Cloudflare Access</h2></div></div><div className="securityNote"><ShieldCheck size={24}/><div><strong>Protect both admin surfaces</strong><p>Cloudflare Access should cover <code>/admin/*</code> and <code>/api/admin/*</code>. Once enabled, set <code>REQUIRE_ACCESS=true</code> so the Worker rejects API requests without an Access assertion.</p></div></div></div>
+        <div className="adminPanel"><div className="adminPanelHead"><div><span>SECURITY</span><h2>Cloudflare Access</h2></div></div><div className="securityNote healthSecurity"><ShieldCheck size={24}/><div><strong>Cloudflare Access enforced</strong><p><code>/admin/*</code> and <code>/api/admin/*</code> are protected at the edge, while <code>REQUIRE_ACCESS=true</code> makes the Worker reject API requests without an Access assertion.</p></div><Pill tone="green">Protected</Pill></div></div>
       </section>}
 
       {selected&&<div className="adminDrawerBackdrop" onClick={()=>setSelected(null)}><aside className="adminDrawer" onClick={e=>e.stopPropagation()}><button className="drawerClose" onClick={()=>setSelected(null)}><X size={18}/></button><Pill tone="blue">Score {selected.score}/100</Pill><h2>{selected.action}</h2><p className="drawerQuery">{selected.query}</p><code>{selected.page.replace('https://toolmera.com','')}</code><div className="drawerMetrics"><div><span>Impressions</span><strong>{number(selected.impressions)}</strong></div><div><span>CTR</span><strong>{pct(selected.ctr)}</strong></div><div><span>Position</span><strong>{pos(selected.position)}</strong></div><div><span>Clicks</span><strong>{number(selected.clicks)}</strong></div></div><h3>Why this opportunity</h3><p>{selected.reason}</p><label>Status<select value={statuses[selected.id]||'Open'} onChange={e=>setStatuses({...statuses,[selected.id]:e.target.value as Status})}><option>Open</option><option>In progress</option><option>Done</option><option>Ignored</option></select></label><label>Notes<textarea value={notes[selected.id]||''} onChange={e=>setNotes({...notes,[selected.id]:e.target.value})} placeholder="Add an optimization note…"/></label><button className="adminPrimary" onClick={()=>setSelected(null)}>Save & close</button></aside></div>}
