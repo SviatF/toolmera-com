@@ -88,6 +88,24 @@ type BingCrawlRow = {
   InLinks?: number;
 };
 
+type UrlInspectionApiResponse = {
+  inspectionResult?: {
+    indexStatusResult?: {
+      verdict?: string;
+      coverageState?: string;
+      robotsTxtState?: string;
+      indexingState?: string;
+      lastCrawlTime?: string;
+      pageFetchState?: string;
+      googleCanonical?: string;
+      userCanonical?: string;
+      crawledAs?: string;
+      sitemap?: string[];
+      referringUrls?: string[];
+    };
+  };
+};
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -725,6 +743,124 @@ async function handleBing(request:Request,env:Env){
   });
 }
 
+
+async function sitemapUrlList(env:Env){
+  const response=await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
+  if(!response.ok)throw new Error('Could not read sitemap.xml: '+response.status);
+  const xml=await response.text();
+  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
+    .map(match=>match[1]?.trim())
+    .filter((url):url is string=>Boolean(url));
+}
+
+function normalizeCanonical(value?:string){
+  if(!value)return '';
+  try{
+    const url=new URL(value);
+    const path=url.pathname==='/'?'/':url.pathname.replace(/\/+$/,'')+'/';
+    return url.origin.toLowerCase()+path+(url.search||'');
+  }catch{return value.replace(/\/+$/,'')+'/'}
+}
+
+async function inspectGoogleUrl(token:string,siteUrl:string,inspectionUrl:string){
+  const response=await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect',{
+    method:'POST',
+    headers:{
+      authorization:'Bearer '+token,
+      'content-type':'application/json'
+    },
+    body:JSON.stringify({
+      inspectionUrl,
+      siteUrl,
+      languageCode:'en-US'
+    })
+  });
+
+  const raw=await response.text();
+  if(!response.ok)throw new Error('URL Inspection failed: '+response.status+' '+raw.slice(0,700));
+
+  let data:UrlInspectionApiResponse;
+  try{data=JSON.parse(raw) as UrlInspectionApiResponse}
+  catch{throw new Error('URL Inspection returned invalid JSON.')}
+
+  const result=data.inspectionResult?.indexStatusResult||{};
+  const userCanonical=result.userCanonical||'';
+  const googleCanonical=result.googleCanonical||'';
+  const canonicalMatch=Boolean(userCanonical&&googleCanonical)&&normalizeCanonical(userCanonical)===normalizeCanonical(googleCanonical);
+
+  return {
+    url:inspectionUrl,
+    verdict:result.verdict||'VERDICT_UNSPECIFIED',
+    indexed:result.verdict==='PASS',
+    coverageState:result.coverageState||'Unknown',
+    robotsTxtState:result.robotsTxtState||'ROBOTS_TXT_STATE_UNSPECIFIED',
+    indexingState:result.indexingState||'INDEXING_STATE_UNSPECIFIED',
+    pageFetchState:result.pageFetchState||'PAGE_FETCH_STATE_UNSPECIFIED',
+    lastCrawlTime:result.lastCrawlTime||null,
+    googleCanonical:googleCanonical||null,
+    userCanonical:userCanonical||null,
+    canonicalMatch:userCanonical&&googleCanonical?canonicalMatch:null,
+    crawledAs:result.crawledAs||null,
+    sitemapKnown:Boolean(result.sitemap?.length),
+    referringUrls:Number(result.referringUrls?.length||0)
+  };
+}
+
+async function handleIndexing(request:Request,env:Env){
+  if(!env.GSC_SITE_URL||!env.GOOGLE_CLIENT_EMAIL||!env.GOOGLE_PRIVATE_KEY){
+    return json({
+      connected:false,
+      code:'NOT_CONFIGURED',
+      message:'Google Search Console service account is not configured yet.'
+    },503);
+  }
+
+  const url=new URL(request.url);
+  const offset=Math.max(0,Number(url.searchParams.get('offset')||0));
+  const requestedLimit=Math.max(1,Number(url.searchParams.get('limit')||10));
+  const limit=Math.min(10,requestedLimit);
+  const urls=await sitemapUrlList(env);
+  const slice=urls.slice(offset,offset+limit);
+  const token=await googleAccessToken(env,['https://www.googleapis.com/auth/webmasters.readonly']);
+  const results=[];
+
+  // Intentionally sequential to keep Worker subrequests/connections predictable.
+  for(const inspectionUrl of slice){
+    try{
+      results.push(await inspectGoogleUrl(token,env.GSC_SITE_URL,inspectionUrl));
+    }catch(error){
+      results.push({
+        url:inspectionUrl,
+        verdict:'ERROR',
+        indexed:false,
+        coverageState:'Inspection error',
+        robotsTxtState:'UNKNOWN',
+        indexingState:'UNKNOWN',
+        pageFetchState:'UNKNOWN',
+        lastCrawlTime:null,
+        googleCanonical:null,
+        userCanonical:null,
+        canonicalMatch:null,
+        crawledAs:null,
+        sitemapKnown:false,
+        referringUrls:0,
+        error:error instanceof Error?error.message:String(error)
+      });
+    }
+  }
+
+  return json({
+    connected:true,
+    source:'Google URL Inspection',
+    total:urls.length,
+    offset,
+    limit,
+    nextOffset:offset+slice.length<urls.length?offset+slice.length:null,
+    results,
+    fetchedAt:new Date().toISOString()
+  });
+}
+
 async function sitemapCount(env: Env) {
   try {
     const response = await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
@@ -803,22 +939,16 @@ async function handleGsc(request: Request, env: Env) {
   const token = await googleAccessToken(env, ['https://www.googleapis.com/auth/webmasters.readonly']);
   const site = env.GSC_SITE_URL;
 
-  const [
-    summaryRows,
-    previousRows,
-    pageRows,
-    queryRows,
-    countryRows,
-    trendRows,
-    pairRows,
-  ] = await Promise.all([
-    gscQuery(token, site, window.startDate, window.endDate, [], 1),
-    gscQuery(token, site, window.previousStartDate, window.previousEndDate, [], 1),
-    gscQuery(token, site, window.startDate, window.endDate, ['page'], 250),
-    gscQuery(token, site, window.startDate, window.endDate, ['query'], 500),
-    gscQuery(token, site, window.startDate, window.endDate, ['country'], 100),
-    gscQuery(token, site, window.startDate, window.endDate, ['date'], 100),
-    gscQuery(token, site, window.startDate, window.endDate, ['query', 'page'], 500),
+  const [summaryRows,previousRows,pageRows,queryRows]=await Promise.all([
+    gscQuery(token,site,window.startDate,window.endDate,[],1),
+    gscQuery(token,site,window.previousStartDate,window.previousEndDate,[],1),
+    gscQuery(token,site,window.startDate,window.endDate,['page'],250),
+    gscQuery(token,site,window.startDate,window.endDate,['query'],500),
+  ]);
+  const [countryRows,trendRows,pairRows]=await Promise.all([
+    gscQuery(token,site,window.startDate,window.endDate,['country'],100),
+    gscQuery(token,site,window.startDate,window.endDate,['date'],100),
+    gscQuery(token,site,window.startDate,window.endDate,['query','page'],500),
   ]);
 
   const current = aggregate(summaryRows);
@@ -894,6 +1024,7 @@ export default {
 
         if(url.pathname==='/api/admin/status')return await handleStatus(env);
         if(url.pathname==='/api/admin/gsc')return await handleGsc(request,env);
+        if(url.pathname==='/api/admin/indexing')return await handleIndexing(request,env);
         if(url.pathname==='/api/admin/ga4')return await handleGa4(request,env);
         if(url.pathname==='/api/admin/cloudflare')return await handleCloudflare(env);
         if(url.pathname==='/api/admin/bing')return await handleBing(request,env);
