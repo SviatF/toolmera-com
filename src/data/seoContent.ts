@@ -1712,7 +1712,243 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'length', anchor: 'convert linear length measurements' },
       { id: 'volume', anchor: 'convert volume and capacity units' }
     ]
+  },
+
+  'speed': {
+    title: 'Free Speed Converter — MPH, KM/H, M/S, Knots & Ft/S',
+    description: 'Convert speed between kilometers per hour, miles per hour, meters per second, feet per second and knots with exact reference factors.',
+    intro: 'Convert road, aviation, marine and scientific speed units instantly and compare all supported equivalents from one source value.',
+    sections: [
+      {
+        title: 'Common speed conversion relationships',
+        paragraphs: [
+          'Toolmera converts every supported speed through meters per second, then calculates the selected target and full comparison matrix.',
+          'The mph and foot-per-second values use international foot and mile definitions, while knots use the international nautical mile.'
+        ],
+        facts: [
+          { label: '1 mph', value: '0.44704 m/s' },
+          { label: '1 km/h', value: '0.277777… m/s' },
+          { label: '1 knot', value: '0.514444… m/s' }
+        ]
+      },
+      {
+        title: 'When knots and road units differ',
+        paragraphs: [
+          'Road speeds are commonly expressed in km/h or mph, while marine and aviation speeds commonly use knots. A knot is one nautical mile per hour, not one statute mile per hour.',
+          'Toolmera keeps the unit name visible throughout the conversion so those systems are not mixed accidentally.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How many km/h are in 1 mph?', a: 'One mile per hour equals exactly 1.609344 kilometers per hour.' },
+      { q: 'How many mph are in 100 km/h?', a: '100 km/h is approximately 62.1371 mph.' },
+      { q: 'What is one knot in km/h?', a: 'One knot equals exactly 1.852 km/h.' },
+      { q: 'Does this converter include Mach?', a: 'No. Mach depends on the local speed of sound, which varies with conditions, so it is intentionally excluded from this fixed-factor converter.' }
+    ],
+    related: [
+      { id: 'length', anchor: 'convert distance units' },
+      { id: 'temperature', anchor: 'convert temperature values' }
+    ]
+  },
+
+  'data-storage': {
+    title: 'Free Data Storage Converter — Bytes, KB, MB, GB, KiB & GiB',
+    description: 'Convert digital storage values with separate decimal SI and binary IEC modes so KB/MB/GB are not confused with KiB/MiB/GiB.',
+    intro: 'Convert file and storage sizes using explicit decimal or binary definitions, then compare every unit in the selected system.',
+    sections: [
+      {
+        title: 'Decimal SI vs. binary IEC storage',
+        paragraphs: [
+          'Decimal storage uses powers of 1000: one kilobyte is 1,000 bytes, one megabyte is 1,000,000 bytes and one gigabyte is 1,000,000,000 bytes.',
+          'Binary IEC units use powers of 1024: one kibibyte is 1,024 bytes, one mebibyte is 1,048,576 bytes and one gibibyte is 1,073,741,824 bytes.'
+        ],
+        facts: [
+          { label: '1 GB', value: '1,000,000,000 bytes' },
+          { label: '1 GiB', value: '1,073,741,824 bytes' },
+          { label: '1 MB', value: '1,000,000 bytes' },
+          { label: '1 MiB', value: '1,048,576 bytes' }
+        ]
+      },
+      {
+        title: 'Why the same drive can appear to have two sizes',
+        paragraphs: [
+          'Storage vendors often publish capacities with decimal units, while some operating-system interfaces have historically displayed binary quantities using decimal-looking labels.',
+          'Separating SI and IEC modes makes the unit definition explicit instead of pretending that GB and GiB are interchangeable.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Is 1 GB the same as 1 GiB?', a: 'No. 1 GB is 1,000,000,000 bytes, while 1 GiB is 1,073,741,824 bytes.' },
+      { q: 'How many bytes are in 1 MB?', a: 'In decimal SI notation, 1 MB is 1,000,000 bytes.' },
+      { q: 'How many bytes are in 1 MiB?', a: '1 MiB is 1,048,576 bytes.' },
+      { q: 'Which mode should I use?', a: 'Use decimal SI when the source uses KB, MB, GB or TB. Use binary IEC when the source explicitly uses KiB, MiB, GiB or TiB.' }
+    ],
+    related: [
+      { id: 'base64', anchor: 'work with Base64 text' },
+      { id: 'json', anchor: 'format JSON payloads' }
+    ]
+  },
+
+  'color': {
+    title: 'Free Color Converter — HEX, RGB & HSL',
+    description: 'Convert web colors between HEX, RGB and HSL with validation, a live preview and copy-ready values.',
+    intro: 'Enter a HEX, RGB or HSL color and get equivalent values in the other common web color models.',
+    sections: [
+      {
+        title: 'HEX, RGB and HSL describe the same color differently',
+        paragraphs: [
+          'HEX is a compact hexadecimal representation of red, green and blue channels. RGB exposes those channels directly as values from 0 to 255.',
+          'HSL describes hue as an angle and saturation and lightness as percentages, which can be easier for controlled visual adjustments.'
+        ]
+      },
+      {
+        title: 'What this converter validates',
+        paragraphs: [
+          'HEX input accepts three-digit or six-digit RGB hex values. RGB channels are constrained to 0–255, while HSL saturation and lightness are constrained to 0–100%.',
+          'The current converter focuses on opaque colors and does not expose alpha-channel conversion.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can I enter a 3-digit HEX color?', a: 'Yes. Values such as #0AF are expanded to their six-digit RGB equivalent.' },
+      { q: 'Does the tool support alpha transparency?', a: 'Not in the current version. It converts opaque HEX, RGB and HSL values.' },
+      { q: 'What range does RGB use?', a: 'Each red, green and blue channel uses a value from 0 to 255.' },
+      { q: 'What range does HSL use?', a: 'Hue is expressed in degrees, while saturation and lightness are percentages.' }
+    ],
+    related: [
+      { id: 'png-webp', anchor: 'convert web image formats' },
+      { id: 'json', anchor: 'format color configuration JSON' }
+    ]
+  },
+
+  'time-zone': {
+    title: 'Free Time Zone Converter — Convert Date & Time Between Zones',
+    description: 'Convert a local date and time between IANA time zones with browser timezone rules, UTC output and daylight-saving handling.',
+    intro: 'Choose the zone where a local wall-clock time occurs, then see the same instant in another time zone and in UTC.',
+    sections: [
+      {
+        title: 'A time zone is more than a fixed UTC offset',
+        paragraphs: [
+          'IANA time zones such as Europe/London or America/New_York can change their UTC offset during the year because of daylight-saving rules and historical changes.',
+          'Toolmera uses the browser Intl timezone database so the conversion is based on named zone rules rather than a manually fixed offset.'
+        ]
+      },
+      {
+        title: 'Daylight-saving transitions can be ambiguous',
+        paragraphs: [
+          'When clocks move backward, a local wall-clock time can occur twice. When clocks move forward, some local times do not occur at all.',
+          'The converter uses the browser timezone engine, but ambiguous or skipped local times should be checked carefully for scheduling, legal or operational workflows.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does the converter handle daylight saving time?', a: 'Yes, it uses the browser’s IANA/Intl timezone rules for the selected date and zone.' },
+      { q: 'Can I convert to UTC?', a: 'Yes. Every conversion also shows the matching ISO 8601 UTC timestamp.' },
+      { q: 'Why use named time zones instead of UTC offsets?', a: 'Named zones can apply daylight-saving and historical rules, while a fixed offset such as UTC+2 does not identify those rules.' },
+      { q: 'Are all time zones available?', a: 'Modern browsers expose the IANA timezone list. Toolmera falls back to a smaller common list when that browser API is unavailable.' }
+    ],
+    related: [
+      { id: 'unix-timestamp', anchor: 'convert the same instant to Unix time' },
+      { id: 'date-difference', anchor: 'measure duration between calendar dates' }
+    ]
+  },
+
+  'url-encoder': {
+    title: 'Free URL Encoder & Decoder — Percent-Encoding Tool',
+    description: 'Encode or decode URL components and complete URLs locally with browser-native percent-encoding functions.',
+    intro: 'Percent-encode text for a path or query component, or decode encoded values back into readable text without a server round trip.',
+    sections: [
+      {
+        title: 'URL component vs. complete URL mode',
+        paragraphs: [
+          'Component mode is intended for a value that belongs inside a URL, such as a query parameter, path segment or search term. It encodes reserved syntax characters more aggressively.',
+          'Complete URL mode preserves structural URL characters such as colon, slash and question mark where the browser encoding function treats them as part of the URL syntax.'
+        ]
+      },
+      {
+        title: 'Percent-encoding is not encryption',
+        paragraphs: [
+          'Percent-encoding represents characters in a URL-safe form. Anyone who sees the encoded value can decode it.',
+          'Do not use URL encoding as a privacy or security mechanism for secrets, credentials or sensitive data.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What does %20 mean in a URL?', a: 'It is the percent-encoded representation of a space character.' },
+      { q: 'Should I use component or complete URL mode?', a: 'Use component mode for query values or individual path segments. Use complete URL mode when the input is a full URL and you want to preserve its syntax.' },
+      { q: 'Can decoding fail?', a: 'Yes. Invalid or incomplete percent sequences can cause the browser decoder to reject the input.' },
+      { q: 'Is URL encoding secure?', a: 'No. It is a transport encoding, not encryption.' }
+    ],
+    related: [
+      { id: 'base64', anchor: 'encode text as Base64' },
+      { id: 'slug', anchor: 'create a URL slug from a title' }
+    ]
+  },
+
+  'slug': {
+    title: 'Free Slug Generator — Create Clean URL Slugs',
+    description: 'Turn titles and phrases into lowercase URL slugs with hyphen or underscore separators and optional Unicode preservation.',
+    intro: 'Create compact URL-friendly slugs from headings, article titles or product names and copy the result instantly.',
+    sections: [
+      {
+        title: 'What the slug generator changes',
+        paragraphs: [
+          'The generator lowercases the input, removes combining diacritic marks where possible, replaces runs of separators and punctuation with one chosen separator, and trims separators from the edges.',
+          'ASCII mode removes non-Latin characters instead of inventing transliterations. Unicode preservation keeps letters from other writing systems in the slug.'
+        ]
+      },
+      {
+        title: 'Readable slugs are easier to manage',
+        paragraphs: [
+          'A short descriptive slug can make routes easier to read, share and maintain. It should represent the page topic without repeating an entire sentence.',
+          'Changing a published slug can break inbound links unless the old URL is redirected, so treat live URL changes carefully.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does the tool transliterate Cyrillic or other scripts?', a: 'No. ASCII mode removes non-Latin characters rather than guessing a transliteration. Enable Unicode preservation if you want those letters kept.' },
+      { q: 'Can I use underscores instead of hyphens?', a: 'Yes. The separator selector supports hyphens and underscores.' },
+      { q: 'Does it lowercase the slug?', a: 'Yes. Output is normalized to lowercase.' },
+      { q: 'Should I change an existing indexed URL just to improve the slug?', a: 'Not casually. A URL change can affect links and indexing; use redirects when changing a published route.' }
+    ],
+    related: [
+      { id: 'case-converter', anchor: 'transform text case first' },
+      { id: 'url-encoder', anchor: 'percent-encode a URL component' }
+    ]
+  },
+
+  'jwt': {
+    title: 'Free JWT Decoder — Decode Header & Payload Locally',
+    description: 'Decode JWT header and payload JSON locally, inspect exp, iat and nbf timestamps, and keep signature verification clearly separate.',
+    intro: 'Paste a compact JSON Web Token to inspect its first two Base64URL-encoded parts. Decoding does not verify that the token is authentic or trustworthy.',
+    sections: [
+      {
+        title: 'What a JWT decoder can safely tell you',
+        paragraphs: [
+          'A compact JWT typically contains a Base64URL-encoded header, a Base64URL-encoded payload and a signature. The first two parts can be decoded without any secret key.',
+          'That means decoding only reveals the claims carried in the token. It does not prove that the issuer created the token or that the payload has not been altered.'
+        ]
+      },
+      {
+        title: 'Signature verification is a separate security step',
+        paragraphs: [
+          'Real verification requires the expected signing algorithm and the correct verification key or public key, plus validation of issuer, audience and any application-specific policy.',
+          'Toolmera intentionally does not present decoded claims as verified. The exp, iat and nbf timestamps are shown as convenience fields only.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does Toolmera verify JWT signatures?', a: 'No. This page decodes the header and payload only.' },
+      { q: 'What does exp mean?', a: 'exp is a NumericDate claim representing the token expiration time in seconds since the Unix epoch.' },
+      { q: 'What does iat mean?', a: 'iat is the issued-at NumericDate claim when the issuer includes it.' },
+      { q: 'Is a readable JWT payload secret?', a: 'No. JWT payloads are commonly Base64URL-encoded rather than encrypted, so sensitive information should not be assumed private simply because it appears inside a token.' }
+    ],
+    related: [
+      { id: 'json', anchor: 'format decoded JSON' },
+      { id: 'base64', anchor: 'work with Base64URL text' }
+    ]
   }
+
 };
 
 export const categorySeoContent: Record<string, {
@@ -1788,15 +2024,15 @@ export const categorySeoContent: Record<string, {
   },
 
   converters: {
-    title: 'Free Unit Converters — Length, Weight, Volume, Area & Temperature',
-    description: 'Free online converters for length, weight, volume, area and temperature with clearly labeled units and browser-side calculations.',
-    intro: 'Convert physical measurements across metric, customary and Imperial units with focused tools and transparent unit definitions.',
+    title: 'Free Online Converters — Units, Speed, Storage & Color',
+    description: 'Free online converters for length, weight, volume, area, temperature, speed, digital storage and web colors.',
+    intro: 'Convert physical measurements, digital storage sizes and common web color formats with focused browser-based tools and explicit definitions.',
     sections: [
       {
         title: 'Which converter do you need?',
         paragraphs: [
-          'Use Length for distance, Weight for mass, Volume for liquid and capacity units, Area for surface or land measurements, and Temperature for Celsius, Fahrenheit or Kelvin.',
-          'Each converter updates in the browser and exposes clear unit labels, especially where similar names such as US and Imperial gallons represent different quantities.'
+          'Use Length for distance, Weight for mass, Volume for capacity, Area for surfaces, Temperature for Celsius/Fahrenheit/Kelvin and Speed for km/h, mph, m/s, ft/s or knots.',
+          'Use Data Storage when decimal and binary file-size units need to stay distinct, and Color Converter when you need equivalent HEX, RGB or HSL values.'
         ]
       },
       {
@@ -1810,15 +2046,15 @@ export const categorySeoContent: Record<string, {
   },
 
   text: {
-    title: 'Online Text Tools — Word Counter & Case Converter',
-    description: 'Count words, characters, sentences and paragraphs or transform text between editorial and developer case styles.',
-    intro: 'Analyze text length and structure or transform capitalization with browser-side text utilities.',
+    title: 'Free Text Tools — Word Counter, Case Converter & Slug Generator',
+    description: 'Count text, transform capitalization and generate clean URL slugs directly in your browser.',
+    intro: 'Analyze text length, transform capitalization or turn titles into URL-friendly slugs with focused browser-side utilities.',
     sections: [
       {
         title: 'Which text tool do you need?',
         paragraphs: [
-          'Use Word Counter when you need words, characters, sentences, paragraphs or an estimated reading time. Use Case Converter when you need to change capitalization or transform words into developer naming styles.',
-          'The two tools cover different jobs: measurement versus transformation. Both work directly on the text you enter in the browser.'
+          'Use Word Counter for words, characters, sentences, paragraphs or estimated reading time. Use Case Converter for capitalization and developer naming styles.',
+          'Use Slug Generator when a title or phrase needs to become a compact lowercase route segment with controlled separators and optional Unicode preservation.'
         ]
       },
       {
@@ -1832,22 +2068,22 @@ export const categorySeoContent: Record<string, {
   },
 
   developer: {
-    title: 'Developer Tools — JSON & Base64 Utilities',
-    description: 'Format, validate and minify JSON or encode and decode UTF-8 Base64 and Base64URL text directly in your browser.',
-    intro: 'Lightweight developer utilities for JSON inspection and Base64 text encoding, built around local browser execution.',
+    title: 'Developer Tools — JSON, Base64, URL Encoding & JWT',
+    description: 'Format JSON, encode or decode Base64 and URLs, and inspect JWT header and payload data directly in your browser.',
+    intro: 'Lightweight developer utilities for structured data, text encodings, URL percent-encoding and local JWT inspection.',
     sections: [
       {
         title: 'Which developer tool do you need?',
         paragraphs: [
-          'Use JSON Formatter to pretty-print, minify and validate strict JSON syntax. Use Base64 Encode / Decode to convert UTF-8 text to standard Base64 or Base64URL and back.',
-          'These tools are intentionally narrow: JSON formatting does not repair malformed data, and the Base64 utility is text-focused rather than a file encoder.'
+          'Use JSON Formatter to pretty-print and validate strict JSON, Base64 Encode / Decode for text encodings, URL Encoder / Decoder for percent-encoding, and JWT Decoder to inspect compact token header and payload JSON.',
+          'Each tool stays intentionally narrow. In particular, Base64 and URL encoding are not encryption, and JWT decoding is not signature verification.'
         ]
       },
       {
         title: 'Local processing for developer payloads',
         paragraphs: [
-          'Both current developer utilities execute their core transformations in the browser. JSON uses native parsing and serialization, while Base64 uses browser byte and text encoding APIs.',
-          'Local execution reduces the need to send pasted payloads to a Toolmera processing endpoint, but Base64 itself should never be confused with encryption or secret storage.'
+          'The current developer utilities execute their core transformations in the browser. JSON uses native parsing, Base64 uses browser byte/text APIs, URL encoding uses native URI functions and JWT decoding operates on the token locally.',
+          'Local execution reduces unnecessary server round trips, but developers should still avoid pasting production secrets into any tool unless the workflow and environment are appropriate.'
         ]
       }
     ]
@@ -1876,15 +2112,15 @@ export const categorySeoContent: Record<string, {
   },
 
   time: {
-    title: 'Free Time & Date Tools — Unix Timestamp Converter',
-    description: 'Free browser-based time utilities for converting Unix epoch timestamps to readable UTC and local dates and back.',
-    intro: 'Work with Unix epoch values and human-readable date-time formats without server round trips.',
+    title: 'Free Time & Date Tools — Time Zones & Unix Timestamps',
+    description: 'Convert Unix timestamps and translate local date-times between IANA time zones with browser-based timezone rules.',
+    intro: 'Work with Unix epoch values, UTC and named time zones without server round trips.',
     sections: [
       {
-        title: 'Unix time for developer and admin workflows',
+        title: 'Time zones and Unix time for real workflows',
         paragraphs: [
-          'Unix timestamps are common in APIs, logs, databases and infrastructure tools. The converter handles seconds and milliseconds and shows the same instant in UTC, local and ISO forms.',
-          'The Time & Date category will remain focused on utilities where timezone or timestamp semantics materially affect the result.'
+          'Unix timestamps are common in APIs, logs and databases, while named IANA time zones are essential when a human wall-clock time needs daylight-saving rules.',
+          'Use Unix Timestamp Converter for epoch values and Time Zone Converter when the same instant needs to be represented across locations such as Europe/Kyiv, America/New_York or Asia/Kolkata.'
         ]
       }
     ]
