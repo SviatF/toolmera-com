@@ -1947,7 +1947,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { id: 'json', anchor: 'format decoded JSON' },
       { id: 'base64', anchor: 'work with Base64URL text' }
     ]
-  }
+  },
 
 
   'character-counter': {
