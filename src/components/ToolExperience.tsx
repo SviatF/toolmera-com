@@ -2193,8 +2193,222 @@ function Base64Tool(){
   </div>;
 }
 
+
+function SpeedConverter(){
+  const units:MatrixUnit[]=[
+    {id:'ms',label:'Meter per second (m/s)',factor:1},
+    {id:'kmh',label:'Kilometer per hour (km/h)',factor:1/3.6},
+    {id:'mph',label:'Mile per hour (mph)',factor:.44704},
+    {id:'fts',label:'Foot per second (ft/s)',factor:.3048},
+    {id:'knot',label:'Knot (kn)',factor:.5144444444444445},
+  ];
+  return <MatrixUnitConverter units={units} defaultFrom="kmh" defaultTo="mph" note="Knots use the international nautical mile definition: 1 knot = 1 nautical mile per hour = 0.514444… m/s."/>;
+}
+
+function DataStorageConverter(){
+  const [mode,setMode]=useState<'decimal'|'binary'>('decimal');
+  const [value,setValue]=useState(1);
+  const [from,setFrom]=useState('GB');
+  const [to,setTo]=useState('MB');
+  const [copied,setCopied]=useState('');
+  const units=useMemo(()=>mode==='decimal'?[
+    {id:'B',label:'Byte (B)',factor:1},
+    {id:'KB',label:'Kilobyte (KB)',factor:1e3},
+    {id:'MB',label:'Megabyte (MB)',factor:1e6},
+    {id:'GB',label:'Gigabyte (GB)',factor:1e9},
+    {id:'TB',label:'Terabyte (TB)',factor:1e12},
+    {id:'PB',label:'Petabyte (PB)',factor:1e15},
+  ]:[
+    {id:'B',label:'Byte (B)',factor:1},
+    {id:'KiB',label:'Kibibyte (KiB)',factor:1024},
+    {id:'MiB',label:'Mebibyte (MiB)',factor:1024**2},
+    {id:'GiB',label:'Gibibyte (GiB)',factor:1024**3},
+    {id:'TiB',label:'Tebibyte (TiB)',factor:1024**4},
+    {id:'PiB',label:'Pebibyte (PiB)',factor:1024**5},
+  ],[mode]);
+  useEffect(()=>{if(mode==='decimal'){setFrom('GB');setTo('MB')}else{setFrom('GiB');setTo('MiB')}},[mode]);
+  const fromUnit=units.find(u=>u.id===from)||units[0],toUnit=units.find(u=>u.id===to)||units[1];
+  const bytes=value*fromUnit.factor,converted=bytes/toUnit.factor;
+  const format=(n:number)=>Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumSignificantDigits:12}).format(n):'—';
+  async function copy(key:string,v:string){await copyPlainText(v);setCopied(key);window.setTimeout(()=>setCopied(''),1200)}
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs"><button className={mode==='decimal'?'active':''} onClick={()=>setMode('decimal')}>Decimal SI (1000)</button><button className={mode==='binary'?'active':''} onClick={()=>setMode('binary')}>Binary IEC (1024)</button></div>
+    <div className="fieldGrid matrixFields">
+      <label>Value<input type="number" value={value} onChange={e=>setValue(+e.target.value)}/></label>
+      <label>From<select value={from} onChange={e=>setFrom(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+      <label>To<select value={to} onChange={e=>setTo(e.target.value)}>{units.map(u=><option key={u.id} value={u.id}>{u.label}</option>)}</select></label>
+      <button className="secondaryButton matrixSwap" onClick={()=>{setFrom(to);setTo(from)}}><RefreshCw size={15}/> Swap units</button>
+    </div>
+    <div className="durationHero matrixHero"><strong>{format(converted)}</strong><span>{toUnit.label}</span></div>
+    <div className="conversionMatrix">{units.map(unit=>{const v=bytes/unit.factor;const out=format(v);return <div key={unit.id}><span>{unit.label}</span><strong>{out}</strong><button onClick={()=>copy(unit.id,out)}>{copied===unit.id?<Check size={14}/>:<Copy size={14}/>}</button></div>})}</div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>{mode==='decimal'?'Decimal storage uses powers of 1000: 1 GB = 1,000,000,000 bytes.':'Binary IEC storage uses powers of 1024: 1 GiB = 1,073,741,824 bytes.'}</span></div>
+  </div>;
+}
+
+type Rgb={r:number;g:number;b:number};
+type Hsl={h:number;s:number;l:number};
+function clamp255(n:number){return Math.max(0,Math.min(255,Math.round(n)))}
+function normalizeHue(n:number){const h=n%360;return h<0?h+360:h}
+function hexToRgbValue(hex:string):Rgb|null{
+  let v=hex.trim().replace(/^#/,'');
+  if(/^[0-9a-f]{3}$/i.test(v))v=v.split('').map(ch=>ch+ch).join('');
+  if(!/^[0-9a-f]{6}$/i.test(v))return null;
+  return {r:parseInt(v.slice(0,2),16),g:parseInt(v.slice(2,4),16),b:parseInt(v.slice(4,6),16)};
+}
+function rgbToHexValue({r,g,b}:Rgb){return '#'+[r,g,b].map(v=>clamp255(v).toString(16).padStart(2,'0')).join('').toUpperCase()}
+function rgbToHslValue({r,g,b}:Rgb):Hsl{
+  const rn=r/255,gn=g/255,bn=b/255,max=Math.max(rn,gn,bn),min=Math.min(rn,gn,bn);
+  let h=0,s=0;const l=(max+min)/2,d=max-min;
+  if(d){s=d/(1-Math.abs(2*l-1));if(max===rn)h=60*(((gn-bn)/d)%6);else if(max===gn)h=60*((bn-rn)/d+2);else h=60*((rn-gn)/d+4)}
+  return {h:normalizeHue(h),s:s*100,l:l*100};
+}
+function hslToRgbValue({h,s,l}:Hsl):Rgb{
+  const hue=normalizeHue(h),sat=Math.max(0,Math.min(100,s))/100,light=Math.max(0,Math.min(100,l))/100;
+  const ch=(1-Math.abs(2*light-1))*sat,x=ch*(1-Math.abs((hue/60)%2-1)),m=light-ch/2;
+  let rp=0,gp=0,bp=0;
+  if(hue<60){rp=ch;gp=x}else if(hue<120){rp=x;gp=ch}else if(hue<180){gp=ch;bp=x}else if(hue<240){gp=x;bp=ch}else if(hue<300){rp=x;bp=ch}else{rp=ch;bp=x}
+  return {r:(rp+m)*255,g:(gp+m)*255,b:(bp+m)*255};
+}
+function ColorConverter(){
+  const [mode,setMode]=useState<'hex'|'rgb'|'hsl'>('hex');
+  const [hex,setHex]=useState('#2F80FF');
+  const [r,setR]=useState(47),[g,setG]=useState(128),[b,setB]=useState(255);
+  const [h,setH]=useState(214),[s,setS]=useState(100),[l,setL]=useState(59);
+  const [copied,setCopied]=useState('');
+  function currentRgb():Rgb|null{
+    if(mode==='hex')return hexToRgbValue(hex);
+    if(mode==='rgb')return [r,g,b].some(v=>!Number.isFinite(v)||v<0||v>255)?null:{r,g,b};
+    return !Number.isFinite(h)||!Number.isFinite(s)||!Number.isFinite(l)||s<0||s>100||l<0||l>100?null:hslToRgbValue({h,s,l});
+  }
+  const rgb=currentRgb();
+  const outputs=rgb?(()=>{const hv=rgbToHexValue(rgb),hs=rgbToHslValue(rgb);return {hex:hv,rgb:'rgb('+clamp255(rgb.r)+', '+clamp255(rgb.g)+', '+clamp255(rgb.b)+')',hsl:'hsl('+Math.round(hs.h)+', '+Math.round(hs.s)+'%, '+Math.round(hs.l)+'%)'}})():null;
+  function sync(next:'hex'|'rgb'|'hsl'){
+    if(outputs&&rgb){const hs=rgbToHslValue(rgb);setHex(outputs.hex);setR(clamp255(rgb.r));setG(clamp255(rgb.g));setB(clamp255(rgb.b));setH(Math.round(hs.h));setS(Math.round(hs.s));setL(Math.round(hs.l))}
+    setMode(next);
+  }
+  async function copy(key:string,value:string){await copyPlainText(value);setCopied(key);window.setTimeout(()=>setCopied(''),1200)}
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs"><button className={mode==='hex'?'active':''} onClick={()=>sync('hex')}>HEX</button><button className={mode==='rgb'?'active':''} onClick={()=>sync('rgb')}>RGB</button><button className={mode==='hsl'?'active':''} onClick={()=>sync('hsl')}>HSL</button></div>
+    {mode==='hex'&&<label className="singleField">HEX color<input value={hex} onChange={e=>setHex(e.target.value)} placeholder="#2F80FF"/></label>}
+    {mode==='rgb'&&<div className="fieldGrid"><label>Red<input type="number" min="0" max="255" value={r} onChange={e=>setR(+e.target.value)}/></label><label>Green<input type="number" min="0" max="255" value={g} onChange={e=>setG(+e.target.value)}/></label><label>Blue<input type="number" min="0" max="255" value={b} onChange={e=>setB(+e.target.value)}/></label></div>}
+    {mode==='hsl'&&<div className="fieldGrid"><label>Hue<input type="number" value={h} onChange={e=>setH(+e.target.value)}/></label><label>Saturation %<input type="number" min="0" max="100" value={s} onChange={e=>setS(+e.target.value)}/></label><label>Lightness %<input type="number" min="0" max="100" value={l} onChange={e=>setL(+e.target.value)}/></label></div>}
+    {!outputs?<div className="toolError">Enter a valid {mode.toUpperCase()} color value.</div>:<>
+      <div className="colorPreviewLarge" style={{background:outputs.hex}}><span>{outputs.hex}</span></div>
+      <div className="conversionMatrix">{([['hex','HEX',outputs.hex],['rgb','RGB',outputs.rgb],['hsl','HSL',outputs.hsl]] as const).map(([key,label,value])=><div key={key}><span>{label}</span><strong>{value}</strong><button onClick={()=>copy(key,value)}>{copied===key?<Check size={14}/>:<Copy size={14}/>}</button></div>)}</div>
+    </>}
+  </div>;
+}
+
+function availableTimeZones(){
+  const intl=Intl as typeof Intl & {supportedValuesOf?:(key:'timeZone')=>string[]};
+  if(intl.supportedValuesOf){try{return intl.supportedValuesOf('timeZone')}catch{}}
+  return ['UTC','America/New_York','America/Los_Angeles','America/Chicago','Europe/London','Europe/Berlin','Europe/Warsaw','Europe/Kyiv','Asia/Kolkata','Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney'];
+}
+function zoneParts(epoch:number,zone:string){
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(epoch));
+  const get=(type:string)=>Number(parts.find(p=>p.type===type)?.value||0);
+  return {year:get('year'),month:get('month'),day:get('day'),hour:get('hour'),minute:get('minute'),second:get('second')};
+}
+function wallTimeToEpoch(input:string,zone:string){
+  const match=input.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if(!match)return null;
+  const targetUtc=Date.UTC(+match[1],+match[2]-1,+match[3],+match[4],+match[5],+(match[6]||0));
+  let guess=targetUtc;
+  for(let i=0;i<3;i++){const p=zoneParts(guess,zone);const represented=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);guess=targetUtc-(represented-guess)}
+  return guess;
+}
+function TimeZoneConverter(){
+  const zones=useMemo(()=>availableTimeZones(),[]);
+  const browserZone=typeof Intl!=='undefined'?Intl.DateTimeFormat().resolvedOptions().timeZone:'UTC';
+  const [from,setFrom]=useState(browserZone||'UTC');
+  const [to,setTo]=useState(browserZone==='America/New_York'?'Europe/London':'America/New_York');
+  const [input,setInput]=useState('');
+  const [copied,setCopied]=useState('');
+  useEffect(()=>{if(input)return;const d=new Date(),pad=(v:number)=>String(v).padStart(2,'0');setInput(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes()))},[input]);
+  const epoch=useMemo(()=>wallTimeToEpoch(input,from),[input,from]);
+  const sourceText=epoch!==null?new Intl.DateTimeFormat('en-US',{timeZone:from,dateStyle:'full',timeStyle:'long'}).format(new Date(epoch)):'';
+  const targetText=epoch!==null?new Intl.DateTimeFormat('en-US',{timeZone:to,dateStyle:'full',timeStyle:'long'}).format(new Date(epoch)):'';
+  async function copy(key:string,value:string){await copyPlainText(value);setCopied(key);window.setTimeout(()=>setCopied(''),1200)}
+  return <div className="toolUi">
+    <label className="singleField">Date & time in source zone<input type="datetime-local" value={input} onChange={e=>setInput(e.target.value)}/></label>
+    <div className="fieldGrid timezoneFields"><label>From<select value={from} onChange={e=>setFrom(e.target.value)}>{zones.map(zone=><option key={zone} value={zone}>{zone}</option>)}</select></label><label>To<select value={to} onChange={e=>setTo(e.target.value)}>{zones.map(zone=><option key={zone} value={zone}>{zone}</option>)}</select></label><button className="secondaryButton matrixSwap" onClick={()=>{setFrom(to);setTo(from)}}><RefreshCw size={15}/> Swap zones</button></div>
+    {epoch===null?<div className="toolError">Enter a valid date and time.</div>:<div className="timezoneResults">
+      <div><span>Source · {from}</span><strong>{sourceText}</strong><button onClick={()=>copy('source',sourceText)}>{copied==='source'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+      <div className="targetZoneResult"><span>Converted · {to}</span><strong>{targetText}</strong><button onClick={()=>copy('target',targetText)}>{copied==='target'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+      <div><span>UTC / ISO 8601</span><strong>{new Date(epoch).toISOString()}</strong><button onClick={()=>copy('iso',new Date(epoch).toISOString())}>{copied==='iso'?<Check size={14}/>:<Copy size={14}/>}</button></div>
+    </div>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>Time-zone rules come from the browser&apos;s IANA/Intl data. Around daylight-saving transitions, some local clock times can be ambiguous or may not exist.</span></div>
+  </div>;
+}
+
+function UrlEncoderDecoder(){
+  const [text,setText]=useState(''),[output,setOutput]=useState('');
+  const [scope,setScope]=useState<'component'|'url'>('component');
+  const [error,setError]=useState(''),[copied,setCopied]=useState(false);
+  function run(action:'encode'|'decode'){try{const result=action==='encode'?(scope==='component'?encodeURIComponent(text):encodeURI(text)):(scope==='component'?decodeURIComponent(text):decodeURI(text));setOutput(result);setError('');setCopied(false)}catch(e){setOutput('');setError(e instanceof Error?e.message:'Could not transform this URL value.')}}
+  async function copy(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs"><button className={scope==='component'?'active':''} onClick={()=>setScope('component')}>URL component</button><button className={scope==='url'?'active':''} onClick={()=>setScope('url')}>Complete URL</button></div>
+    <textarea className="textArea codeArea" value={text} onChange={e=>setText(e.target.value)} placeholder={scope==='component'?'Search term, path segment or query value…':'https://example.com/path?q=hello world'}/>
+    <div className="buttonRow"><button className="primaryButton" onClick={()=>run('encode')}>Encode</button><button className="secondaryButton" onClick={()=>run('decode')}>Decode</button></div>
+    {error&&<div className="toolError">{error}</div>}
+    <div className="outputWrap"><textarea className="textArea output codeArea" readOnly value={output} placeholder="Encoded or decoded result…"/><button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Component mode uses encodeURIComponent/decodeURIComponent. Full URL mode keeps URL syntax characters such as : / ? & = available where appropriate.</span></div>
+  </div>;
+}
+
+function createSlug(text:string,separator:string,preserveUnicode:boolean){
+  let value=text.trim().toLocaleLowerCase().normalize('NFKD').replace(/\p{M}+/gu,'');
+  if(preserveUnicode)value=value.replace(/[^\p{L}\p{N}]+/gu,separator);
+  else value=value.replace(/[^\x00-\x7F]/g,'').replace(/[^a-z0-9]+/g,separator);
+  const repeats=separator==='-'?/-+/g:/_+/g;
+  const edges=separator==='-'?/^-+|-+$/g:/^_+|_+$/g;
+  return value.replace(repeats,separator).replace(edges,'');
+}
+function SlugGenerator(){
+  const [text,setText]=useState(''),[separator,setSeparator]=useState('-'),[preserveUnicode,setPreserveUnicode]=useState(false),[copied,setCopied]=useState(false);
+  const output=useMemo(()=>createSlug(text,separator,preserveUnicode),[text,separator,preserveUnicode]);
+  async function copy(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={e=>setText(e.target.value)} placeholder="Free Online Tools for Faster Everyday Work"/>
+    <div className="fieldGrid generatorFields"><label>Separator<select value={separator} onChange={e=>setSeparator(e.target.value)}><option value="-">Hyphen (-)</option><option value="_">Underscore (_)</option></select></label><label className="checkControl slugCheck"><input type="checkbox" checked={preserveUnicode} onChange={e=>setPreserveUnicode(e.target.checked)}/><span>Preserve non-Latin letters</span></label></div>
+    <div className="slugOutput"><span>URL slug</span><code>{output||'—'}</code><button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>ASCII mode removes non-Latin characters rather than guessing transliterations. Enable Unicode preservation when you want native-script URL slugs.</span></div>
+  </div>;
+}
+
+function decodeJwtPart(value:string){
+  let normalized=value.replace(/-/g,'+').replace(/_/g,'/');normalized+='='.repeat((4-normalized.length%4)%4);
+  return new TextDecoder('utf-8',{fatal:true}).decode(base64ToBytes(normalized));
+}
+function JwtDecoder(){
+  const [token,setToken]=useState(''),[header,setHeader]=useState(''),[payload,setPayload]=useState('');
+  const [claims,setClaims]=useState<{exp?:number;iat?:number;nbf?:number}|null>(null);
+  const [error,setError]=useState(''),[copied,setCopied]=useState('');
+  function decode(){
+    try{
+      const parts=token.trim().split('.');if(parts.length!==3)throw new Error('A compact JWT should contain three dot-separated parts.');
+      const headerObj=JSON.parse(decodeJwtPart(parts[0])),payloadObj=JSON.parse(decodeJwtPart(parts[1]));
+      setHeader(JSON.stringify(headerObj,null,2));setPayload(JSON.stringify(payloadObj,null,2));
+      setClaims({exp:typeof payloadObj.exp==='number'?payloadObj.exp:undefined,iat:typeof payloadObj.iat==='number'?payloadObj.iat:undefined,nbf:typeof payloadObj.nbf==='number'?payloadObj.nbf:undefined});setError('');setCopied('');
+    }catch(e){setHeader('');setPayload('');setClaims(null);setError(e instanceof Error?e.message:'Could not decode this JWT.')}
+  }
+  async function copy(key:string,value:string){await copyPlainText(value);setCopied(key);window.setTimeout(()=>setCopied(''),1200)}
+  const exp=claims?.exp?new Date(claims.exp*1000):null,status=exp?(exp.getTime()<Date.now()?'Expired':'Not expired by exp claim'):'No exp claim';
+  return <div className="toolUi">
+    <textarea className="textArea codeArea jwtInput" value={token} onChange={e=>setToken(e.target.value)} placeholder="eyJhbGciOi..."/>
+    <button className="primaryButton wide" onClick={decode}>Decode JWT</button>
+    {error&&<div className="toolError">{error}</div>}
+    {header&&payload&&<>
+      <div className="jwtStatus"><span>Token timing</span><strong>{status}</strong>{exp&&<small>exp · {exp.toISOString()}</small>}{claims?.iat&&<small>iat · {new Date(claims.iat*1000).toISOString()}</small>}{claims?.nbf&&<small>nbf · {new Date(claims.nbf*1000).toISOString()}</small>}</div>
+      <div className="jwtGrid"><div><div className="queueHead"><span>Header</span><button className="copyButton" onClick={()=>copy('header',header)}>{copied==='header'?<Check size={14}/>:<Copy size={14}/>} Copy</button></div><textarea className="textArea output codeArea" readOnly value={header}/></div><div><div className="queueHead"><span>Payload</span><button className="copyButton" onClick={()=>copy('payload',payload)}>{copied==='payload'?<Check size={14}/>:<Copy size={14}/>} Copy</button></div><textarea className="textArea output codeArea" readOnly value={payload}/></div></div>
+    </>}
+    <div className="toolError jwtWarning"><ShieldCheck size={15}/><span>Decoding is not verification. Toolmera does not validate the JWT signature, issuer, audience or trustworthiness of any claim on this page.</span></div>
+  </div>;
+}
+
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
