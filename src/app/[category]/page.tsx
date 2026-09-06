@@ -37,6 +37,11 @@ const groupedCategoryTools: Record<string,{title:string;description:string;ids:s
   time: [
     { title: 'Epoch & Timestamps', description: 'Convert Unix time to readable dates and back.', ids: ['unix-timestamp'] },
   ],
+  'website-analysis': [
+    { title: 'Full Audit & SEO', description: 'Run broad website audits or focus on on-page search signals.', ids: ['website-analyzer','seo-checker','meta-tag-checker'] },
+    { title: 'Crawl & HTTP', description: 'Inspect statuses, redirects and crawl-control files.', ids: ['http-status-checker','redirect-checker','robots-checker','sitemap-checker'] },
+    { title: 'Security & Technology', description: 'Review HTTPS, browser security headers and public technology fingerprints.', ids: ['ssl-checker','security-headers-checker','technology-checker'] },
+  ],
 };
 
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
@@ -74,7 +79,7 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
     <section className="shell categoryHero compactHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><span>{cat.label}</span></div>
       <span className="eyebrow neonText">TOOLMERA / {cat.label.toUpperCase()}</span>
-      <h1>{cat.label}</h1>
+      <h1>{category==='website-analysis'?'Free Website Analysis Tools':cat.label}</h1>
       <p>{seo?.intro||`${cat.description} Fast, focused and designed with privacy in mind.`}</p>
       <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>

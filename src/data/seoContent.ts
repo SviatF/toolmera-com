@@ -2086,6 +2086,411 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     related: [{ id: 'time-zone', anchor: 'convert date-times between zones' }, { id: 'date-difference', anchor: 'compare calendar dates' }]
   },
 
+  'website-analyzer': {
+    title: 'Free Website Analyzer — SEO, Security & Technical Site Audit',
+    description: 'Free website analyzer for live SEO, metadata, headings, crawlability, robots.txt, XML sitemap, security headers, redirects and technology signals.',
+    intro: 'Analyze any public webpage with a free website analysis tool that reads the live HTML response, HTTP headers and crawl-control files. Use the report as a fast first-pass website health check before deeper SEO, performance or security work.',
+    sections: [
+      {
+        title: 'What this free website analyzer checks',
+        paragraphs: [
+          'The Website Analyzer combines signals that are usually checked in separate tools: HTTP response status, final URL, page title, meta description, canonical URL, robots directives, viewport, H1 structure, image alt coverage, internal and external links, structured data, robots.txt, XML sitemap availability, browser security headers and recognizable technology fingerprints.',
+          'The report is evidence-based. It only scores signals Toolmera can verify from a public response. It does not invent domain authority, backlink counts, keyword rankings or monthly traffic estimates, and it does not claim access to private server configuration.'
+        ]
+      },
+      {
+        title: 'Use it for technical website audits and competitor research',
+        paragraphs: [
+          'A quick technical website audit is useful before a redesign, migration, SEO campaign or competitor review. A 200 response with a missing canonical, multiple H1 tags, no sitemap or a site-wide robots block tells a very different story from a page that is crawlable but simply needs stronger content.',
+          'For competitor analysis, the tool can reveal public implementation details such as CMS or framework fingerprints, analytics tags, CDN signals, response headers and crawl files. These are observable technical signals, not estimates of a competitor’s private analytics.'
+        ]
+      },
+      {
+        title: 'How to interpret the website SEO score',
+        paragraphs: [
+          'The score is a compact diagnostic, not a Google ranking score. It rewards a successful response, reasonable title and description lengths, one H1, a canonical tag, indexable robots directives, a mobile viewport, strong image alt coverage, structured data and reachable crawl files.',
+          'A lower score should be used to prioritize checks, not as proof that a page cannot rank. Search performance also depends on relevance, content quality, internal and external links, user intent, competition and many signals that a single live-page scan cannot measure.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Is the Toolmera Website Analyzer free?', a: 'Yes. You can analyze public HTTP and HTTPS pages without creating an account.' },
+      { q: 'Can I analyze a competitor website?', a: 'Yes, if the page is publicly reachable. The tool only reads public responses and does not access private analytics or restricted server data.' },
+      { q: 'Does the analyzer show real website traffic?', a: 'No. Toolmera does not fabricate traffic estimates. Real traffic requires first-party analytics or a dedicated third-party traffic intelligence dataset.' },
+      { q: 'Does the tool render JavaScript?', a: 'The current analyzer reads the server-returned HTML and headers. Content injected only after client-side JavaScript runs may not appear in the report.' },
+      { q: 'Is the SEO score a Google ranking score?', a: 'No. It is a Toolmera diagnostic score based on verifiable technical and on-page checks, not a prediction from Google.' }
+    ],
+    related: [{ id: 'seo-checker', anchor: 'run a focused SEO audit' }, { id: 'security-headers-checker', anchor: 'check browser security headers' }, { id: 'technology-checker', anchor: 'detect website technologies' }, { id: 'redirect-checker', anchor: 'trace redirect chains' }],
+    sources: [
+      { label: 'Google Search Essentials', href: 'https://developers.google.com/search/docs/essentials' },
+      { label: 'Google canonicalization guidance', href: 'https://developers.google.com/search/docs/crawling-indexing/canonicalization' }
+    ]
+  },
+
+  'seo-checker': {
+    title: 'Free SEO Checker — On-Page & Technical SEO Website Audit',
+    description: 'Free SEO checker for title tags, meta descriptions, H1 structure, canonical URLs, robots directives, image ALT text, schema, robots.txt and sitemaps.',
+    intro: 'Run a free on-page and technical SEO check against a live URL. Toolmera focuses on crawlable evidence: metadata, headings, indexability signals, links, images, structured data and the site files search engines use to discover and control crawling.',
+    sections: [
+      {
+        title: 'On-page SEO checks for titles, descriptions and headings',
+        paragraphs: [
+          'The checker extracts the HTML title, meta description and heading structure directly from the fetched page. It reports character counts so you can spot missing or unusually short and long metadata without assuming that one exact length guarantees how Google will display a search result.',
+          'It also checks the H1 count, image alt coverage, internal and external link counts, mobile viewport and detected schema types. These signals help answer long-tail audit questions such as whether a page has multiple H1 tags, missing image alt attributes or no structured data.'
+        ]
+      },
+      {
+        title: 'Technical SEO and indexability signals',
+        paragraphs: [
+          'A page can have strong copy and still be difficult to crawl if the final URL redirects unexpectedly, returns an error, declares noindex, lacks a canonical URL or sits behind a robots.txt rule that blocks crawlers. Toolmera surfaces those signals next to the on-page report instead of separating them into unrelated dashboards.',
+          'The checker also tests robots.txt and sitemap availability for the final origin. This makes it useful as a lightweight technical SEO audit before opening Search Console, crawling a full site or investigating why a specific URL is not being discovered.'
+        ]
+      },
+      {
+        title: 'What a free SEO checker cannot prove',
+        paragraphs: [
+          'A live URL scan cannot determine whether Google has indexed the page, which queries it ranks for, how many backlinks it has or how much organic traffic it receives. Those require Search Console, backlink indexes, analytics or other datasets.',
+          'Use this report to fix observable page-level issues first. Then validate indexing and search performance with first-party search data rather than treating any third-party SEO score as a ranking guarantee.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What does this free SEO checker analyze?', a: 'It checks live metadata, headings, canonical and robots signals, links, images, schema, robots.txt, sitemap availability and HTTP response details.' },
+      { q: 'Can it tell if a page is indexed by Google?', a: 'No. A public page scan cannot authoritatively confirm Google index status. Use Google Search Console URL Inspection for that.' },
+      { q: 'Does one H1 matter for SEO?', a: 'The checker reports H1 count as a structural signal. A clear primary heading is useful, but a page is not automatically penalized simply because more than one H1 exists.' },
+      { q: 'Why does the tool check canonical tags?', a: 'Canonical annotations help signal the preferred URL when similar or duplicate pages exist. Missing or conflicting canonicals can complicate consolidation.' },
+      { q: 'Can I use this as a technical SEO audit tool?', a: 'Yes, for a fast page-level audit. A large site still benefits from a full crawler and Search Console data for site-wide coverage.' }
+    ],
+    related: [{ id: 'website-analyzer', anchor: 'run the complete website audit' }, { id: 'meta-tag-checker', anchor: 'inspect SEO and social metadata' }, { id: 'robots-checker', anchor: 'check robots.txt rules' }, { id: 'sitemap-checker', anchor: 'inspect an XML sitemap' }],
+    sources: [
+      { label: 'Google SEO Starter Guide', href: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide' },
+      { label: 'Google robots meta documentation', href: 'https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag' }
+    ]
+  },
+
+  'meta-tag-checker': {
+    title: 'Free Meta Tag Checker — Analyze SEO & Social Meta Tags',
+    description: 'Free meta tag checker for page title, meta description, canonical, robots, viewport, language, charset, Open Graph and Twitter Card tags.',
+    intro: 'Check the metadata a public webpage sends in its raw HTML. This free meta tag analyzer is built for SEO reviews, social preview debugging and migrations where a stale canonical, noindex directive or missing Open Graph tag can be easy to overlook.',
+    sections: [
+      {
+        title: 'Check SEO meta tags from the live page source',
+        paragraphs: [
+          'Toolmera extracts the title tag, meta description, canonical URL, meta robots directive, viewport, document language and charset. The values shown come from the fetched response, which is useful when a CMS preview says one thing but the production page source sends something different.',
+          'Title and description character counts are shown as diagnostics rather than rigid pass-or-fail ranking rules. Search engines can rewrite snippets, and the best metadata is primarily descriptive, relevant and distinct for the page.'
+        ]
+      },
+      {
+        title: 'Open Graph and Twitter Card metadata',
+        paragraphs: [
+          'Social platforms often use Open Graph or Twitter Card tags to build link previews. The checker surfaces og:title, og:description, og:image, og:url, og:type, twitter:card, twitter:title, twitter:description and twitter:image when present.',
+          'This makes the tool useful for long-tail tasks such as checking why a shared page has the wrong image, whether a social title differs from the SEO title or whether a migrated domain still declares an old og:url.'
+        ]
+      },
+      {
+        title: 'Canonical and robots metadata deserve special attention',
+        paragraphs: [
+          'A canonical URL can point search engines toward a preferred version of similar content, while a noindex robots directive asks compatible search engines not to index the page. Because both can materially affect search visibility, the checker keeps them visible alongside ordinary preview metadata.',
+          'Always review these values on the final live URL after redirects. A correctly configured CMS template can still be undermined by an edge rule, staging tag or deployment-specific response.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What meta tags does this checker read?', a: 'It reads common SEO metadata, canonical and robots directives, viewport, language and charset plus Open Graph and Twitter Card tags.' },
+      { q: 'Does Google always use the meta description?', a: 'No. Google may generate a different search snippet when it believes another passage better matches the query.' },
+      { q: 'Can a meta robots noindex tag block indexing?', a: 'A noindex directive can prevent indexing when the crawler is allowed to fetch the page and process the directive.' },
+      { q: 'Why is the canonical URL checked separately?', a: 'Canonical links are not ordinary meta tags, but they are a critical head-level SEO signal and are commonly reviewed during the same audit.' },
+      { q: 'Can this checker debug social sharing previews?', a: 'It can show the public Open Graph and Twitter metadata. Individual social platforms may cache older preview data separately.' }
+    ],
+    related: [{ id: 'seo-checker', anchor: 'check the full on-page SEO context' }, { id: 'http-status-checker', anchor: 'verify the live HTTP response' }, { id: 'website-analyzer', anchor: 'run a complete site audit' }],
+    sources: [
+      { label: 'Google title link guidance', href: 'https://developers.google.com/search/docs/appearance/title-link' },
+      { label: 'Open Graph protocol', href: 'https://ogp.me/' }
+    ]
+  },
+
+  'http-status-checker': {
+    title: 'Free HTTP Status Checker — Check 200, 301, 404 & Headers',
+    description: 'Free HTTP status checker to test a URL response code, final destination, redirect hops, response time, content type, cache headers and X-Robots-Tag.',
+    intro: 'Check the live HTTP response for any public URL. See whether the request ends in 200 OK, a redirect, 404 Not Found, a server error or another status before investigating SEO, uptime or deployment problems.',
+    sections: [
+      {
+        title: 'Check URL status codes and final response details',
+        paragraphs: [
+          'The checker follows a limited number of public HTTP redirects and reports the final status, destination URL, elapsed fetch time, response content type and selected headers. This is useful when a browser appears to load a page normally but crawlers or integrations are receiving a different response path.',
+          'Common SEO debugging cases include an old URL returning 200 instead of redirecting, a migrated page returning 404, an HTTP URL taking multiple hops before HTTPS or a final response carrying an unexpected X-Robots-Tag.'
+        ]
+      },
+      {
+        title: 'What 200, 3xx, 4xx and 5xx mean in practice',
+        paragraphs: [
+          'A 2xx status indicates a successful HTTP request. 3xx statuses signal redirection, 4xx statuses describe client-side request problems such as 404 Not Found, and 5xx statuses indicate server-side failures. The exact meaning depends on the specific status code.',
+          'For SEO, the distinction matters because search engines treat a working content URL, a permanent redirect and a missing page differently. A status checker is therefore one of the fastest ways to verify a migration or diagnose a crawl error.'
+        ]
+      },
+      {
+        title: 'Response time is a network diagnostic, not Core Web Vitals',
+        paragraphs: [
+          'The elapsed time shown here measures the Toolmera edge request and any redirects until the final response is read. It is not the same as browser rendering performance, Largest Contentful Paint or Interaction to Next Paint.',
+          'Use the timing as a quick comparison signal for slow responses or redirect chains, then use a dedicated browser performance test when you need rendering and Core Web Vitals data.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can this checker test 301 and 302 redirects?', a: 'Yes. It follows common HTTP redirects and records each hop before the final response.' },
+      { q: 'What is a 404 status?', a: '404 Not Found means the server could not find a current representation for the requested URL.' },
+      { q: 'Does the tool use HEAD or GET?', a: 'The analyzer uses a bounded GET request so it can inspect both response headers and the public page body when needed.' },
+      { q: 'Can it check localhost or private IPs?', a: 'No. Private, local and reserved network targets are blocked for security.' },
+      { q: 'Is the response time a PageSpeed score?', a: 'No. It is request timing from the Toolmera edge, not a browser rendering metric.' }
+    ],
+    related: [{ id: 'redirect-checker', anchor: 'trace the full redirect chain' }, { id: 'ssl-checker', anchor: 'check HTTPS redirect behavior' }, { id: 'seo-checker', anchor: 'review SEO implications of the response' }],
+    sources: [
+      { label: 'MDN HTTP response status codes', href: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status' }
+    ]
+  },
+
+  'redirect-checker': {
+    title: 'Free Redirect Checker — Trace 301, 302 & URL Redirect Chains',
+    description: 'Free redirect checker to trace 301, 302, 303, 307 and 308 URL redirects, show every hop and confirm the final HTTP status and destination.',
+    intro: 'Trace a public URL from its starting address to the final destination. This free redirect checker makes redirect chains visible so you can find unnecessary hops, outdated migrations and HTTP-to-HTTPS routing problems.',
+    sections: [
+      {
+        title: 'Trace every redirect hop, not only the final page',
+        paragraphs: [
+          'Browsers hide most redirects because they automatically navigate to the destination. Toolmera records the starting URL, status code and Location header at each hop, then shows the final response separately.',
+          'That makes it easier to identify chains such as HTTP → www → non-www → new path, or an old campaign URL that still passes through multiple legacy destinations before reaching the current page.'
+        ]
+      },
+      {
+        title: '301 vs 302 vs 307 vs 308 redirects',
+        paragraphs: [
+          '301 and 308 are commonly used for permanent redirects, while 302 and 307 are commonly used for temporary routing. The methods differ in historical and method-preservation behavior, so the correct choice depends on the application rather than SEO shorthand alone.',
+          'For migrations, the most important practical checks are that the intended old URL redirects to the correct new URL, the chain is short and the final destination returns a successful response.'
+        ]
+      },
+      {
+        title: 'Why long redirect chains can complicate SEO and performance',
+        paragraphs: [
+          'Every extra hop adds another request before users and crawlers reach the final page. Chains can also hide configuration mistakes, create inconsistent canonical paths and make large migrations harder to audit.',
+          'Use this checker after domain changes, URL restructuring, HTTPS migrations, trailing-slash changes and campaign cleanup. Then update internal links so they point directly to the final canonical URL where practical.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'How many redirects does Toolmera follow?', a: 'The current checker caps redirect traversal at five hops to keep the public analyzer bounded and avoid runaway chains.' },
+      { q: 'Can it detect HTTP to HTTPS redirects?', a: 'Yes. An HTTP-to-HTTPS transition appears as one of the recorded hops.' },
+      { q: 'Is a 301 always better than a 302 for SEO?', a: 'No single redirect code is universally better. Use a permanent redirect when the move is intended to be permanent and a temporary redirect for genuinely temporary routing.' },
+      { q: 'Why should internal links avoid redirect chains?', a: 'Direct internal links reduce unnecessary requests and make the intended destination clearer for users and crawlers.' },
+      { q: 'Can this checker follow redirects to private network addresses?', a: 'No. Every redirect destination is revalidated and private or reserved targets are blocked.' }
+    ],
+    related: [{ id: 'http-status-checker', anchor: 'check final HTTP response details' }, { id: 'ssl-checker', anchor: 'verify HTTP to HTTPS behavior' }, { id: 'website-analyzer', anchor: 'audit the destination page' }],
+    sources: [
+      { label: 'Google redirects guidance', href: 'https://developers.google.com/search/docs/crawling-indexing/301-redirects' },
+      { label: 'MDN redirections in HTTP', href: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections' }
+    ]
+  },
+
+  'robots-checker': {
+    title: 'Free Robots.txt Checker — Test Crawl Rules & Sitemap Directives',
+    description: 'Free robots.txt checker to fetch a live robots file, detect a site-wide Disallow rule, count Allow and Disallow directives and find declared XML sitemaps.',
+    intro: 'Check a website robots.txt file directly from the public origin. Review crawl directives, sitemap declarations and the high-risk Disallow: / pattern before diagnosing discovery or crawl problems.',
+    sections: [
+      {
+        title: 'What a robots.txt checker can verify',
+        paragraphs: [
+          'Toolmera fetches /robots.txt from the requested site origin and reports its HTTP status, number of User-agent sections, Allow and Disallow directives, declared Sitemap lines and whether a broad wildcard rule appears to disallow the entire site.',
+          'The preview shows the fetched file so you can inspect context yourself. This matters because robots rules are grouped by user agent and path, and a simple directive count cannot fully explain how every crawler will interpret a complex file.'
+        ]
+      },
+      {
+        title: 'Robots.txt controls crawling, not guaranteed indexing removal',
+        paragraphs: [
+          'A robots.txt Disallow rule is primarily a crawl-control mechanism. Blocking a URL from crawling is not the same as sending a noindex directive in a fetched page response, because a crawler that cannot fetch the page cannot read its meta robots tag.',
+          'Use robots.txt to manage crawling of appropriate paths, and use page-level indexing controls when your actual goal is to keep a page out of search results. Always test carefully before blocking large path patterns.'
+        ]
+      },
+      {
+        title: 'Sitemap directives inside robots.txt',
+        paragraphs: [
+          'Robots.txt can declare one or more Sitemap locations. The checker extracts those URLs so you can confirm whether the production site points crawlers to the expected XML sitemap or sitemap index.',
+          'A sitemap declaration is useful for discovery, but it does not override blocking rules and does not guarantee indexing. The URLs still need to be crawlable, canonical and valuable enough for search engines to process.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Where is robots.txt normally located?', a: 'The file is normally served from the root of a host, such as https://example.com/robots.txt.' },
+      { q: 'What does Disallow: / mean?', a: 'Within an applicable user-agent group, Disallow: / generally blocks crawling of the entire host path space for that crawler.' },
+      { q: 'Can robots.txt remove a page from Google?', a: 'Robots.txt is not a guaranteed removal mechanism. Use appropriate indexing controls or Search Console removal workflows depending on the goal.' },
+      { q: 'Does Toolmera validate every crawler-specific rule?', a: 'It surfaces the file, counts key directives and flags a broad wildcard block. Complex rule precedence should still be reviewed in context.' },
+      { q: 'Does the tool find sitemap declarations?', a: 'Yes. It extracts Sitemap lines from the live robots.txt file.' }
+    ],
+    related: [{ id: 'sitemap-checker', anchor: 'inspect the declared XML sitemap' }, { id: 'seo-checker', anchor: 'check page indexability signals' }, { id: 'website-analyzer', anchor: 'run a broader technical audit' }],
+    sources: [
+      { label: 'Google robots.txt documentation', href: 'https://developers.google.com/search/docs/crawling-indexing/robots/intro' }
+    ]
+  },
+
+  'sitemap-checker': {
+    title: 'Free Sitemap Checker — Validate XML Sitemap & Count URLs',
+    description: 'Free XML sitemap checker to test sitemap availability, distinguish URL sets from sitemap indexes, count entries, inspect lastmod usage and preview sitemap URLs.',
+    intro: 'Check a website XML sitemap or sitemap index from the live origin. Toolmera reports reachability, entry counts, lastmod coverage and a sample of submitted URLs so you can catch obvious sitemap deployment problems quickly.',
+    sections: [
+      {
+        title: 'Check whether sitemap.xml is reachable and parseable',
+        paragraphs: [
+          'The checker first looks for a sitemap declared in robots.txt on the same origin and otherwise tests the conventional /sitemap.xml location. It reports the final URL and HTTP status instead of assuming the file exists.',
+          'The XML is then inspected for url entries, child sitemap entries, loc values and lastmod tags. A sitemap index and a normal URL set are counted separately because they represent different layers of a sitemap architecture.'
+        ]
+      },
+      {
+        title: 'Count sitemap URLs and inspect a sample',
+        paragraphs: [
+          'Entry counts are useful for catching accidental empty sitemaps, missing sections or a sitemap index that stopped including a child file. The sample URLs provide a quick sanity check that the sitemap points to the expected canonical host and path structure.',
+          'This is a lightweight validator, not a full crawl. It does not fetch every submitted URL or prove that Google has indexed them; it verifies the live sitemap file and its visible XML structure.'
+        ]
+      },
+      {
+        title: 'lastmod should represent meaningful page updates',
+        paragraphs: [
+          'The checker counts lastmod elements so you can see whether update dates are present. Search engines may use trustworthy modification dates as a crawl signal, but repeatedly changing dates without meaningful page changes reduces their usefulness.',
+          'For large sites, keep sitemap generation deterministic, submit canonical indexable URLs and split oversized URL sets into sitemap indexes according to search-engine limits.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Does every site need /sitemap.xml?', a: 'No. A sitemap can use another URL and can be declared in robots.txt or submitted directly to search engines.' },
+      { q: 'Can Toolmera check a sitemap index?', a: 'Yes. It distinguishes child sitemap entries from normal URL entries.' },
+      { q: 'Does a sitemap guarantee indexing?', a: 'No. A sitemap helps discovery but does not guarantee crawling or indexing.' },
+      { q: 'What does lastmod mean?', a: 'lastmod is intended to represent when the referenced URL was meaningfully modified, using an accepted date or date-time format.' },
+      { q: 'Does Toolmera crawl every URL in the sitemap?', a: 'No. This checker validates the sitemap file itself and previews a limited number of loc entries.' }
+    ],
+    related: [{ id: 'robots-checker', anchor: 'check sitemap declarations in robots.txt' }, { id: 'seo-checker', anchor: 'audit page-level SEO signals' }, { id: 'http-status-checker', anchor: 'test a submitted URL status' }],
+    sources: [
+      { label: 'Google sitemap documentation', href: 'https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview' },
+      { label: 'Sitemaps protocol', href: 'https://www.sitemaps.org/protocol.html' }
+    ]
+  },
+
+  'ssl-checker': {
+    title: 'Free SSL Checker — Check HTTPS, HSTS & Secure Website Connection',
+    description: 'Free SSL and HTTPS checker for live HTTPS reachability, HTTP-to-HTTPS redirect behavior, final secure URL and Strict-Transport-Security headers.',
+    intro: 'Check whether a public website is reachable over HTTPS, whether plain HTTP redirects to HTTPS and whether the secure response sends HSTS. The report focuses on transport signals the Toolmera edge can verify directly.',
+    sections: [
+      {
+        title: 'What this free SSL checker verifies',
+        paragraphs: [
+          'Toolmera attempts the requested HTTPS connection through the edge network and confirms the final scheme and HTTP response. For HTTPS targets it also tests the equivalent HTTP URL to see whether traffic is upgraded to HTTPS through the redirect chain.',
+          'The checker reports the Strict-Transport-Security header when present. HSTS tells compatible browsers to prefer HTTPS for the host after the policy has been received over a valid secure connection.'
+        ]
+      },
+      {
+        title: 'Why HTTPS redirects matter',
+        paragraphs: [
+          'A site can support HTTPS while still serving an HTTP version separately. Redirecting HTTP traffic to the canonical HTTPS URL reduces duplicate entry points, helps users land on the secure version and keeps internal linking and canonicalization simpler.',
+          'After enabling HTTPS, test representative URLs rather than only the homepage. Mixed redirect rules, old subdomains and application-specific paths can behave differently.'
+        ]
+      },
+      {
+        title: 'Certificate issuer and expiry are not fabricated',
+        paragraphs: [
+          'The current Toolmera edge fetch confirms that a trusted HTTPS connection can be established, but it does not expose the remote certificate issuer, serial number or expiry date to this application layer.',
+          'Instead of inventing certificate metadata, the tool explicitly limits its report to verifiable HTTPS, redirect and HSTS signals. A future certificate-specific backend can add issuer and expiry data if a reliable TLS inspection source is introduced.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Is this SSL checker free?', a: 'Yes. It checks public HTTP and HTTPS transport signals without an account.' },
+      { q: 'Does it show certificate expiry?', a: 'Not currently. The edge fetch interface used by this tool does not expose the served certificate expiry, so Toolmera does not fabricate it.' },
+      { q: 'What does HSTS do?', a: 'HSTS tells compatible browsers to use HTTPS for the host for the policy duration after receiving the header over a secure connection.' },
+      { q: 'Why check the HTTP version too?', a: 'It confirms whether users entering an insecure URL are redirected to the secure HTTPS version.' },
+      { q: 'Is HTTPS a substitute for application security?', a: 'No. HTTPS protects transport. Application security also depends on authentication, authorization, software updates, headers and secure code.' }
+    ],
+    related: [{ id: 'security-headers-checker', anchor: 'check additional browser security headers' }, { id: 'redirect-checker', anchor: 'trace HTTP to HTTPS redirects' }, { id: 'http-status-checker', anchor: 'inspect the live response' }],
+    sources: [
+      { label: 'MDN HTTPS overview', href: 'https://developer.mozilla.org/en-US/docs/Glossary/HTTPS' },
+      { label: 'MDN HSTS', href: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security' }
+    ]
+  },
+
+  'security-headers-checker': {
+    title: 'Free Security Headers Checker — Test HSTS, CSP & Browser Headers',
+    description: 'Free security headers checker for HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy and Permissions-Policy.',
+    intro: 'Inspect common browser-facing HTTP security headers from a live public response. Toolmera shows the exact values it receives and grades only the presence of the baseline header set plus HTTPS.',
+    sections: [
+      {
+        title: 'Security headers checked by Toolmera',
+        paragraphs: [
+          'The report checks Strict-Transport-Security, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy and Permissions-Policy. These headers address different browser behaviors, so the tool reports them separately instead of collapsing every security concern into one vague score.',
+          'The grade is intentionally simple: it reflects HTTPS plus the number of checked headers present. It does not prove that a policy is perfectly configured, that an application has no vulnerabilities or that every missing header is required for every site.'
+        ]
+      },
+      {
+        title: 'CSP, framing and MIME protections solve different problems',
+        paragraphs: [
+          'Content-Security-Policy can constrain where scripts, styles and other resources may load from. X-Frame-Options controls older framing behavior, while frame-ancestors in CSP can provide more flexible framing policy. X-Content-Type-Options: nosniff asks browsers not to reinterpret declared MIME types.',
+          'Referrer-Policy governs referrer information sent with requests, and Permissions-Policy can restrict access to selected browser features. HSTS is transport-focused and is only meaningful when served over HTTPS.'
+        ]
+      },
+      {
+        title: 'Use the result as a configuration review, not a penetration test',
+        paragraphs: [
+          'A header checker is useful after CDN changes, framework upgrades, reverse-proxy migrations or security hardening because headers can disappear at the edge even when application configuration looks correct.',
+          'It is not a vulnerability scanner. Authentication flaws, insecure APIs, exposed secrets, dependency vulnerabilities and application logic require separate security testing.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'What security headers does Toolmera check?', a: 'It checks HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy and Permissions-Policy.' },
+      { q: 'Does an A grade mean the website is secure?', a: 'No. The grade reflects the presence of the checked headers and HTTPS, not overall application security.' },
+      { q: 'Is Content-Security-Policy always easy to add?', a: 'No. A strict CSP can break scripts or resources if it is deployed without testing. Start with an inventory and rollout plan appropriate to the application.' },
+      { q: 'Why can a CDN change security headers?', a: 'Reverse proxies and edge platforms can add, remove or override response headers after the application generates a response.' },
+      { q: 'Can this replace a penetration test?', a: 'No. It is a fast HTTP header inspection tool, not a penetration test or vulnerability assessment.' }
+    ],
+    related: [{ id: 'ssl-checker', anchor: 'check HTTPS and HSTS behavior' }, { id: 'website-analyzer', anchor: 'combine security with SEO and crawl checks' }, { id: 'http-status-checker', anchor: 'inspect response headers and status' }],
+    sources: [
+      { label: 'MDN HTTP headers', href: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers' },
+      { label: 'OWASP HTTP Headers Cheat Sheet', href: 'https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html' }
+    ]
+  },
+
+  'technology-checker': {
+    title: 'Free Technology Checker — Detect CMS, Frameworks, Analytics & CDN',
+    description: 'Free website technology checker to detect public fingerprints for WordPress, Shopify, Next.js, React, Vue, Nuxt, Cloudflare, Vercel, GA, GTM and more.',
+    intro: 'Find recognizable website technologies from public HTML and HTTP headers. This free tech stack checker is useful for competitor research, migration planning and debugging without claiming access to private infrastructure.',
+    sections: [
+      {
+        title: 'Detect CMS and frontend framework fingerprints',
+        paragraphs: [
+          'Toolmera looks for public signatures associated with WordPress, Shopify, Next.js, React, Vue.js and Nuxt. Signals can include asset paths, generated markup and standard framework markers that are visible in the fetched response.',
+          'Detection is probabilistic rather than exhaustive. A site can remove recognizable markers, render content differently for bots or use a framework version that does not expose the signatures this lightweight detector knows about.'
+        ]
+      },
+      {
+        title: 'Check analytics, marketing and infrastructure signals',
+        paragraphs: [
+          'The technology report can also identify public traces of Google Analytics, Google Tag Manager, Meta Pixel, Hotjar, Stripe, jQuery, Bootstrap, Cloudflare and Vercel. Server and generator headers are shown when the site chooses to disclose them.',
+          'This can answer practical long-tail questions such as whether a competitor appears to use Shopify, whether GTM is present in server HTML or whether Cloudflare is visible at the response edge.'
+        ]
+      },
+      {
+        title: 'What technology detection cannot reveal',
+        paragraphs: [
+          'A public website scan cannot reliably reveal databases, private APIs, cloud accounts, internal services or software that leaves no client-visible fingerprint. Absence from the Toolmera result means only that the current detector did not find a supported public signal.',
+          'Use the output as a research hint, then confirm important implementation decisions with documentation, source access or direct technical discovery when you control the website.'
+        ]
+      }
+    ],
+    faq: [
+      { q: 'Can Toolmera detect WordPress?', a: 'Yes, when public WordPress generator or asset-path fingerprints are present in the fetched response.' },
+      { q: 'Can it detect Shopify?', a: 'It looks for common Shopify CDN and theme markers visible in public HTML.' },
+      { q: 'Does it detect Google Tag Manager?', a: 'Yes, common GTM script and container patterns are included in the detector.' },
+      { q: 'Why might a technology be missing?', a: 'The site may hide fingerprints, inject scripts only after JavaScript execution or use a technology not covered by the current signature set.' },
+      { q: 'Does the checker reveal private hosting credentials or backend code?', a: 'No. It analyzes only public response data.' }
+    ],
+    related: [{ id: 'website-analyzer', anchor: 'combine tech detection with a full audit' }, { id: 'security-headers-checker', anchor: 'inspect edge security configuration' }, { id: 'meta-tag-checker', anchor: 'inspect public HTML metadata' }]
+  },
+
+
 };
 
 export const categorySeoContent: Record<string, {
@@ -2261,5 +2666,35 @@ export const categorySeoContent: Record<string, {
         ]
       }
     ]
-  }
+  },
+
+  'website-analysis': {
+    title: 'Free Website Analysis Tools — SEO, HTTP, Security & Tech Checkers',
+    description: 'Free website analysis tools for SEO audits, meta tags, HTTP status, redirects, robots.txt, XML sitemaps, HTTPS, security headers and technology detection.',
+    intro: 'Analyze public websites with focused free tools for SEO, crawlability, HTTP behavior, transport security and public technology signals. Use the complete Website Analyzer for a broad report or open a specialist checker when you need one narrow answer.',
+    sections: [
+      {
+        title: 'Free website analysis tools built around real audit tasks',
+        paragraphs: [
+          'Start with Website Analyzer when you want one report covering metadata, headings, links, crawl files, security headers and detected technologies. Use SEO Checker for on-page and indexability signals, or Meta Tag Checker when titles, descriptions, canonicals and social tags are the specific problem.',
+          'For infrastructure debugging, HTTP Status Checker and Redirect Checker expose response behavior; Robots.txt Checker and Sitemap Checker focus on crawler discovery; SSL Checker and Security Headers Checker review transport and browser-facing protection; Technology Checker identifies supported public stack fingerprints.'
+        ]
+      },
+      {
+        title: 'Live evidence instead of invented SEO metrics',
+        paragraphs: [
+          'Toolmera reports signals it can verify from a public website response. It does not manufacture traffic estimates, keyword positions, backlink counts or authority scores when no trustworthy data source is connected.',
+          'This keeps the category useful for technical audits and competitor research while making the limits explicit. When a future traffic intelligence source is integrated, traffic analysis can live in its own tool without contaminating technical reports with guessed numbers.'
+        ]
+      },
+      {
+        title: 'Use specialist checkers for long-tail website diagnostics',
+        paragraphs: [
+          'Focused tools are useful when the question is specific: why a URL returns 404, whether HTTP redirects to HTTPS, whether robots.txt blocks all crawlers, whether a sitemap contains URLs, whether a canonical tag points elsewhere or whether CSP is missing.',
+          'Because each page solves a different task and returns a different report, the category forms a browseable website-audit workflow rather than a collection of near-duplicate SEO landing pages.'
+        ]
+      }
+    ]
+  },
+
 };

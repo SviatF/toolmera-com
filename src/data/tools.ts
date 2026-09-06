@@ -43,6 +43,7 @@ export type ToolKind =
   | 'xml-formatter'
   | 'date-calculator'
   | 'time-duration'
+  | 'website-analysis'
   | 'qr-generator'
   | 'uuid-generator'
   | 'password-generator'
@@ -294,6 +295,48 @@ export const tools: Tool[] = [
     title: 'Time Duration Calculator — Hours & Minutes Between Times', description: 'Calculate elapsed days, hours, minutes and seconds between two local date-time values.', intro: 'Measure the exact elapsed duration between a start and end date-time and see the total in multiple units.', benefits: ['Days, hours & minutes', 'Total hours & minutes', 'Local date-time inputs'], faq: commonFaq,
   },
 
+
+  {
+    id: 'website-analyzer', name: 'Website Analyzer', short: 'Run a complete SEO, crawl, security and technology audit for any public page.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'website-analyzer', kind: 'website-analysis', accent: 'cyan', badge: 'Popular',
+    title: 'Free Website Analyzer — SEO, Security & Technical Site Audit', description: 'Analyze a public website for on-page SEO, crawlability, metadata, headings, robots.txt, sitemap, security headers and detected technologies.', intro: 'Enter a public URL to run a practical website audit based on live HTML, HTTP headers, crawl files and verifiable technical signals.', benefits: ['Live URL & HTTP analysis', 'SEO and crawl diagnostics', 'Security & technology signals'], faq: commonFaq,
+  },
+  {
+    id: 'seo-checker', name: 'SEO Checker', short: 'Check on-page and technical SEO signals from a live public URL.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'seo-checker', kind: 'website-analysis', accent: 'blue',
+    title: 'Free SEO Checker — On-Page & Technical SEO Website Audit', description: 'Check title tags, meta descriptions, headings, canonical tags, indexability, image alt text, schema, robots.txt and sitemap signals.', intro: 'Audit the SEO signals search engines can verify from a public page response and its crawl-control files.', benefits: ['On-page SEO checks', 'Indexability signals', 'Actionable SEO score'], faq: commonFaq,
+  },
+  {
+    id: 'meta-tag-checker', name: 'Meta Tag Checker', short: 'Inspect title, description, canonical, robots and social preview tags.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'meta-tag-checker', kind: 'website-analysis', accent: 'violet',
+    title: 'Free Meta Tag Checker — Analyze SEO & Social Meta Tags', description: 'Check a webpage title, meta description, canonical URL, robots directives, viewport, Open Graph and Twitter metadata.', intro: 'Inspect the metadata returned in a page’s raw HTML before changing titles, descriptions, canonicals or social sharing tags.', benefits: ['SEO meta tags', 'Open Graph & Twitter tags', 'Canonical & robots directives'], faq: commonFaq,
+  },
+  {
+    id: 'http-status-checker', name: 'HTTP Status Checker', short: 'Check HTTP status, final URL, response time and key response headers.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'http-status-checker', kind: 'website-analysis', accent: 'green',
+    title: 'Free HTTP Status Checker — Check 200, 301, 404 & Headers', description: 'Check the HTTP response status for a URL, follow redirects safely and inspect final response headers, content type and response time.', intro: 'Test a public URL to see whether it returns 200, redirects, errors or another HTTP status before debugging crawl and availability problems.', benefits: ['Live HTTP status', 'Final destination URL', 'Response headers & timing'], faq: commonFaq,
+  },
+  {
+    id: 'redirect-checker', name: 'Redirect Checker', short: 'Trace URL redirect chains and inspect every 3xx hop.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'redirect-checker', kind: 'website-analysis', accent: 'amber',
+    title: 'Free Redirect Checker — Trace 301, 302 & URL Redirect Chains', description: 'Trace HTTP redirects from a starting URL to its final destination and inspect each 301, 302, 307 or 308 hop.', intro: 'Follow a public URL through its redirect chain to find unnecessary hops, outdated destinations and HTTP-to-HTTPS transitions.', benefits: ['Redirect chain tracing', '301 / 302 / 307 / 308 visibility', 'Final URL confirmation'], faq: commonFaq,
+  },
+  {
+    id: 'robots-checker', name: 'Robots.txt Checker', short: 'Fetch robots.txt and inspect crawl rules and sitemap declarations.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'robots-txt-checker', kind: 'website-analysis', accent: 'pink',
+    title: 'Free Robots.txt Checker — Test Crawl Rules & Sitemap Directives', description: 'Check a website robots.txt file, HTTP status, wildcard crawl rules and declared XML sitemap locations.', intro: 'Fetch the robots.txt file for a public website and review whether crawl directives or a site-wide Disallow rule could block search engines.', benefits: ['Live robots.txt fetch', 'Crawl-block detection', 'Declared sitemap discovery'], faq: commonFaq,
+  },
+  {
+    id: 'sitemap-checker', name: 'Sitemap Checker', short: 'Inspect an XML sitemap, URL count, sitemap index and lastmod coverage.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'sitemap-checker', kind: 'website-analysis', accent: 'cyan',
+    title: 'Free Sitemap Checker — Validate XML Sitemap & Count URLs', description: 'Check whether an XML sitemap is reachable, count URL or child-sitemap entries, inspect lastmod coverage and preview submitted URLs.', intro: 'Test a website sitemap.xml file and quickly verify whether search engines can reach a usable XML sitemap or sitemap index.', benefits: ['XML sitemap availability', 'URL & sitemap counts', 'lastmod and sample URL checks'], faq: commonFaq,
+  },
+  {
+    id: 'ssl-checker', name: 'SSL Checker', short: 'Check HTTPS availability, secure redirects and HSTS signals.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'ssl-checker', kind: 'website-analysis', accent: 'green',
+    title: 'Free SSL Checker — Check HTTPS, HSTS & Secure Website Connection', description: 'Check whether a website loads over trusted HTTPS, whether HTTP redirects to HTTPS and whether the final response sends HSTS.', intro: 'Verify the practical HTTPS and transport-security signals visible from a live website response without installing software.', benefits: ['HTTPS connection check', 'HTTP → HTTPS redirect', 'HSTS response header'], faq: commonFaq,
+  },
+  {
+    id: 'security-headers-checker', name: 'Security Headers Checker', short: 'Check HSTS, CSP, frame protection, MIME protection and privacy headers.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'security-headers-checker', kind: 'website-analysis', accent: 'pink',
+    title: 'Free Security Headers Checker — Test HSTS, CSP & Browser Headers', description: 'Test common website security headers including HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options and Referrer-Policy.', intro: 'Inspect browser-facing HTTP security headers from a live public response and see which baseline protections are present or missing.', benefits: ['Security header grade', 'Six common header checks', 'Live response evidence'], faq: commonFaq,
+  },
+  {
+    id: 'technology-checker', name: 'Technology Checker', short: 'Detect CMS, frameworks, analytics, CDN and common integrations from public signals.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'technology-checker', kind: 'website-analysis', accent: 'blue',
+    title: 'Free Technology Checker — Detect CMS, Frameworks, Analytics & CDN', description: 'Detect common website technologies such as WordPress, Shopify, Next.js, Cloudflare, Google Analytics, GTM, Meta Pixel, Stripe and Hotjar.', intro: 'Scan public HTML and response headers for recognizable technology fingerprints without claiming access to private server configuration.', benefits: ['CMS & framework detection', 'Analytics & marketing tags', 'CDN and integration signals'], faq: commonFaq,
+  },
+
   {
     id: 'emi-in', name: 'EMI Calculator', short: 'Calculate monthly loan EMI, interest and repayment.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'emi-calculator', kind: 'emi', accent: 'blue', badge: 'India',
     title: 'EMI Calculator India — Loan EMI Calculator', description: 'Calculate monthly EMI, total interest and repayment for loans in India.', intro: 'Estimate your monthly EMI for personal, car or home loans with a clear repayment summary.', benefits: ['Monthly EMI', 'Total interest', 'Total repayment'], faq: commonFaq,
@@ -357,6 +400,7 @@ export const categories = [
   { slug: 'time', label: 'Time & Date', description: 'Convert timestamps and work with time values.', accent: 'pink' as Accent },
   { slug: 'text', label: 'Text Tools', description: 'Count, transform and clean text.', accent: 'violet' as Accent },
   { slug: 'developer', label: 'Developer Tools', description: 'Format, encode and inspect developer data.', accent: 'pink' as Accent },
+  { slug: 'website-analysis', label: 'Website Analysis', description: 'Audit SEO, crawlability, redirects, security and website technology.', accent: 'green' as Accent },
 ];
 
 export function toolUrl(tool: Tool) {

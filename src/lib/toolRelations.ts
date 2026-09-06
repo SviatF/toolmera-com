@@ -74,6 +74,18 @@ const graph:Record<string,string[]>={
   'date-calculator':['date-difference','time-duration','time-zone','age'],
   'time-duration':['date-difference','date-calculator','time-zone','unix-timestamp'],
 
+  // Website analysis — one audit workflow with specialist intent pages.
+  'website-analyzer':['seo-checker','meta-tag-checker','http-status-checker','redirect-checker','robots-checker','sitemap-checker','security-headers-checker','technology-checker'],
+  'seo-checker':['website-analyzer','meta-tag-checker','robots-checker','sitemap-checker','http-status-checker'],
+  'meta-tag-checker':['seo-checker','website-analyzer','http-status-checker','redirect-checker'],
+  'http-status-checker':['redirect-checker','ssl-checker','seo-checker','website-analyzer'],
+  'redirect-checker':['http-status-checker','ssl-checker','website-analyzer','seo-checker'],
+  'robots-checker':['sitemap-checker','seo-checker','website-analyzer','http-status-checker'],
+  'sitemap-checker':['robots-checker','seo-checker','website-analyzer','http-status-checker'],
+  'ssl-checker':['security-headers-checker','redirect-checker','http-status-checker','website-analyzer'],
+  'security-headers-checker':['ssl-checker','website-analyzer','http-status-checker','technology-checker'],
+  'technology-checker':['website-analyzer','security-headers-checker','meta-tag-checker','seo-checker'],
+
   // India finance/tax — local cluster plus relevant global bridges.
   'emi-in':['home-emi-in','car-emi-in','loan','simple-interest','percentage'],
   'home-emi-in':['emi-in','car-emi-in','loan','compound','percentage'],
@@ -267,6 +279,67 @@ export function howToForTool(tool:Tool):HowToStep[]{
     {title:'Calculate elapsed time',description:'Toolmera measures the interval in milliseconds and decomposes it into calendar-day-sized blocks, hours, minutes and seconds.'},
     {title:'Review total units',description:'Use the breakdown or the total hours, minutes and seconds shown below it.'},
   ];
+
+
+  if(tool.kind==='website-analysis'){
+    const steps:Record<string,HowToStep[]>={
+      'website-analyzer':[
+        {title:'Enter a public website URL',description:'Paste the homepage or specific page you want to audit. Toolmera accepts public HTTP and HTTPS URLs only.'},
+        {title:'Run the live website analysis',description:'Toolmera fetches the public response and checks metadata, headings, crawl files, security headers, redirects and supported technology fingerprints.'},
+        {title:'Prioritize the report',description:'Start with failed crawl or indexability checks, then review on-page SEO, security and technology details.'},
+      ],
+      'seo-checker':[
+        {title:'Paste the page you want to audit',description:'Use the exact live URL whose on-page and technical SEO signals you want to inspect.'},
+        {title:'Check SEO and crawl signals',description:'Review title, description, H1, canonical, robots directives, image ALT coverage, schema, robots.txt and sitemap availability.'},
+        {title:'Separate observable issues from search performance',description:'Fix verifiable page problems here, then use Search Console for index status, queries, impressions and rankings.'},
+      ],
+      'meta-tag-checker':[
+        {title:'Enter the production page URL',description:'Analyze the live page rather than relying only on CMS preview fields.'},
+        {title:'Inspect SEO and social metadata',description:'Check title, description, canonical, robots, viewport, Open Graph and Twitter Card values returned in the HTML.'},
+        {title:'Correct stale or missing tags',description:'Update the source template or CMS, deploy the change and run the checker again against the final URL.'},
+      ],
+      'http-status-checker':[
+        {title:'Enter the URL to test',description:'Use the exact HTTP or HTTPS address that users, crawlers or integrations request.'},
+        {title:'Check the final response',description:'Toolmera follows a bounded redirect chain and reports status, destination, timing, content type and selected headers.'},
+        {title:'Match the status to the intended behavior',description:'Confirm that live content returns success, moved URLs redirect correctly and removed or broken URLs return the expected error response.'},
+      ],
+      'redirect-checker':[
+        {title:'Paste the starting URL',description:'Use the old, campaign, HTTP or alternate URL whose redirect behavior you want to trace.'},
+        {title:'Follow every redirect hop',description:'Review each 3xx response, Location destination and the final status.'},
+        {title:'Shorten unnecessary chains',description:'Where practical, update redirects and internal links so they point directly to the intended final canonical URL.'},
+      ],
+      'robots-checker':[
+        {title:'Enter the site URL',description:'Toolmera derives the origin and requests the root robots.txt file.'},
+        {title:'Review crawler directives',description:'Check status, User-agent groups, Allow and Disallow counts, broad wildcard blocking and declared Sitemap lines.'},
+        {title:'Verify risky rules in context',description:'Read the file preview before changing production crawl rules, especially any Disallow pattern affecting large sections.'},
+      ],
+      'sitemap-checker':[
+        {title:'Enter the website origin',description:'Toolmera looks for a same-origin sitemap declared in robots.txt and otherwise checks the conventional sitemap.xml path.'},
+        {title:'Inspect XML structure and counts',description:'See whether the file is a URL set or sitemap index, how many entries it contains and whether lastmod tags are present.'},
+        {title:'Spot-check submitted URLs',description:'Review the sample loc values for the expected canonical host and path structure, then validate indexing separately in Search Console.'},
+      ],
+      'ssl-checker':[
+        {title:'Enter the website URL',description:'Use the public host whose HTTPS and transport behavior you want to verify.'},
+        {title:'Check HTTPS and HSTS',description:'Toolmera confirms the final secure scheme, tests HTTP-to-HTTPS redirect behavior and reports Strict-Transport-Security when present.'},
+        {title:'Review transport gaps honestly',description:'Use the verified HTTPS signals here and a certificate-specific service when you need issuer, chain or expiry metadata.'},
+      ],
+      'security-headers-checker':[
+        {title:'Enter a public page URL',description:'Choose a representative production URL served through the same CDN or reverse proxy as the site.'},
+        {title:'Inspect six baseline headers',description:'Check HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy and Permissions-Policy values.'},
+        {title:'Test changes before enforcing them',description:'Add or tighten headers carefully, especially CSP, then rerun the live check after deployment.'},
+      ],
+      'technology-checker':[
+        {title:'Enter the site or page URL',description:'Use a public page that is likely to include the site’s normal framework, analytics and integration markup.'},
+        {title:'Scan public fingerprints',description:'Toolmera checks HTML and headers for supported CMS, framework, CDN, analytics and marketing signatures.'},
+        {title:'Treat detections as evidence, not private access',description:'Confirm important stack decisions separately because hidden or client-injected technologies may not expose recognizable public markers.'},
+      ],
+    };
+    return steps[tool.id]||[
+      {title:'Enter a public URL',description:'Paste the website or page you want to analyze.'},
+      {title:'Run the live check',description:'Toolmera fetches bounded public response data relevant to this checker.'},
+      {title:'Review the evidence',description:'Use the returned values and stated limitations before changing production configuration.'},
+    ];
+  }
 
   if(tool.kind==='percentage')return[
     {title:'Choose the percentage question',description:'Select part of a total, percent of a number, change or percentage difference.'},
