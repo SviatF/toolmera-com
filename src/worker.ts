@@ -1224,7 +1224,7 @@ function trafficPopularityLevel(rank:number|null){
   return 'Visible';
 }
 
-async function fetchTrafficPopularity(domain:string){
+async function fetchTrafficPopularityUncached(domain:string){
   const base={
     domain,
     source:'Tranco 30-day popularity ranking',
@@ -1275,6 +1275,24 @@ async function fetchTrafficPopularity(domain:string){
   }catch(error){
     return{...base,sourceAvailable:false,error:error instanceof Error?error.message:String(error)};
   }finally{clearTimeout(timer)}
+}
+
+async function fetchTrafficPopularity(domain:string){
+  const cache=(caches as unknown as {default:Cache}).default;
+  const key=new Request('https://toolmera.com/__traffic-rank-cache/'+encodeURIComponent(domain));
+  try{
+    const cached=await cache.match(key);
+    if(cached)return await cached.json();
+  }catch{}
+  const result=await fetchTrafficPopularityUncached(domain);
+  if(result.sourceAvailable){
+    try{
+      await cache.put(key,new Response(JSON.stringify(result),{
+        headers:{'content-type':'application/json','cache-control':'public, max-age=43200'}
+      }));
+    }catch{}
+  }
+  return result;
 }
 
 async function handleWebsiteAnalysis(request:Request){
