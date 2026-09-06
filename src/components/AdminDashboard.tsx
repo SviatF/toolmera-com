@@ -5,7 +5,9 @@ import {
   Gauge, Globe2, LayoutDashboard, Link2, ListChecks, RefreshCw, Search, Settings,
   ShieldCheck, Sparkles, TrendingDown, TrendingUp, Unplug, UsersRound, X, CheckCircle2, Clock3, ServerCog
 } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import adminLogo from '@/lib/favcion (1).webp';
 
 type View='overview'|'indexing'|'opportunities'|'pages'|'queries'|'countries'|'errors'|'integrations'|'settings';
 type Status='Open'|'In progress'|'Done'|'Ignored';
@@ -442,7 +444,7 @@ export function AdminDashboard(){
 
   return <div className="adminApp">
     <aside className="adminSidebar">
-      <div className="adminBrand"><span className="adminBrandMark">A</span><div><strong>TOOLMERA</strong><small>SEO Intelligence</small></div></div>
+      <div className="adminBrand"><span className="adminBrandMark"><Image src={adminLogo} alt="TOOLMERA" width={34} height={34} priority /></span><div><strong>TOOLMERA</strong><small>SEO Intelligence</small></div></div>
       <div className={systemHealth==='Operational'?'adminDemo adminLive':'adminDemo'}><span></span>{systemHealth==='Operational'?' System operational':systemHealth==='Degraded'?' Attention required':' Connecting sources'}</div>
       <nav>{nav.map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?'active':''} onClick={()=>setView(item.id)}><Icon size={17}/><span>{item.label}</span></button>})}</nav>
       <div className="adminSidebarFoot"><ShieldCheck size={16}/><div><strong>Private dashboard</strong><span>/admin/ · noindex</span></div></div>
