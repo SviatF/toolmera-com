@@ -874,3 +874,70 @@ html[data-theme="light"] .reviewStamp p{color:#667085}
   .reviewStamp{grid-template-columns:1fr}
   .indiaPillarCard{min-height:220px}
 }
+
+
+/* Admin production polish: system health, URL inspection and cross-source intelligence */
+.adminHealthHero{
+  display:flex;align-items:center;gap:16px;margin-bottom:14px;padding:20px 22px;
+  border:1px solid rgba(255,255,255,.09);border-radius:16px;
+  background:linear-gradient(135deg,rgba(12,20,30,.96),rgba(7,12,18,.96));
+}
+.adminHealthHero>div:nth-child(2){flex:1}
+.adminHealthHero span{font-size:8px;letter-spacing:.16em;color:#788897;font-weight:700}
+.adminHealthHero h2{font-size:24px;letter-spacing:-.035em;margin:4px 0 4px}
+.adminHealthHero p{margin:0;color:#788897;font-size:10px}
+.healthOrb{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1)}
+.healthOrb.healthy{color:#52d8ad;background:rgba(62,216,163,.07);border-color:rgba(62,216,163,.18)}
+.healthOrb.attention{color:#ffbc63;background:rgba(255,180,79,.07);border-color:rgba(255,180,79,.18)}
+.healthSourceGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.healthSourceCard{display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:13px 14px;background:#091019}
+.healthSourceCard>div{flex:1;min-width:0}
+.healthSourceCard strong{display:block;font-size:10px;color:#d8e2ec}
+.healthSourceCard small{display:block;margin-top:3px;font-size:8px;color:#6f7e8d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.healthDot{width:7px;height:7px;border-radius:50%;background:#586675;box-shadow:0 0 0 4px rgba(255,255,255,.02)}
+.healthDot.live{background:#3ed8a3;box-shadow:0 0 10px rgba(62,216,163,.5)}
+.healthSecurity{display:flex!important;align-items:center!important}
+.healthSecurity>div{flex:1}
+
+.indexingControlPanel{margin-bottom:14px}
+.indexingControlRow{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.indexingControlRow>div{max-width:720px}
+.indexingControlRow strong{display:block;font-size:12px;color:#dce6ef;margin-bottom:5px}
+.indexingControlRow p{margin:0;color:#788897;font-size:9px;line-height:1.65}
+.indexingControlRow small{display:block;margin-top:8px;color:#5e7183;font-size:8px}
+.inspectionButton{width:auto!important;min-width:170px;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.inspectionButton:disabled{opacity:.55;cursor:wait}
+.inspectionProgress{margin-top:18px}
+.inspectionProgress>div{height:5px;border-radius:999px;background:#101923;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+.inspectionProgress>div>span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2f80ff,#00c2ff);box-shadow:0 0 14px rgba(47,128,255,.45);transition:width .28s ease}
+.inspectionProgress small{display:block;margin-top:7px;color:#6f7e8d;font-size:8px}
+
+.indexingTablePanel{overflow:hidden}
+.inspectionTable{overflow-x:auto}
+.inspectionHead,
+.inspectionTable>div:not(.inspectionHead){display:grid;grid-template-columns:minmax(240px,2.1fr) .72fr 1.35fr .95fr .85fr .8fr;gap:10px;align-items:center;min-width:980px;padding:11px 12px;border-top:1px solid rgba(255,255,255,.065)}
+.inspectionHead{border-top:0!important;background:rgba(255,255,255,.018);color:#667687;font-size:7px;text-transform:uppercase;letter-spacing:.11em;font-weight:700}
+.inspectionTable>div:not(.inspectionHead){font-size:9px;color:#8d9ba9}
+.inspectionTable>div:not(.inspectionHead):hover{background:rgba(73,170,255,.025)}
+.inspectionTable strong{font-size:9px;color:#c8d4df;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inspectionTable .adminPill{font-size:7px;padding:4px 7px}
+.inspectionError{background:rgba(255,111,131,.025)}
+
+.crossPageTable{overflow-x:auto}
+.crossPageHead,
+.crossPageTable>div:not(.crossPageHead){display:grid;grid-template-columns:minmax(260px,1.65fr) 1fr 1fr 1fr 1fr;gap:12px;align-items:center;min-width:1000px;padding:12px 13px;border-top:1px solid rgba(255,255,255,.065)}
+.crossPageHead{border-top:0!important;color:#68798a;font-size:7px;text-transform:uppercase;letter-spacing:.11em;font-weight:700;background:rgba(255,255,255,.014)}
+.crossPageTable>div:not(.crossPageHead):hover{background:rgba(73,170,255,.024)}
+.crossPageTable strong{font-size:9px;color:#d3dee8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crossPageTable span{font-size:9px;color:#9aa8b6}
+.crossPageTable span small{display:block;margin-top:3px;color:#5f7080;font-size:7px}
+
+@media(max-width:1100px){
+  .healthSourceGrid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+  .healthSourceGrid{grid-template-columns:1fr}
+  .adminHealthHero{align-items:flex-start}
+  .indexingControlRow{align-items:stretch;flex-direction:column}
+  .inspectionButton{width:100%!important}
+}
