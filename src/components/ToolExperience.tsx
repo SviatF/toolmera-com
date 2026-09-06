@@ -2709,10 +2709,25 @@ type WebsiteAnalysisResponse={
   ssl?:{https:boolean;secureConnection:boolean;hsts:boolean;httpRedirectToHttps:boolean|null};
   technologies?:string[];
   seoScore?:number;
+  traffic?:{
+    domain:string;
+    source:string;
+    ranked:boolean;
+    latestRank:number|null;
+    averageRank30d:number|null;
+    bestRank30d:number|null;
+    worstRank30d:number|null;
+    change30d:number|null;
+    popularityLevel:string;
+    daysObserved:number;
+    history:{date:string;rank:number}[];
+    note:string;
+  };
 };
 
 const websiteModeById:Record<string,string>={
   'website-analyzer':'full',
+  'website-traffic-checker':'traffic',
   'seo-checker':'seo',
   'meta-tag-checker':'meta',
   'http-status-checker':'status',
@@ -2804,6 +2819,31 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
           <section className="websiteReportPanel"><span className="sectionKicker">SECURITY</span><h3>Headers grade {security.grade}</h3><div className="websiteSignalList">{securityRows.map(([label,value])=><WebsiteSignal key={label} label={label} value={value||'Missing'} ok={Boolean(value)}/>)}</div></section>
           <section className="websiteReportPanel"><span className="sectionKicker">TECHNOLOGY</span><h3>Public fingerprints</h3>{result.technologies?.length?<div className="technologyTags">{result.technologies.map(t=><span key={t}>{t}</span>)}</div>:<p className="websiteMuted">No supported technology fingerprints were detected in the fetched HTML or response headers.</p>}</section>
         </div>}
+      </div>}
+
+      {mode==='traffic'&&result.traffic&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics">
+          <MetricCard label="Latest popularity rank" value={result.traffic.latestRank?'#'+result.traffic.latestRank.toLocaleString():'Not in top 1M'}/>
+          <MetricCard label="30-day average" value={result.traffic.averageRank30d?'#'+result.traffic.averageRank30d.toLocaleString():'—'}/>
+          <MetricCard label="Best rank" value={result.traffic.bestRank30d?'#'+result.traffic.bestRank30d.toLocaleString():'—'}/>
+          <MetricCard label="Traffic popularity" value={result.traffic.popularityLevel}/>
+        </div>
+        <div className="websiteReportGrid">
+          <section className="websiteReportPanel"><span className="sectionKicker">PUBLIC TRAFFIC SIGNALS</span><h3>{result.traffic.domain}</h3>
+            <div className="websiteSignalList">
+              <WebsiteSignal label="Ranking status" value={result.traffic.ranked?'Ranked in the public popularity dataset':'No top-1M rank found'} ok={result.traffic.ranked}/>
+              <WebsiteSignal label="30-day movement" value={result.traffic.change30d===null?'Not enough history':result.traffic.change30d===0?'No net rank change':(result.traffic.change30d>0?'+':'')+result.traffic.change30d.toLocaleString()+' places'}/>
+              <WebsiteSignal label="Worst rank" value={result.traffic.worstRank30d?'#'+result.traffic.worstRank30d.toLocaleString():'—'}/>
+              <WebsiteSignal label="Days observed" value={result.traffic.daysObserved}/>
+              <WebsiteSignal label="Live website status" value={page?page.status+' · '+page.elapsedMs+' ms':'Could not verify live page'}/>
+              <WebsiteSignal label="Data source" value={result.traffic.source}/>
+            </div>
+          </section>
+          <section className="websiteReportPanel"><span className="sectionKicker">30-DAY TREND</span><h3>Popularity rank history</h3>
+            {result.traffic.history.length?<div className="trafficHistory">{result.traffic.history.slice(-14).map(row=><div key={row.date}><span>{row.date}</span><strong>#{row.rank.toLocaleString()}</strong></div>)}</div>:<p className="websiteMuted">This domain has no rank history in the returned public dataset. That does not prove the website has zero traffic.</p>}
+          </section>
+        </div>
+        <div className="toolNote"><ShieldCheck size={15}/><span>{result.traffic.note}</span></div>
       </div>}
 
       {mode==='meta'&&meta&&<div className="websiteReport">
