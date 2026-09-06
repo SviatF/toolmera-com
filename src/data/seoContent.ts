@@ -1949,6 +1949,143 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
     ]
   }
 
+
+  'character-counter': {
+    title: 'Free Character Counter — Characters, Spaces, Lines & UTF-8 Bytes',
+    description: 'Count visible characters, characters without whitespace, words, lines and UTF-8 bytes with Unicode-aware browser processing.',
+    intro: 'Measure text length from several useful angles instead of treating characters, whitespace and encoded bytes as the same thing.',
+    sections: [
+      { title: 'Characters and bytes answer different questions', paragraphs: ['A visible character count is useful for forms, metadata and writing limits. A UTF-8 byte count is useful when a database field, API payload or storage limit is defined in bytes.', 'Because many Unicode characters use more than one UTF-8 byte, the byte total can be larger than the number of visible characters.'] },
+      { title: 'Unicode-aware counting', paragraphs: ['Modern browsers can segment grapheme clusters so many emoji and combined characters are counted more like users perceive them on screen.', 'Toolmera falls back to Unicode code-point iteration when that segmentation API is not available.'] }
+    ],
+    faq: [
+      { q: 'Does the counter include spaces?', a: 'It shows both the full character count and a separate count with whitespace removed.' },
+      { q: 'Why are UTF-8 bytes higher than characters?', a: 'Many non-ASCII characters require multiple bytes when encoded as UTF-8.' },
+      { q: 'Does it count emoji?', a: 'Yes. Modern browsers use grapheme segmentation when available, which improves counting for emoji sequences and combined characters.' },
+      { q: 'Is this the same as the Word Counter?', a: 'No. This page focuses on character, whitespace, line and byte limits, while Word Counter emphasizes words, sentences, paragraphs and reading time.' }
+    ],
+    related: [{ id: 'word-counter', anchor: 'count words and reading time' }, { id: 'case-converter', anchor: 'transform text case' }]
+  },
+
+  'remove-duplicate-lines': {
+    title: 'Remove Duplicate Lines Online — Free, Private Dedupe Tool',
+    description: 'Remove repeated lines from lists with case sensitivity, whitespace trimming, blank-line controls and optional sorting.',
+    intro: 'Deduplicate keyword lists, IDs, URLs, logs and exports while choosing exactly how matching should work.',
+    sections: [
+      { title: 'Define what counts as a duplicate', paragraphs: ['Case-insensitive mode can treat Apple and apple as the same line, while trimming can ignore accidental leading or trailing spaces.', 'Toolmera keeps the first surviving occurrence and preserves input order unless you explicitly choose a sort order.'] },
+      { title: 'Useful for list cleanup before import', paragraphs: ['Duplicate rows can distort keyword lists, CRM imports, allowlists, test data and simple line-based exports.', 'Removing duplicates before the next workflow makes counts and downstream processing easier to reason about.'] }
+    ],
+    faq: [
+      { q: 'Does it preserve the original order?', a: 'Yes, when Order is set to Preserve input order.' },
+      { q: 'Can Apple and apple be treated as duplicates?', a: 'Yes. Turn on Ignore case.' },
+      { q: 'Can blank lines be removed?', a: 'Yes. Blank-line removal is an explicit option.' },
+      { q: 'Is the text uploaded?', a: 'No. Deduplication runs in the browser.' }
+    ],
+    related: [{ id: 'sort-lines', anchor: 'sort a line-based list' }, { id: 'text-diff', anchor: 'compare two versions of text' }]
+  },
+
+  'sort-lines': {
+    title: 'Sort Lines Online — Alphabetical, Natural A–Z & Z–A',
+    description: 'Sort text lines alphabetically or naturally with numeric ordering, case controls and optional blank-line removal.',
+    intro: 'Reorder pasted lists in seconds, including filenames and identifiers where natural numeric sorting matters.',
+    sections: [
+      { title: 'Alphabetical vs. natural numeric sorting', paragraphs: ['Plain lexical sorting can place file10 before file2 because it compares characters. Natural numeric sorting recognizes the numeric portions and places file2 before file10.', 'Toolmera exposes that behavior as a toggle so the sort matches the kind of list you are cleaning.'] },
+      { title: 'Locale-aware comparison', paragraphs: ['The browser Intl.Collator API is used for sorting instead of a hard-coded English-only comparison.', 'Case can be ignored or treated as significant depending on the list.'] }
+    ],
+    faq: [
+      { q: 'Can I sort Z to A?', a: 'Yes. Choose descending order.' },
+      { q: 'What is natural sort?', a: 'It compares embedded numbers numerically, so item2 comes before item10.' },
+      { q: 'Can I keep blank lines?', a: 'Yes. Turn off Remove blank lines.' },
+      { q: 'Does sorting remove duplicates?', a: 'No. Use Remove Duplicate Lines when deduplication is the goal.' }
+    ],
+    related: [{ id: 'remove-duplicate-lines', anchor: 'remove duplicate lines first' }, { id: 'case-converter', anchor: 'normalize capitalization' }]
+  },
+
+  'text-diff': {
+    title: 'Text Diff Checker — Compare Two Text Blocks Online',
+    description: 'Compare two blocks of text line by line and identify added, removed and unchanged lines locally in your browser.',
+    intro: 'Spot structural changes between drafts, configuration snippets, lists and small code samples without uploading them.',
+    sections: [
+      { title: 'Line-level diff for quick comparisons', paragraphs: ['The checker uses a longest-common-subsequence comparison to align matching lines and identify insertions and removals.', 'The output prefixes additions with + and removals with -, making it easy to copy the result into notes or a review.'] },
+      { title: 'Designed for pasted text, not giant repositories', paragraphs: ['The browser implementation intentionally limits each side to 600 lines so the comparison stays responsive.', 'For large source trees, use a dedicated version-control diff workflow instead.'] }
+    ],
+    faq: [
+      { q: 'Is this a word-by-word diff?', a: 'No. The current Toolmera diff works at line level.' },
+      { q: 'What do + and - mean?', a: '+ marks a line added on the right; - marks a line removed from the left.' },
+      { q: 'Why is there a 600-line limit?', a: 'The limit keeps the browser-side LCS comparison responsive and predictable.' },
+      { q: 'Is my text sent to a server?', a: 'No. The comparison runs in the browser.' }
+    ],
+    related: [{ id: 'remove-duplicate-lines', anchor: 'clean repeated lines' }, { id: 'word-counter', anchor: 'measure either text version' }]
+  },
+
+  'json-csv': {
+    title: 'JSON to CSV Converter — Convert JSON Arrays to CSV Online',
+    description: 'Convert JSON objects or arrays to CSV with nested-object flattening, delimiter controls, copy and download.',
+    intro: 'Turn structured JSON from an API or export into a spreadsheet-ready table without sending the payload to a server.',
+    sections: [
+      { title: 'How JSON fields become CSV columns', paragraphs: ['For an array of objects, Toolmera builds a header from the union of object keys so rows with missing fields still stay aligned.', 'Nested objects can be flattened into dotted column names such as address.city. Arrays remain represented as JSON text inside a cell.'] },
+      { title: 'CSV quoting and delimiters', paragraphs: ['Values containing the selected delimiter, quotes or line breaks are wrapped in quotes and embedded quotes are doubled.', 'Choose comma, semicolon or tab depending on the spreadsheet or import workflow that will consume the file.'] }
+    ],
+    faq: [
+      { q: 'Can I convert one JSON object?', a: 'Yes. A single object is treated as a one-row table.' },
+      { q: 'Can nested JSON be flattened?', a: 'Yes. Nested objects can become dotted columns such as user.name.' },
+      { q: 'Can I download the CSV?', a: 'Yes. The result can be copied or downloaded as a CSV file.' },
+      { q: 'Are JSON arrays inside fields expanded?', a: 'No. Array values are serialized into the CSV cell as JSON text.' }
+    ],
+    related: [{ id: 'json', anchor: 'format and validate JSON first' }, { id: 'base64', anchor: 'decode Base64 API payload text' }]
+  },
+
+  'xml-formatter': {
+    title: 'XML Formatter — Beautify & Validate XML Online',
+    description: 'Validate and pretty-print XML with configurable indentation using the browser XML parser.',
+    intro: 'Make compact XML easier to inspect while checking that the document is well formed.',
+    sections: [
+      { title: 'Formatting starts with XML validation', paragraphs: ['Toolmera parses the input as application/xml before formatting it. Malformed tags, broken nesting and other well-formedness errors are reported instead of silently producing misleading output.', 'After validation, the browser serializes the document and Toolmera adds readable indentation.'] },
+      { title: 'Serialization can normalize the document', paragraphs: ['XML serializers can normalize quoting, namespace output and some whitespace details even when the logical document structure is unchanged.', 'Review formatted output carefully before replacing whitespace-sensitive XML, digital signatures or documents where byte-for-byte identity matters.'] }
+    ],
+    faq: [
+      { q: 'Does the tool validate XML?', a: 'It validates XML well-formedness with the browser XML parser.' },
+      { q: 'Can I choose indentation?', a: 'Yes. Choose 2 spaces, 4 spaces or tabs.' },
+      { q: 'Does it validate against XSD?', a: 'No. The current tool checks XML well-formedness, not an external XSD schema.' },
+      { q: 'Is the XML uploaded?', a: 'No. Parsing and formatting happen in the browser.' }
+    ],
+    related: [{ id: 'json', anchor: 'format JSON data' }, { id: 'url-encoder', anchor: 'encode XML values for URLs' }]
+  },
+
+  'date-calculator': {
+    title: 'Date Calculator — Add or Subtract Days, Weeks, Months & Years',
+    description: 'Calculate a future or past date by adding or subtracting years, months, weeks and days with calendar-aware month handling.',
+    intro: 'Start from any calendar date and move forward or backward by a combination of calendar units.',
+    sections: [
+      { title: 'Months are calendar units, not fixed day counts', paragraphs: ['A month is not always 30 days. Toolmera changes years and months on the calendar, clamps to the last valid day of the target month, and only then applies weeks and days.', 'That matters for dates such as January 31, where moving one month forward cannot preserve the day number in every year.'] },
+      { title: 'Calendar math vs. elapsed duration', paragraphs: ['Use Date Calculator when the task is to reach a calendar date after a number of years, months, weeks or days.', 'Use Time Duration Calculator when you already have two date-time values and need the elapsed hours, minutes or seconds between them.'] }
+    ],
+    faq: [
+      { q: 'What happens when the target month has fewer days?', a: 'The date is clamped to the last valid day of the target month before week and day adjustments are applied.' },
+      { q: 'Can I subtract dates?', a: 'You can subtract calendar units from a starting date. For the difference between two dates, use Date Difference Calculator.' },
+      { q: 'Can I add weeks and days together?', a: 'Yes. Years, months, weeks and days can be combined in one calculation.' },
+      { q: 'Does the result show the weekday?', a: 'Yes. The formatted result includes the weekday.' }
+    ],
+    related: [{ id: 'date-difference', anchor: 'calculate days between two dates' }, { id: 'time-duration', anchor: 'measure elapsed hours and minutes' }]
+  },
+
+  'time-duration': {
+    title: 'Time Duration Calculator — Hours, Minutes & Seconds Between Times',
+    description: 'Calculate elapsed days, hours, minutes and seconds between two local date-time values and see total hours and minutes.',
+    intro: 'Measure how much clock time passes between a start and end date-time using browser-local calculation.',
+    sections: [
+      { title: 'Elapsed time in several useful units', paragraphs: ['Toolmera breaks the interval into whole days, remaining hours, minutes and seconds, then also shows the total duration in hours, minutes and seconds.', 'This is useful for shifts, sessions, production windows, travel segments and other elapsed-time calculations.'] },
+      { title: 'Local date-time inputs do not name a time zone', paragraphs: ['The browser interprets datetime-local inputs in the local environment. That is appropriate for same-zone elapsed time but it is not a substitute for named-zone conversion.', 'For events in different locations or daylight-saving-sensitive scheduling, convert the instants with Time Zone Converter first.'] }
+    ],
+    faq: [
+      { q: 'Can the end time be on a later day?', a: 'Yes. The inputs include both date and time.' },
+      { q: 'What if the end is before the start?', a: 'The tool reports an error instead of returning a negative duration.' },
+      { q: 'Does it show total minutes?', a: 'Yes. It shows total minutes and total seconds in addition to the day/hour/minute breakdown.' },
+      { q: 'Can it compare two different time zones?', a: 'Not directly. Use Time Zone Converter when the two clock times belong to different named zones.' }
+    ],
+    related: [{ id: 'time-zone', anchor: 'convert date-times between zones' }, { id: 'date-difference', anchor: 'compare calendar dates' }]
+  },
+
 };
 
 export const categorySeoContent: Record<string, {
@@ -2046,15 +2183,15 @@ export const categorySeoContent: Record<string, {
   },
 
   text: {
-    title: 'Free Text Tools — Word Counter, Case Converter & Slug Generator',
-    description: 'Count text, transform capitalization and generate clean URL slugs directly in your browser.',
-    intro: 'Analyze text length, transform capitalization or turn titles into URL-friendly slugs with focused browser-side utilities.',
+    title: 'Free Text Tools — Count, Compare, Sort & Clean Text Online',
+    description: 'Count characters and words, compare text, remove duplicate lines, sort lists, transform case and generate URL slugs.',
+    intro: 'Analyze, compare, clean and transform text with focused browser-side utilities for writing, lists and developer workflows.',
     sections: [
       {
         title: 'Which text tool do you need?',
         paragraphs: [
-          'Use Word Counter for words, characters, sentences, paragraphs or estimated reading time. Use Case Converter for capitalization and developer naming styles.',
-          'Use Slug Generator when a title or phrase needs to become a compact lowercase route segment with controlled separators and optional Unicode preservation.'
+          'Use Word Counter for words, sentences, paragraphs and reading time, and Character Counter when exact text length, whitespace or UTF-8 bytes matter. Use Case Converter for capitalization and developer naming styles.',
+          'Use Remove Duplicate Lines and Sort Lines for list cleanup, Text Diff Checker for version comparison, and Slug Generator for compact URL-friendly route segments.'
         ]
       },
       {
@@ -2068,8 +2205,8 @@ export const categorySeoContent: Record<string, {
   },
 
   developer: {
-    title: 'Developer Tools — JSON, Base64, URL Encoding & JWT',
-    description: 'Format JSON, encode or decode Base64 and URLs, and inspect JWT header and payload data directly in your browser.',
+    title: 'Developer Tools — JSON, CSV, XML, Base64, URLs & JWT',
+    description: 'Format JSON and XML, convert JSON to CSV, encode Base64 and URLs, and inspect JWT data directly in your browser.',
     intro: 'Lightweight developer utilities for structured data, text encodings, URL percent-encoding and local JWT inspection.',
     sections: [
       {
@@ -2112,15 +2249,15 @@ export const categorySeoContent: Record<string, {
   },
 
   time: {
-    title: 'Free Time & Date Tools — Time Zones & Unix Timestamps',
-    description: 'Convert Unix timestamps and translate local date-times between IANA time zones with browser-based timezone rules.',
-    intro: 'Work with Unix epoch values, UTC and named time zones without server round trips.',
+    title: 'Free Time & Date Tools — Date Math, Duration, Time Zones & Unix',
+    description: 'Add or subtract calendar dates, calculate elapsed time, convert Unix timestamps and translate date-times between IANA time zones.',
+    intro: 'Calculate calendar dates and durations, work with Unix epoch values, UTC and named time zones without server round trips.',
     sections: [
       {
         title: 'Time zones and Unix time for real workflows',
         paragraphs: [
-          'Unix timestamps are common in APIs, logs and databases, while named IANA time zones are essential when a human wall-clock time needs daylight-saving rules.',
-          'Use Unix Timestamp Converter for epoch values and Time Zone Converter when the same instant needs to be represented across locations such as Europe/Kyiv, America/New_York or Asia/Kolkata.'
+          'Unix timestamps are common in APIs, logs and databases, while named IANA time zones are essential when a human wall-clock time needs daylight-saving rules. Calendar arithmetic and elapsed duration are separate problems.',
+          'Use Date Calculator to move a date by years, months, weeks or days; Time Duration Calculator for elapsed clock time; Unix Timestamp Converter for epoch values; and Time Zone Converter for the same instant across named locations.'
         ]
       }
     ]
