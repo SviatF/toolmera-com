@@ -2407,8 +2407,281 @@ function JwtDecoder(){
   </div>;
 }
 
+
+function graphemeLength(value:string){
+  const Segmenter=(Intl as typeof Intl & {Segmenter?:new(...args:any[])=>any}).Segmenter;
+  if(Segmenter)return Array.from(new Segmenter(undefined,{granularity:'grapheme'}).segment(value)).length;
+  return Array.from(value).length;
+}
+
+function CharacterCounter(){
+  const [text,setText]=useState('');
+  const characters=useMemo(()=>graphemeLength(text),[text]);
+  const noWhitespace=useMemo(()=>graphemeLength(text.replace(/\s/gu,'')),[text]);
+  const spaces=useMemo(()=>graphemeLength(text.match(/\s/gu)?.join('')||''),[text]);
+  const lines=useMemo(()=>text?text.split(/\r\n|\r|\n/).length:0,[text]);
+  const words=useMemo(()=>countWords(text),[text]);
+  const bytes=useMemo(()=>new TextEncoder().encode(text).length,[text]);
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={x=>setText(x.target.value)} placeholder="Paste or type text here…"/>
+    <div className="metricGrid textMetricGrid">
+      <MetricCard label="Characters" value={characters}/>
+      <MetricCard label="No whitespace" value={noWhitespace}/>
+      <MetricCard label="Whitespace" value={spaces}/>
+      <MetricCard label="Words" value={words}/>
+      <MetricCard label="Lines" value={lines}/>
+      <MetricCard label="UTF-8 bytes" value={bytes}/>
+    </div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Character counting uses Unicode grapheme segmentation when the browser supports it. UTF-8 bytes are a separate storage measurement and can exceed the visible character count.</span></div>
+  </div>;
+}
+
+function RemoveDuplicateLines(){
+  const [text,setText]=useState('');
+  const [ignoreCase,setIgnoreCase]=useState(false);
+  const [trim,setTrim]=useState(true);
+  const [removeBlank,setRemoveBlank]=useState(true);
+  const [sort,setSort]=useState<'preserve'|'az'|'za'>('preserve');
+  const [copied,setCopied]=useState(false);
+  const result=useMemo(()=>{
+    const input=text?text.split(/\r\n|\r|\n/):[];
+    const seen=new Set<string>();
+    const unique:string[]=[];
+    for(const raw of input){
+      const value=trim?raw.trim():raw;
+      if(removeBlank&&!value)continue;
+      const key=ignoreCase?value.toLocaleLowerCase():value;
+      if(seen.has(key))continue;
+      seen.add(key);unique.push(value);
+    }
+    if(sort!=='preserve'){
+      const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:ignoreCase?'base':'variant'});
+      unique.sort((a,b)=>sort==='az'?collator.compare(a,b):collator.compare(b,a));
+    }
+    return {output:unique.join('\n'),inputCount:input.length,uniqueCount:unique.length};
+  },[text,ignoreCase,trim,removeBlank,sort]);
+  async function copy(){if(!result.output)return;await copyPlainText(result.output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={x=>setText(x.target.value)} placeholder={'apple\nbanana\napple\nAPPLE'}/>
+    <div className="fieldGrid generatorFields">
+      <label>Order<select value={sort} onChange={x=>setSort(x.target.value as 'preserve'|'az'|'za')}><option value="preserve">Preserve input order</option><option value="az">Sort A–Z</option><option value="za">Sort Z–A</option></select></label>
+      <label className="checkControl"><input type="checkbox" checked={ignoreCase} onChange={x=>setIgnoreCase(x.target.checked)}/><span>Ignore case</span></label>
+      <label className="checkControl"><input type="checkbox" checked={trim} onChange={x=>setTrim(x.target.checked)}/><span>Trim whitespace</span></label>
+      <label className="checkControl"><input type="checkbox" checked={removeBlank} onChange={x=>setRemoveBlank(x.target.checked)}/><span>Remove blank lines</span></label>
+    </div>
+    <div className="metricGrid textMetricGrid">
+      <MetricCard label="Input lines" value={result.inputCount}/>
+      <MetricCard label="Unique lines" value={result.uniqueCount}/>
+      <MetricCard label="Removed" value={Math.max(0,result.inputCount-result.uniqueCount)}/>
+    </div>
+    <div className="outputWrap"><textarea className="textArea output" readOnly value={result.output} placeholder="Unique lines appear here…"/><button className="copyButton" onClick={copy} disabled={!result.output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+  </div>;
+}
+
+function SortLines(){
+  const [text,setText]=useState('');
+  const [direction,setDirection]=useState<'asc'|'desc'>('asc');
+  const [natural,setNatural]=useState(true);
+  const [ignoreCase,setIgnoreCase]=useState(true);
+  const [removeBlank,setRemoveBlank]=useState(true);
+  const [copied,setCopied]=useState(false);
+  const output=useMemo(()=>{
+    const lines=(text?text.split(/\r\n|\r|\n/):[]).filter(x=>!removeBlank||x.trim());
+    const collator=new Intl.Collator(undefined,{numeric:natural,sensitivity:ignoreCase?'base':'variant'});
+    return [...lines].sort((a,b)=>direction==='asc'?collator.compare(a,b):collator.compare(b,a)).join('\n');
+  },[text,direction,natural,ignoreCase,removeBlank]);
+  async function copy(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <textarea className="textArea" value={text} onChange={x=>setText(x.target.value)} placeholder={'file10\nfile2\nfile1'}/>
+    <div className="fieldGrid generatorFields">
+      <label>Direction<select value={direction} onChange={x=>setDirection(x.target.value as 'asc'|'desc')}><option value="asc">A → Z</option><option value="desc">Z → A</option></select></label>
+      <label className="checkControl"><input type="checkbox" checked={natural} onChange={x=>setNatural(x.target.checked)}/><span>Natural numeric sort</span></label>
+      <label className="checkControl"><input type="checkbox" checked={ignoreCase} onChange={x=>setIgnoreCase(x.target.checked)}/><span>Ignore case</span></label>
+      <label className="checkControl"><input type="checkbox" checked={removeBlank} onChange={x=>setRemoveBlank(x.target.checked)}/><span>Remove blank lines</span></label>
+    </div>
+    <div className="outputWrap"><textarea className="textArea output" readOnly value={output} placeholder="Sorted lines appear here…"/><button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+  </div>;
+}
+
+type LineDiffItem={type:'same'|'add'|'remove';text:string};
+function buildLineDiff(left:string,right:string){
+  const a=left.split(/\r\n|\r|\n/),b=right.split(/\r\n|\r|\n/);
+  if(a.length>600||b.length>600)throw new Error('For a responsive browser diff, keep each side to 600 lines or fewer.');
+  const dp=Array.from({length:a.length+1},()=>new Uint16Array(b.length+1));
+  for(let i=a.length-1;i>=0;i--)for(let j=b.length-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const items:LineDiffItem[]=[];let i=0,j=0;
+  while(i<a.length&&j<b.length){
+    if(a[i]===b[j]){items.push({type:'same',text:a[i]});i++;j++;continue}
+    if(dp[i+1][j]>=dp[i][j+1]){items.push({type:'remove',text:a[i]});i++}else{items.push({type:'add',text:b[j]});j++}
+  }
+  while(i<a.length)items.push({type:'remove',text:a[i++]});
+  while(j<b.length)items.push({type:'add',text:b[j++]});
+  return items;
+}
+
+function TextDiffChecker(){
+  const [left,setLeft]=useState(''),[right,setRight]=useState('');
+  const result=useMemo(()=>{
+    if(!left&&!right)return {output:'',added:0,removed:0,unchanged:0,error:''};
+    try{
+      const items=buildLineDiff(left,right);
+      return {output:items.map(x=>(x.type==='add'?'+ ':x.type==='remove'?'- ':'  ')+x.text).join('\n'),added:items.filter(x=>x.type==='add').length,removed:items.filter(x=>x.type==='remove').length,unchanged:items.filter(x=>x.type==='same').length,error:''};
+    }catch(err){return {output:'',added:0,removed:0,unchanged:0,error:err instanceof Error?err.message:'Could not compare these texts.'}}
+  },[left,right]);
+  const [copied,setCopied]=useState(false);
+  async function copy(){if(!result.output)return;await copyPlainText(result.output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <div className="jwtGrid">
+      <div><div className="queueHead"><span>Original</span></div><textarea className="textArea codeArea" value={left} onChange={x=>setLeft(x.target.value)} placeholder="Original text…"/></div>
+      <div><div className="queueHead"><span>Changed</span></div><textarea className="textArea codeArea" value={right} onChange={x=>setRight(x.target.value)} placeholder="Changed text…"/></div>
+    </div>
+    {result.error&&<div className="toolError">{result.error}</div>}
+    <div className="metricGrid textMetricGrid"><MetricCard label="Added" value={result.added}/><MetricCard label="Removed" value={result.removed}/><MetricCard label="Unchanged" value={result.unchanged}/></div>
+    <div className="outputWrap"><textarea className="textArea output codeArea" readOnly value={result.output} placeholder="+ added, - removed and unchanged lines appear here…"/><button className="copyButton" onClick={copy} disabled={!result.output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>This is a line-level longest-common-subsequence diff, optimized for pasted text and small configuration files rather than very large repositories.</span></div>
+  </div>;
+}
+
+function flattenJsonRecord(value:Record<string,unknown>,prefix='',out:Record<string,unknown>={}){
+  for(const [key,item] of Object.entries(value)){
+    const next=prefix?prefix+'.'+key:key;
+    if(item&&typeof item==='object'&&!Array.isArray(item))flattenJsonRecord(item as Record<string,unknown>,next,out);
+    else out[next]=item;
+  }
+  return out;
+}
+function csvCell(value:unknown,delimiter:string){
+  const text=value==null?'':typeof value==='object'?JSON.stringify(value):String(value);
+  return (text.includes(delimiter)||/["\r\n]/.test(text))?'"'+text.replace(/"/g,'""')+'"':text;
+}
+
+function JsonToCsv(){
+  const [text,setText]=useState(''),[delimiter,setDelimiter]=useState(','),[flatten,setFlatten]=useState(true);
+  const [output,setOutput]=useState(''),[error,setError]=useState(''),[copied,setCopied]=useState(false);
+  function convert(){
+    try{
+      const parsed=JSON.parse(text);
+      const source=Array.isArray(parsed)?parsed:[parsed];
+      if(!source.length||source.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw new Error('Use a JSON object or an array of JSON objects.');
+      const rows=(source as Record<string,unknown>[]).map(x=>flatten?flattenJsonRecord(x):x);
+      const headers=Array.from(new Set(rows.flatMap(x=>Object.keys(x))));
+      const csv=[headers.map(x=>csvCell(x,delimiter)).join(delimiter),...rows.map(row=>headers.map(h=>csvCell(row[h],delimiter)).join(delimiter))].join('\n');
+      setOutput(csv);setError('');setCopied(false);
+    }catch(err){setOutput('');setError(err instanceof Error?err.message:'Could not convert this JSON.')}
+  }
+  async function copy(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  function download(){
+    if(!output)return;
+    const url=URL.createObjectURL(new Blob([output],{type:'text/csv;charset=utf-8'}));
+    const a=document.createElement('a');a.href=url;a.download='toolmera-json.csv';a.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  return <div className="toolUi">
+    <textarea className="textArea codeArea" value={text} onChange={x=>setText(x.target.value)} placeholder={'[{"name":"Ada","age":36},{"name":"Grace","age":41}]'}/>
+    <div className="fieldGrid generatorFields">
+      <label>Delimiter<select value={delimiter} onChange={x=>setDelimiter(x.target.value)}><option value=",">Comma (,)</option><option value=";">Semicolon (;)</option><option value={'\t'}>Tab</option></select></label>
+      <label className="checkControl"><input type="checkbox" checked={flatten} onChange={x=>setFlatten(x.target.checked)}/><span>Flatten nested objects</span></label>
+    </div>
+    <button className="primaryButton wide" onClick={convert}>Convert JSON to CSV</button>
+    {error&&<div className="toolError">{error}</div>}
+    <div className="outputWrap"><textarea className="textArea output codeArea" readOnly value={output} placeholder="CSV appears here…"/><button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <button className="secondaryButton wide" onClick={download} disabled={!output}><Download size={16}/> Download CSV</button>
+  </div>;
+}
+
+function prettyXml(xml:string,indent:string){
+  const normalized=xml.replace(/>\s*</g,'><').replace(/(>)(<)(\/*)/g,'$1\n$2$3');
+  let depth=0;
+  return normalized.split('\n').map(raw=>{
+    const line=raw.trim();
+    if(/^<\//.test(line))depth=Math.max(0,depth-1);
+    const out=indent.repeat(depth)+line;
+    if(/^<[^!?/][^>]*[^/]?>/.test(line)&&!/<\/[^>]+>\s*$/.test(line)&&!/^<[^>]+\/>/.test(line))depth++;
+    return out;
+  }).join('\n');
+}
+function XmlFormatter(){
+  const [text,setText]=useState(''),[output,setOutput]=useState(''),[indent,setIndent]=useState<'2'|'4'|'tab'>('2');
+  const [error,setError]=useState(''),[copied,setCopied]=useState(false);
+  function format(){
+    try{
+      const doc=new DOMParser().parseFromString(text,'application/xml');
+      const parserError=doc.querySelector('parsererror');
+      if(parserError)throw new Error((parserError.textContent||'Invalid XML').replace(/\s+/g,' ').slice(0,220));
+      const serialized=new XMLSerializer().serializeToString(doc);
+      const pad=indent==='tab'?'\t':' '.repeat(Number(indent));
+      setOutput(prettyXml(serialized,pad));setError('');setCopied(false);
+    }catch(err){setOutput('');setError(err instanceof Error?err.message:'Invalid XML.')}
+  }
+  async function copy(){if(!output)return;await copyPlainText(output);setCopied(true);window.setTimeout(()=>setCopied(false),1200)}
+  return <div className="toolUi">
+    <textarea className="textArea codeArea" value={text} onChange={x=>setText(x.target.value)} placeholder={'<root><item id="1">Hello</item></root>'}/>
+    <div className="jsonControls"><button className="primaryButton" onClick={format}>Format XML</button><label>Indentation<select value={indent} onChange={x=>setIndent(x.target.value as '2'|'4'|'tab')}><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></label></div>
+    {error&&<div className="toolError">{error}</div>}
+    <div className="outputWrap"><textarea className="textArea output codeArea" readOnly value={output} placeholder="Formatted XML appears here…"/><button className="copyButton" onClick={copy} disabled={!output}>{copied?<Check size={15}/>:<Copy size={15}/>} {copied?'Copied':'Copy'}</button></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>The browser XML parser validates well-formedness. Formatting can normalize serialization details, so review output before replacing whitespace-sensitive XML or signed documents.</span></div>
+  </div>;
+}
+
+function parseLocalDate(value:string){
+  const [y,m,d]=value.split('-').map(Number);
+  return y&&m&&d?new Date(y,m-1,d):null;
+}
+function formatDateValue(date:Date){
+  return date.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+function shiftCalendarDate(base:Date,sign:number,years:number,months:number,weeks:number,days:number){
+  const d=new Date(base.getFullYear(),base.getMonth(),1);
+  const originalDay=base.getDate();
+  d.setFullYear(d.getFullYear()+sign*years);
+  d.setMonth(d.getMonth()+sign*months);
+  const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  d.setDate(Math.min(originalDay,last));
+  d.setDate(d.getDate()+sign*(weeks*7+days));
+  return d;
+}
+function DateCalculator(){
+  const [date,setDate]=useState(''),[mode,setMode]=useState<'add'|'subtract'>('add');
+  const [years,setYears]=useState(0),[months,setMonths]=useState(0),[weeks,setWeeks]=useState(0),[days,setDays]=useState(0);
+  useEffect(()=>{if(!date){const n=new Date();setDate([n.getFullYear(),String(n.getMonth()+1).padStart(2,'0'),String(n.getDate()).padStart(2,'0')].join('-'))}},[date]);
+  const result=useMemo(()=>{const base=parseLocalDate(date);return base?shiftCalendarDate(base,mode==='add'?1:-1,years,months,weeks,days):null},[date,mode,years,months,weeks,days]);
+  return <div className="toolUi">
+    <div className="calcModeTabs unitTabs"><button className={mode==='add'?'active':''} onClick={()=>setMode('add')}>Add</button><button className={mode==='subtract'?'active':''} onClick={()=>setMode('subtract')}>Subtract</button></div>
+    <div className="fieldGrid">
+      <label>Start date<input type="date" value={date} onChange={x=>setDate(x.target.value)}/></label>
+      <label>Years<input type="number" min="0" value={years} onChange={x=>setYears(Math.max(0,Number(x.target.value)||0))}/></label>
+      <label>Months<input type="number" min="0" value={months} onChange={x=>setMonths(Math.max(0,Number(x.target.value)||0))}/></label>
+      <label>Weeks<input type="number" min="0" value={weeks} onChange={x=>setWeeks(Math.max(0,Number(x.target.value)||0))}/></label>
+      <label>Days<input type="number" min="0" value={days} onChange={x=>setDays(Math.max(0,Number(x.target.value)||0))}/></label>
+    </div>
+    <div className="resultHero"><span>Result date</span><strong>{result?formatDateValue(result):'—'}</strong>{result&&<small>{[result.getFullYear(),String(result.getMonth()+1).padStart(2,'0'),String(result.getDate()).padStart(2,'0')].join('-')}</small>}</div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>Month and year changes clamp to the last valid day of the target month before weeks and days are applied.</span></div>
+  </div>;
+}
+
+function TimeDurationCalculator(){
+  const [start,setStart]=useState(''),[end,setEnd]=useState('');
+  const result=useMemo(()=>{
+    if(!start||!end)return null;
+    const a=new Date(start),b=new Date(end),ms=b.getTime()-a.getTime();
+    if(!Number.isFinite(ms)||ms<0)return {error:'End date-time must be after the start date-time.',ms:0};
+    return {error:'',ms};
+  },[start,end]);
+  const seconds=result&&!result.error?Math.floor(result.ms/1000):0;
+  const days=Math.floor(seconds/86400),hours=Math.floor((seconds%86400)/3600),minutes=Math.floor((seconds%3600)/60),secs=seconds%60;
+  return <div className="toolUi">
+    <div className="fieldGrid">
+      <label>Start date & time<input type="datetime-local" value={start} onChange={x=>setStart(x.target.value)}/></label>
+      <label>End date & time<input type="datetime-local" value={end} onChange={x=>setEnd(x.target.value)}/></label>
+    </div>
+    {result?.error&&<div className="toolError">{result.error}</div>}
+    {result&&!result.error&&<><div className="metricGrid textMetricGrid"><MetricCard label="Days" value={days}/><MetricCard label="Hours" value={hours}/><MetricCard label="Minutes" value={minutes}/><MetricCard label="Seconds" value={secs}/></div><div className="resultHero"><span>Total elapsed time</span><strong>{(seconds/3600).toLocaleString(undefined,{maximumFractionDigits:4})} hours</strong><small>{Math.floor(seconds/60).toLocaleString()} minutes · {seconds.toLocaleString()} seconds</small></div></>}
+    <div className="toolNote"><ShieldCheck size={15}/><span>Inputs are interpreted as local date-times by the browser. For cross-zone scheduling, use the Time Zone Converter instead.</span></div>
+  </div>;
+}
+
+
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='character-counter')ui=<CharacterCounter/>; else if(tool.kind==='remove-duplicate-lines')ui=<RemoveDuplicateLines/>; else if(tool.kind==='sort-lines')ui=<SortLines/>; else if(tool.kind==='text-diff')ui=<TextDiffChecker/>; else if(tool.kind==='json-to-csv')ui=<JsonToCsv/>; else if(tool.kind==='xml-formatter')ui=<XmlFormatter/>; else if(tool.kind==='date-calculator')ui=<DateCalculator/>; else if(tool.kind==='time-duration')ui=<TimeDurationCalculator/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> Browser-first processing</span></div>{ui}</section>
 }
