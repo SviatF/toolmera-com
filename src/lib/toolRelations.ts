@@ -44,18 +44,25 @@ const graph:Record<string,string[]>={
   'area':['length','volume','weight'],
   'volume':['weight','area','length','temperature'],
   'weight':['volume','length','area'],
-  'temperature':['length','volume'],
+  'temperature':['length','volume','speed'],
+  'speed':['length','temperature','data-storage'],
+  'data-storage':['speed','base64','json'],
+  'color':['png-webp','jpg-png','json'],
 
   // Generators / text / developer / time.
   'qr-code':['uuid','base64','case-converter'],
   'uuid':['json','base64','password'],
   'password':['uuid','random-number'],
   'random-number':['average','password','percentage'],
-  'unix-timestamp':['date-difference','age','json'],
-  'word-counter':['case-converter'],
-  'case-converter':['word-counter','base64'],
-  'json':['base64','uuid'],
-  'base64':['json','uuid','qr-code'],
+  'unix-timestamp':['time-zone','date-difference','age','json'],
+  'time-zone':['unix-timestamp','date-difference','age'],
+  'word-counter':['case-converter','slug'],
+  'case-converter':['word-counter','slug','base64'],
+  'slug':['case-converter','word-counter','url-encoder'],
+  'json':['jwt','base64','uuid'],
+  'base64':['jwt','json','uuid','qr-code'],
+  'url-encoder':['base64','slug','json'],
+  'jwt':['json','base64','url-encoder'],
 
   // India finance/tax — local cluster plus relevant global bridges.
   'emi-in':['home-emi-in','car-emi-in','loan','simple-interest','percentage'],
@@ -174,7 +181,37 @@ export function howToForTool(tool:Tool):HowToStep[]{
     {title:'Choose a case style',description:'Apply uppercase, title case, camelCase, snake_case or another supported style.'},
     {title:'Copy the result',description:'Copy the transformed output with one click.'},
   ];
-  if(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area'].includes(tool.kind))return[
+  if(tool.kind==='time-zone')return[
+    {title:'Choose the source time zone',description:'Enter the wall-clock date and time and select the IANA zone where that local time occurs.'},
+    {title:'Choose the destination zone',description:'Select the time zone you want to compare and swap the two zones when needed.'},
+    {title:'Read the converted instant',description:'Toolmera shows source time, converted destination time and the matching UTC / ISO value.'},
+  ];
+  if(tool.kind==='url-encoder')return[
+    {title:'Choose URL component or full URL',description:'Component mode encodes values such as query parameters; full URL mode preserves URL syntax where appropriate.'},
+    {title:'Paste the value',description:'Enter plain text to encode or percent-encoded text to decode.'},
+    {title:'Encode, decode and copy',description:'Run the browser-native operation and copy the output into your next workflow.'},
+  ];
+  if(tool.kind==='slug-generator')return[
+    {title:'Enter a title or phrase',description:'Paste the text you want to turn into a URL-friendly slug.'},
+    {title:'Choose separator and Unicode behavior',description:'Use hyphens or underscores and decide whether native-script letters should be preserved.'},
+    {title:'Copy the generated slug',description:'Review the cleaned lowercase result and copy it into your CMS or routing configuration.'},
+  ];
+  if(tool.kind==='jwt-decoder')return[
+    {title:'Paste a compact JWT',description:'Enter the three-part token you want to inspect.'},
+    {title:'Decode header and payload',description:'Toolmera Base64URL-decodes the first two parts and formats their JSON locally.'},
+    {title:'Inspect claims without trusting them',description:'Review exp, iat and nbf timestamps while remembering that this tool does not verify the token signature.'},
+  ];
+  if(tool.kind==='color-converter')return[
+    {title:'Choose HEX, RGB or HSL',description:'Select the color model that matches your starting value.'},
+    {title:'Enter the color',description:'Provide a valid color value and check the live preview.'},
+    {title:'Copy the equivalent formats',description:'Use the generated HEX, RGB or HSL value in CSS, design tools or code.'},
+  ];
+  if(tool.kind==='data-storage')return[
+    {title:'Choose decimal or binary units',description:'Use SI for KB/MB/GB or IEC for KiB/MiB/GiB so the unit definition is explicit.'},
+    {title:'Enter the storage value',description:'Select the source and target units and type the size you want to convert.'},
+    {title:'Compare every unit',description:'Read the selected conversion and the full same-system unit matrix.'},
+  ];
+  if(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed'].includes(tool.kind))return[
     {title:'Enter a measurement',description:'Type the value and select the source unit.'},
     {title:'Choose the target unit',description:'Select the unit you want to convert into or use a quick pair.'},
     {title:'Read the conversion',description:'The result and available comparison values update immediately.'},
