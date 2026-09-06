@@ -79,7 +79,7 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
     <section className="shell categoryHero compactHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><span>{cat.label}</span></div>
       <span className="eyebrow neonText">TOOLMERA / {cat.label.toUpperCase()}</span>
-      <h1>{cat.label}</h1>
+      <h1>{category==='website-analysis'?'Free Website Analysis Tools':cat.label}</h1>
       <p>{seo?.intro||`${cat.description} Fast, focused and designed with privacy in mind.`}</p>
       <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
