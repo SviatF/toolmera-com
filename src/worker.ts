@@ -31,6 +31,31 @@ type Ga4Report = {
 };
 type Ga4BatchReport = { reports?: Ga4Report[] };
 
+type CfAdaptiveRow = {
+  count?: number;
+  sum?: { visits?: number; edgeResponseBytes?: number };
+  dimensions?: {
+    clientCountryName?: string;
+    clientRequestPath?: string;
+    edgeResponseStatus?: number;
+    datetimeHour?: string;
+  };
+};
+type CfGraphqlResponse = {
+  data?: {
+    viewer?: {
+      zones?: {
+        overview?: CfAdaptiveRow[];
+        countries?: CfAdaptiveRow[];
+        paths?: CfAdaptiveRow[];
+        statuses?: CfAdaptiveRow[];
+        trend?: CfAdaptiveRow[];
+      }[];
+    };
+  };
+  errors?: { message?: string }[];
+};
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -378,6 +403,7 @@ async function handleGa4(request:Request,env:Env){
       pageViews:Number(row.screenPageViews||0),
       engagementRate:Number(row.engagementRate||0),
     }))
+    .filter(row=>!row.page.startsWith('/admin'))
     .sort((a,b)=>b.sessions-a.sessions);
 
   const countries=ga4Rows(countryReport)
@@ -429,6 +455,130 @@ async function handleGa4(request:Request,env:Env){
   });
 }
 
+
+function cfIso(date:Date){return date.toISOString().replace(/\.\d{3}Z$/,'Z')}
+
+async function handleCloudflare(env:Env){
+  if(!env.CLOUDFLARE_ZONE_ID||!env.CLOUDFLARE_API_TOKEN){
+    return json({
+      connected:false,
+      code:'NOT_CONFIGURED',
+      message:'Cloudflare Analytics credentials are not configured yet.'
+    },503);
+  }
+
+  // On Cloudflare Free, adaptive HTTP analytics has a short query window.
+  // Keep this dashboard panel to the most recent 24 hours for reliable results.
+  const end=new Date();
+  const start=new Date(end.getTime()-24*60*60*1000);
+  const filter={
+    datetime_geq:cfIso(start),
+    datetime_lt:cfIso(end),
+    requestSource:'eyeball'
+  };
+
+  const query=`
+    query ToolmeraEdge($zoneTag: string, $filter: ZoneHttpRequestsAdaptiveGroupsFilter_InputObject) {
+      viewer {
+        zones(filter: {zoneTag: $zoneTag}) {
+          overview: httpRequestsAdaptiveGroups(limit: 1, filter: $filter) {
+            count
+            sum { visits edgeResponseBytes }
+          }
+          countries: httpRequestsAdaptiveGroups(limit: 12, filter: $filter, orderBy: [count_DESC]) {
+            count
+            sum { visits edgeResponseBytes }
+            dimensions { clientCountryName }
+          }
+          paths: httpRequestsAdaptiveGroups(limit: 12, filter: $filter, orderBy: [count_DESC]) {
+            count
+            sum { visits edgeResponseBytes }
+            dimensions { clientRequestPath }
+          }
+          statuses: httpRequestsAdaptiveGroups(limit: 20, filter: $filter, orderBy: [count_DESC]) {
+            count
+            dimensions { edgeResponseStatus }
+          }
+          trend: httpRequestsAdaptiveGroups(limit: 48, filter: $filter, orderBy: [datetimeHour_ASC]) {
+            count
+            sum { visits edgeResponseBytes }
+            dimensions { datetimeHour }
+          }
+        }
+      }
+    }
+  `;
+
+  const response=await fetch('https://api.cloudflare.com/client/v4/graphql',{
+    method:'POST',
+    headers:{
+      authorization:'Bearer '+env.CLOUDFLARE_API_TOKEN,
+      'content-type':'application/json'
+    },
+    body:JSON.stringify({
+      query,
+      variables:{zoneTag:env.CLOUDFLARE_ZONE_ID,filter}
+    })
+  });
+
+  const raw=await response.text();
+  let parsed:CfGraphqlResponse;
+  try{parsed=JSON.parse(raw) as CfGraphqlResponse}
+  catch{throw new Error('Cloudflare Analytics returned invalid JSON.')}
+
+  if(!response.ok||parsed.errors?.length){
+    const detail=parsed.errors?.map(item=>item.message).filter(Boolean).join('; ')||raw.slice(0,1000);
+    throw new Error('Cloudflare Analytics API failed: '+response.status+' '+detail);
+  }
+
+  const zone=parsed.data?.viewer?.zones?.[0];
+  if(!zone)throw new Error('Cloudflare Analytics returned no zone data. Check Zone ID and token resource scope.');
+
+  const overview=zone.overview?.[0]||{};
+  const statuses=(zone.statuses||[]).map(row=>({
+    status:Number(row.dimensions?.edgeResponseStatus||0),
+    requests:Number(row.count||0)
+  }));
+  const errorRequests=statuses
+    .filter(row=>row.status>=400)
+    .reduce((sum,row)=>sum+row.requests,0);
+
+  return json({
+    connected:true,
+    source:'Cloudflare Analytics',
+    window:{start:cfIso(start),end:cfIso(end),label:'Last 24 hours'},
+    summary:{
+      requests:Number(overview.count||0),
+      visits:Number(overview.sum?.visits||0),
+      bandwidthBytes:Number(overview.sum?.edgeResponseBytes||0),
+      errorRequests,
+      errorRate:overview.count?errorRequests/Number(overview.count):0
+    },
+    countries:(zone.countries||[]).map(row=>({
+      country:row.dimensions?.clientCountryName||'Unknown',
+      requests:Number(row.count||0),
+      visits:Number(row.sum?.visits||0),
+      bandwidthBytes:Number(row.sum?.edgeResponseBytes||0)
+    })),
+    paths:(zone.paths||[])
+      .filter(row=>!(row.dimensions?.clientRequestPath||'').startsWith('/admin'))
+      .map(row=>({
+        path:row.dimensions?.clientRequestPath||'/',
+        requests:Number(row.count||0),
+        visits:Number(row.sum?.visits||0),
+        bandwidthBytes:Number(row.sum?.edgeResponseBytes||0)
+      })),
+    statuses,
+    trend:(zone.trend||[]).map(row=>({
+      hour:row.dimensions?.datetimeHour||'',
+      requests:Number(row.count||0),
+      visits:Number(row.sum?.visits||0),
+      bandwidthBytes:Number(row.sum?.edgeResponseBytes||0)
+    })),
+    fetchedAt:new Date().toISOString()
+  });
+}
+
 async function sitemapCount(env: Env) {
   try {
     const response = await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
@@ -456,6 +606,10 @@ async function handleStatus(env: Env) {
     !env.GOOGLE_PRIVATE_KEY?'GOOGLE_PRIVATE_KEY':null,
     !env.GA4_PROPERTY_ID?'GA4_PROPERTY_ID':null,
   ].filter(Boolean);
+  const cloudflareMissing=[
+    !env.CLOUDFLARE_ZONE_ID?'CLOUDFLARE_ZONE_ID':null,
+    !env.CLOUDFLARE_API_TOKEN?'CLOUDFLARE_API_TOKEN':null,
+  ].filter(Boolean);
   const googleConfigured = gscMissing.length===0;
   return json({
     mode: googleConfigured ? 'live-ready' : 'setup',
@@ -474,7 +628,8 @@ async function handleStatus(env: Env) {
         missing: ga4Missing,
       },
       cloudflare: {
-        configured: Boolean(env.CLOUDFLARE_API_TOKEN && env.CLOUDFLARE_ZONE_ID),
+        configured: cloudflareMissing.length===0,
+        missing: cloudflareMissing,
       },
       bing: {
         configured: Boolean(env.BING_API_KEY),
@@ -590,6 +745,7 @@ export default {
         if(url.pathname==='/api/admin/status')return await handleStatus(env);
         if(url.pathname==='/api/admin/gsc')return await handleGsc(request,env);
         if(url.pathname==='/api/admin/ga4')return await handleGa4(request,env);
+        if(url.pathname==='/api/admin/cloudflare')return await handleCloudflare(env);
         return json({error:'Not found'},404);
       }
 
