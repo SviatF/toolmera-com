@@ -73,6 +73,20 @@ type Ga4Data={
   fetchedAt:string;
 };
 
+type BingData={
+  connected:true;
+  source:string;
+  siteUrl:string;
+  range:string;
+  window:{startDate:string;endDate:string;previousStartDate:string;previousEndDate:string};
+  summary:{clicks:number;impressions:number;ctr:number;indexedPages:number;crawledPages:number;crawlErrors:number;inLinks:number};
+  trend:{date:string;clicks:number;impressions:number}[];
+  pages:{page:string;clicks:number;impressions:number;avgPosition:number}[];
+  queries:{query:string;clicks:number;impressions:number;avgPosition:number}[];
+  crawl:{date:string|null;code2xx:number;code301:number;code302:number;code4xx:number;code5xx:number;blockedByRobotsTxt:number;dnsFailures:number;connectionTimeout:number;containsMalware:number}|null;
+  fetchedAt:string;
+};
+
 type CloudflareData={
   connected:true;
   source:string;
@@ -178,10 +192,12 @@ export function AdminDashboard(){
   const [gsc,setGsc]=useState<GscData|null>(null);
   const [ga4,setGa4]=useState<Ga4Data|null>(null);
   const [cloudflare,setCloudflare]=useState<CloudflareData|null>(null);
+  const [bing,setBing]=useState<BingData|null>(null);
   const [loading,setLoading]=useState(true);
   const [gscLoading,setGscLoading]=useState(false);
   const [ga4Loading,setGa4Loading]=useState(false);
   const [cloudflareLoading,setCloudflareLoading]=useState(false);
+  const [bingLoading,setBingLoading]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState('');
   const [selected,setSelected]=useState<Opportunity|null>(null);
@@ -249,6 +265,19 @@ export function AdminDashboard(){
     }finally{setCloudflareLoading(false)}
   },[]);
 
+  const loadBing=useCallback(async(nextRange=range)=>{
+    setBingLoading(true);
+    try{
+      const response=await fetch('/api/admin/bing?range='+encodeURIComponent(nextRange),{cache:'no-store'});
+      if(response.status===503){setBing(null);return}
+      const data=await response.json() as BingData|{detail?:string;message?:string};
+      if(!response.ok)throw new Error('detail' in data&&data.detail?data.detail:'Could not load Bing Webmaster data.');
+      setBing(data as BingData);setError('');
+    }catch(e){
+      setBing(null);setError(e instanceof Error?e.message:'Could not load Bing Webmaster data.');
+    }finally{setBingLoading(false)}
+  },[range]);
+
   useEffect(()=>{
     (async()=>{
       const s=await loadStatus();
@@ -256,9 +285,10 @@ export function AdminDashboard(){
       if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
       if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
       if(s?.integrations.cloudflare.configured)jobs.push(loadCloudflare());
+      if(s?.integrations.bing.configured)jobs.push(loadBing(range));
       await Promise.all(jobs);
     })();
-  },[loadStatus,loadGsc,loadGa4,loadCloudflare,range]);
+  },[loadStatus,loadGsc,loadGa4,loadCloudflare,loadBing,range]);
 
   const refresh=async()=>{
     setError('');
@@ -267,6 +297,7 @@ export function AdminDashboard(){
     if(s?.integrations.gsc.configured)jobs.push(loadGsc(range));
     if(s?.integrations.ga4.configured)jobs.push(loadGa4(range));
     if(s?.integrations.cloudflare.configured)jobs.push(loadCloudflare());
+    if(s?.integrations.bing.configured)jobs.push(loadBing(range));
     await Promise.all(jobs);
   };
 
@@ -280,6 +311,7 @@ export function AdminDashboard(){
     if(key==='gsc'&&gsc)return <Pill tone="green">Live</Pill>;
     if(key==='ga4'&&ga4)return <Pill tone="green">Live</Pill>;
     if(key==='cloudflare'&&cloudflare)return <Pill tone="green">Live</Pill>;
+    if(key==='bing'&&bing)return <Pill tone="green">Live</Pill>;
     return configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>;
   };
 
@@ -304,8 +336,8 @@ export function AdminDashboard(){
         <div><span className="adminKicker">TOOLMERA.COM</span><h1>{nav.find(n=>n.id===view)?.label}</h1></div>
         <div className="adminTopActions">
           <div className={gsc?'adminSourceStatus live':'adminSourceStatus'}><span></span>{gsc?'GSC live':status?.integrations.gsc.configured?'GSC configured':'Waiting for GSC'}</div>
-          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading||cloudflareLoading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
-          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||cloudflareLoading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading||cloudflareLoading)?'spinIcon':''}/> Refresh</button>
+          <select value={range} onChange={e=>setRange(e.target.value)} disabled={gscLoading||ga4Loading||cloudflareLoading||bingLoading}><option value="today">Latest day</option><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select>
+          <button className="adminRefresh" onClick={refresh} disabled={gscLoading||ga4Loading||cloudflareLoading||bingLoading||loading}><RefreshCw size={14} className={(gscLoading||ga4Loading||cloudflareLoading||bingLoading)?'spinIcon':''}/> Refresh</button>
           <a href="https://toolmera.com/" target="_blank" rel="noreferrer">Open site <ExternalLink size={14}/></a>
         </div>
       </header>
@@ -368,6 +400,21 @@ export function AdminDashboard(){
         </section>
 
         <section className="adminGrid adminGridMain">
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>BING WEBMASTER TOOLS</span><h2>Bing search performance</h2></div>{bing?<Pill tone="green">Live</Pill>:status?.integrations.bing.configured?<Pill tone="blue">Configured</Pill>:<Pill>Not connected</Pill>}</div>
+            {bing?<div className="compactTable">
+              <div><span>Clicks</span><strong>{number(bing.summary.clicks)}</strong><span>{number(bing.summary.impressions)} impressions</span></div>
+              <div><span>Indexed pages</span><strong>{number(bing.summary.indexedPages)}</strong><span>{number(bing.summary.crawledPages)} crawled</span></div>
+              <div><span>Crawl errors</span><strong>{number(bing.summary.crawlErrors)}</strong><span>{number(bing.summary.inLinks)} inbound links</span></div>
+            </div>:<EmptyState title="Connect Bing Webmaster Tools" body="Import toolmera.com from Google Search Console in Bing, generate an API key, and add it as BING_API_KEY to Cloudflare."/>}
+          </div>
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><span>BING TOP QUERIES</span><h2>Search demand</h2></div>{bing?<Pill tone="green">Live</Pill>:<Pill>Pending</Pill>}</div>
+            {bing&&bing.queries.length?<div className="compactTable">{bing.queries.slice(0,8).map(q=><div key={q.query}><span>{q.query}</span><strong>{number(q.impressions)} imp.</strong><span>Pos. {q.avgPosition?q.avgPosition.toFixed(1):'—'}</span></div>)}</div>:<EmptyState title="No Bing query data yet" body="Bing typically needs time after verification before search-performance rows appear."/ >}
+          </div>
+        </section>
+
+        <section className="adminGrid adminGridMain">
           <div className="adminPanel"><div className="adminPanelHead"><div><span>LANDING PAGES</span><h2>Top pages</h2></div><button className="textButton" onClick={()=>setView('pages')}>View all</button></div>
             {gsc&&gsc.pages.length?<div className="compactTable">{gsc.pages.slice(0,8).map(p=><div key={p.page}><span>{p.page.replace('https://toolmera.com','')}</span><strong>{number(p.clicks)} clicks</strong><span>{pos(p.position)} pos.</span></div>)}</div>:<EmptyState title="Waiting for GSC" body="Top landing pages will appear here once live Search Console data is connected."/>}
           </div>
@@ -420,12 +467,13 @@ export function AdminDashboard(){
           {!status?.integrations.gsc.configured&&<div><Pill tone="amber">Setup</Pill><span><strong>Google Search Console not connected</strong><small>Missing runtime configuration: {status?.integrations.gsc.missing?.join(', ')||'Google service-account configuration'}.</small></span></div>}
           {!status?.integrations.ga4.configured&&<div><Pill>Pending</Pill><span><strong>GA4 Data API not connected</strong><small>Missing runtime configuration: {status?.integrations.ga4.missing?.join(', ')||'GA4 service-account configuration'}.</small></span></div>}
           {!status?.integrations.cloudflare.configured&&<div><Pill>Pending</Pill><span><strong>Cloudflare Analytics API not connected</strong><small>Missing runtime configuration: {status?.integrations.cloudflare.missing?.join(', ')||'CLOUDFLARE_ZONE_ID, CLOUDFLARE_API_TOKEN'}.</small></span></div>}
+          {!status?.integrations.bing.configured&&<div><Pill>Pending</Pill><span><strong>Bing Webmaster Tools not connected</strong><small>Missing runtime configuration: {status?.integrations.bing.missing?.join(', ')||'BING_API_KEY'}.</small></span></div>}
           {!error&&status?.integrations.gsc.configured&&<div><Pill tone="green">Healthy</Pill><span><strong>Admin API reachable</strong><small>{gsc?'GSC data loaded successfully.':'GSC credentials are present; waiting for data or access.'}</small></span></div>}
           {error&&<div><Pill tone="red">Error</Pill><span><strong>Admin API / source error</strong><small>{error}</small></span></div>}
         </div>
       </section>}
 
-      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?(cloudflare?'Last 24h edge analytics · live':'Requires Zone ID + read-only Analytics token'):'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
+      {view==='integrations'&&<section className="integrationGrid">{sourceCards.map(([name,desc,key])=><div className="integrationCard" key={key}><div><Cloud size={20}/>{sourceState(key)}</div><h3>{name}</h3><p>{desc}</p><span>{key==='gsc'?(status?.integrations.gsc.siteUrl||'sc-domain:toolmera.com'):key==='ga4'?(ga4?'Property 552958073 · live':'Property 552958073'):key==='cloudflare'?(cloudflare?'Last 24h edge analytics · live':'Requires Zone ID + read-only Analytics token'):key==='bing'?(bing?'toolmera.com · live':'Import from GSC + API key'):'Optional later'}</span><div className="integrationSecretList">{key==='gsc'&&<><code>GOOGLE_CLIENT_EMAIL</code><code>GOOGLE_PRIVATE_KEY</code><code>GSC_SITE_URL</code></>}{key==='ga4'&&<code>GA4_PROPERTY_ID</code>}{key==='cloudflare'&&<><code>CLOUDFLARE_ZONE_ID</code><code>CLOUDFLARE_API_TOKEN</code></>}{key==='bing'&&<code>BING_API_KEY</code>}</div></div>)}</section>}
 
       {view==='settings'&&<section className="adminGrid adminGridMain">
         <div className="adminPanel settingsPanel"><div className="adminPanelHead"><div><span>PROJECT</span><h2>Live configuration</h2></div></div><label>Tracked domain<input value="toolmera.com" readOnly/></label><label>GSC property<input value={status?.integrations.gsc.siteUrl||'Not connected'} readOnly/></label><label>Sitemap<input value="https://toolmera.com/sitemap.xml" readOnly/></label><label>Default report<select value={range} onChange={e=>setRange(e.target.value)}><option value="7d">7 days</option><option value="28d">28 days</option><option value="3m">3 months</option></select></label></div>
