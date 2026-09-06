@@ -861,6 +861,446 @@ async function handleIndexing(request:Request,env:Env){
   });
 }
 
+
+type WebsiteAnalysisMode='full'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology';
+
+type PublicFetchResult={
+  requestedUrl:string;
+  finalUrl:string;
+  status:number;
+  statusText:string;
+  headers:Record<string,string>;
+  redirectChain:{url:string;status:number;location:string|null}[];
+  elapsedMs:number;
+  text:string;
+};
+
+function normalizePublicUrl(value:string){
+  const trimmed=value.trim();
+  if(!trimmed)throw new Error('Enter a public website URL.');
+  const candidate=/^https?:\/\//i.test(trimmed)?trimmed:'https://'+trimmed;
+  const url=new URL(candidate);
+  if(url.protocol!=='http:'&&url.protocol!=='https:')throw new Error('Only HTTP and HTTPS URLs are supported.');
+  if(url.username||url.password)throw new Error('URLs with embedded credentials are not supported.');
+  if(url.port&&url.port!=='80'&&url.port!=='443')throw new Error('Only standard HTTP and HTTPS ports are supported.');
+  assertPublicHostname(url.hostname);
+  url.hash='';
+  return url;
+}
+
+function assertPublicHostname(hostname:string){
+  const host=hostname.toLowerCase().replace(/^\[|\]$/g,'');
+  if(
+    host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||
+    host.endsWith('.internal')||host==='metadata.google.internal'||host==='0.0.0.0'||
+    host==='::'||host==='::1'||host.startsWith('fc')||host.startsWith('fd')||host.startsWith('fe80:')
+  )throw new Error('Private or local network addresses are not allowed.');
+
+  const ipv4=host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if(ipv4){
+    const parts=ipv4.slice(1).map(Number);
+    if(parts.some(part=>part<0||part>255))throw new Error('Invalid IP address.');
+    const [a,b]=parts;
+    if(
+      a===0||a===10||a===127||a>=224||
+      (a===100&&b>=64&&b<=127)||
+      (a===169&&b===254)||
+      (a===172&&b>=16&&b<=31)||
+      (a===192&&b===168)
+    )throw new Error('Private or reserved IP addresses are not allowed.');
+  }
+}
+
+async function readResponseTextLimited(response:Response,maxBytes=1200000){
+  if(!response.body)return '';
+  const reader=response.body.getReader();
+  const decoder=new TextDecoder();
+  let total=0;
+  let output='';
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!value)continue;
+      const remaining=maxBytes-total;
+      if(remaining<=0){await reader.cancel();break}
+      const chunk=value.byteLength>remaining?value.slice(0,remaining):value;
+      total+=chunk.byteLength;
+      output+=decoder.decode(chunk,{stream:true});
+      if(value.byteLength>remaining){await reader.cancel();break}
+    }
+  }finally{
+    output+=decoder.decode();
+  }
+  return output;
+}
+
+async function fetchPublicPage(value:string,maxRedirects=5,maxBytes=1200000):Promise<PublicFetchResult>{
+  let current=normalizePublicUrl(value);
+  const requestedUrl=current.toString();
+  const redirectChain:{url:string;status:number;location:string|null}[]=[];
+  const started=Date.now();
+
+  for(let hop=0;hop<=maxRedirects;hop++){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),10000);
+    let response:Response;
+    try{
+      response=await fetch(current.toString(),{
+        redirect:'manual',
+        signal:controller.signal,
+        headers:{
+          accept:'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.5',
+          'user-agent':'ToolmeraSiteAnalyzer/1.0 (+https://toolmera.com/website-analysis/)'
+        }
+      });
+    }finally{clearTimeout(timer)}
+
+    const location=response.headers.get('location');
+    redirectChain.push({url:current.toString(),status:response.status,location});
+    if(response.status>=300&&response.status<400&&location){
+      if(hop===maxRedirects)throw new Error('Redirect chain is longer than '+maxRedirects+' hops.');
+      const next=new URL(location,current);
+      if(next.protocol!=='http:'&&next.protocol!=='https:')throw new Error('Redirect points to an unsupported protocol.');
+      if(next.port&&next.port!=='80'&&next.port!=='443')throw new Error('Redirect points to a non-standard port.');
+      assertPublicHostname(next.hostname);
+      current=next;
+      continue;
+    }
+
+    const headers:Record<string,string>={};
+    response.headers.forEach((value,key)=>{headers[key.toLowerCase()]=value});
+    const text=await readResponseTextLimited(response,maxBytes);
+    return{
+      requestedUrl,
+      finalUrl:current.toString(),
+      status:response.status,
+      statusText:response.statusText,
+      headers,
+      redirectChain,
+      elapsedMs:Date.now()-started,
+      text
+    };
+  }
+  throw new Error('Could not resolve the URL.');
+}
+
+function htmlDecode(value:string){
+  return value
+    .replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'")
+    .replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&nbsp;/gi,' ')
+    .replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCodePoint(parseInt(n,16)));
+}
+
+function tagAttr(tag:string,name:string){
+  const escaped=name.replace(/[.*+?^$()|[\]\\]/g,'\\
+async function sitemapCount(env: Env) {');
+  const match=tag.match(new RegExp('(?:^|\\s)'+escaped+'\\s*=\\s*(?:"([^"]*)"|\\'([^\\']*)\\'|([^\\s>]+))','i'));
+  return htmlDecode((match?.[1]||match?.[2]||match?.[3]||'').trim());
+}
+
+function stripHtml(value:string){
+  return htmlDecode(value.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim());
+}
+
+function metaValue(html:string,key:string,attribute='name'){
+  const tags=html.match(/<meta\b[^>]*>/gi)||[];
+  for(const tag of tags){
+    if(tagAttr(tag,attribute).toLowerCase()===key.toLowerCase())return tagAttr(tag,'content');
+  }
+  return '';
+}
+
+function linkValue(html:string,relName:string){
+  const tags=html.match(/<link\b[^>]*>/gi)||[];
+  for(const tag of tags){
+    const rel=tagAttr(tag,'rel').toLowerCase().split(/\s+/);
+    if(rel.includes(relName.toLowerCase()))return tagAttr(tag,'href');
+  }
+  return '';
+}
+
+function headingValues(html:string,level:number,limit=30){
+  const values:string[]=[];
+  const re=new RegExp('<h'+level+'\\b[^>]*>([\\s\\S]*?)<\\/h'+level+'>','gi');
+  let match:RegExpExecArray|null;
+  while((match=re.exec(html))&&values.length<limit){
+    const value=stripHtml(match[1]||'');
+    if(value)values.push(value);
+  }
+  return values;
+}
+
+function extractSchemaTypes(html:string){
+  const scripts=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  const types=new Set<string>();
+  for(const script of scripts.slice(0,30)){
+    for(const match of (script[1]||'').matchAll(/"@type"\s*:\s*"([^"]+)"/g))types.add(match[1]);
+    for(const match of (script[1]||'').matchAll(/"@type"\s*:\s*\[([^\]]+)\]/g)){
+      for(const item of match[1].matchAll(/"([^"]+)"/g))types.add(item[1]);
+    }
+  }
+  return [...types].slice(0,30);
+}
+
+function analyzeHtml(page:PublicFetchResult){
+  const html=page.text;
+  const title=stripHtml(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]||'');
+  const description=metaValue(html,'description');
+  const canonical=linkValue(html,'canonical');
+  const robots=metaValue(html,'robots');
+  const viewport=metaValue(html,'viewport');
+  const generator=metaValue(html,'generator');
+  const lang=tagAttr(html.match(/<html\b[^>]*>/i)?.[0]||'','lang');
+  const charset=(()=>{
+    const tags=html.match(/<meta\b[^>]*>/gi)||[];
+    for(const tag of tags){
+      const direct=tagAttr(tag,'charset');
+      if(direct)return direct;
+      if(tagAttr(tag,'http-equiv').toLowerCase()==='content-type'){
+        const match=tagAttr(tag,'content').match(/charset=([^;\s]+)/i);
+        if(match)return match[1];
+      }
+    }
+    return '';
+  })();
+
+  const anchorTags=html.match(/<a\b[^>]*>/gi)||[];
+  let internalLinks=0,externalLinks=0;
+  let origin='';
+  try{origin=new URL(page.finalUrl).origin}catch{}
+  for(const tag of anchorTags.slice(0,5000)){
+    const href=tagAttr(tag,'href');
+    if(!href||href.startsWith('#')||/^(mailto:|tel:|javascript:)/i.test(href))continue;
+    try{
+      const target=new URL(href,page.finalUrl);
+      if(target.origin===origin)internalLinks++;else externalLinks++;
+    }catch{}
+  }
+
+  const imageTags=html.match(/<img\b[^>]*>/gi)||[];
+  const missingAlt=imageTags.filter(tag=>!/\salt\s*=/i.test(tag)||tagAttr(tag,'alt').trim()==='').length;
+
+  return{
+    title,
+    titleLength:title.length,
+    description,
+    descriptionLength:description.length,
+    canonical,
+    robots,
+    viewport,
+    lang,
+    charset,
+    generator,
+    openGraph:{
+      title:metaValue(html,'og:title','property'),
+      description:metaValue(html,'og:description','property'),
+      image:metaValue(html,'og:image','property'),
+      url:metaValue(html,'og:url','property'),
+      type:metaValue(html,'og:type','property')
+    },
+    twitter:{
+      card:metaValue(html,'twitter:card'),
+      title:metaValue(html,'twitter:title'),
+      description:metaValue(html,'twitter:description'),
+      image:metaValue(html,'twitter:image')
+    },
+    headings:{h1:headingValues(html,1),h2:headingValues(html,2),h3:headingValues(html,3)},
+    links:{total:internalLinks+externalLinks,internal:internalLinks,external:externalLinks},
+    images:{total:imageTags.length,missingAlt},
+    schemaTypes:extractSchemaTypes(html)
+  };
+}
+
+function securitySignals(headers:Record<string,string>,finalUrl:string){
+  const values={
+    hsts:headers['strict-transport-security']||'',
+    csp:headers['content-security-policy']||'',
+    xFrameOptions:headers['x-frame-options']||'',
+    xContentTypeOptions:headers['x-content-type-options']||'',
+    referrerPolicy:headers['referrer-policy']||'',
+    permissionsPolicy:headers['permissions-policy']||''
+  };
+  const present=Object.values(values).filter(Boolean).length;
+  const https=finalUrl.startsWith('https://');
+  const points=present+(https?1:0);
+  const grade=points>=7?'A':points===6?'B':points===5?'C':points>=3?'D':'F';
+  return{https,grade,present,total:6,headers:values};
+}
+
+function detectTechnologies(page:PublicFetchResult,html:{generator:string}){
+  const source=page.text;
+  const headers=page.headers;
+  const found=new Set<string>();
+  const add=(name:string,condition:boolean)=>{if(condition)found.add(name)};
+  add('WordPress',/wp-content|wp-includes|wordpress/i.test(source)||/wordpress/i.test(html.generator));
+  add('Shopify',/cdn\.shopify\.com|shopify\.theme|shopify-section/i.test(source));
+  add('Next.js',/__NEXT_DATA__|\/_next\/|next-route-announcer/i.test(source));
+  add('React',/data-reactroot|react-dom|react\.production/i.test(source));
+  add('Vue.js',/__vue__|data-v-[a-f0-9]{6,}|vue\.runtime/i.test(source));
+  add('Nuxt',/__NUXT__|\/_nuxt\//i.test(source));
+  add('Cloudflare',/cloudflare/i.test(headers['server']||'')||Boolean(headers['cf-ray']));
+  add('Vercel',Boolean(headers['x-vercel-id'])||/vercel/i.test(headers['server']||''));
+  add('Google Analytics',/googletagmanager\.com\/gtag\/js|gtag\s*\(\s*['"]config/i.test(source));
+  add('Google Tag Manager',/googletagmanager\.com\/gtm\.js|GTM-[A-Z0-9]+/i.test(source));
+  add('Meta Pixel',/connect\.facebook\.net\/.*fbevents\.js|fbq\s*\(/i.test(source));
+  add('Hotjar',/static\.hotjar\.com|hj\s*\(/i.test(source));
+  add('Stripe',/js\.stripe\.com|stripe\.com\/v3/i.test(source));
+  add('jQuery',/jquery(?:\.min)?\.js|jquery-[\d.]+/i.test(source));
+  add('Bootstrap',/bootstrap(?:\.min)?\.(?:css|js)/i.test(source));
+  if(html.generator)found.add('Generator: '+html.generator);
+  return [...found];
+}
+
+function robotsSummary(text:string,url:string,status:number){
+  const sitemaps=[...text.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(m=>m[1]).slice(0,20);
+  const blocksAll=/User-agent:\s*\*[\s\S]{0,800}?Disallow:\s*\/\s*(?:#.*)?$/im.test(text);
+  const userAgents=(text.match(/^\s*User-agent:/gim)||[]).length;
+  const disallows=(text.match(/^\s*Disallow:/gim)||[]).length;
+  const allows=(text.match(/^\s*Allow:/gim)||[]).length;
+  return{url,status,available:status>=200&&status<300,blocksAll,sitemaps,userAgents,disallows,allows,preview:text.slice(0,10000)};
+}
+
+function sitemapSummary(text:string,url:string,status:number){
+  const urls=[...text.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(m=>htmlDecode(m[1].trim()));
+  const urlEntries=(text.match(/<url(?:\s|>)/gi)||[]).length;
+  const sitemapEntries=(text.match(/<sitemap(?:\s|>)/gi)||[]).length;
+  const lastmod=(text.match(/<lastmod(?:\s|>)/gi)||[]).length;
+  return{
+    url,status,available:status>=200&&status<300,
+    type:sitemapEntries?'sitemap-index':urlEntries?'urlset':'unknown',
+    urlCount:urlEntries,
+    sitemapCount:sitemapEntries,
+    lastmodCount:lastmod,
+    sampleUrls:urls.slice(0,12)
+  };
+}
+
+function seoScore(page:PublicFetchResult,html:ReturnType<typeof analyzeHtml>,robots:ReturnType<typeof robotsSummary>|null,sitemap:ReturnType<typeof sitemapSummary>|null){
+  const checks=[
+    page.status>=200&&page.status<300,
+    html.title.length>=20&&html.title.length<=65,
+    html.description.length>=60&&html.description.length<=180,
+    html.headings.h1.length===1,
+    Boolean(html.canonical),
+    !/\bnoindex\b/i.test(html.robots),
+    Boolean(html.viewport),
+    html.images.total===0||html.images.missingAlt/html.images.total<=0.1,
+    html.schemaTypes.length>0,
+    Boolean(robots?.available),
+    Boolean(sitemap?.available)
+  ];
+  return Math.round(checks.filter(Boolean).length/checks.length*100);
+}
+
+async function fetchRobots(origin:string){
+  const result=await fetchPublicPage(new URL('/robots.txt',origin).toString(),3,250000);
+  return robotsSummary(result.text,result.finalUrl,result.status);
+}
+
+async function fetchSitemap(origin:string,declared:string[]=[]){
+  let candidate=new URL('/sitemap.xml',origin).toString();
+  for(const value of declared){
+    try{
+      const parsed=normalizePublicUrl(value);
+      if(parsed.origin===new URL(origin).origin){candidate=parsed.toString();break}
+    }catch{}
+  }
+  const result=await fetchPublicPage(candidate,3,900000);
+  return sitemapSummary(result.text,result.finalUrl,result.status);
+}
+
+async function handleWebsiteAnalysis(request:Request){
+  if(request.method!=='POST')return json({error:'Method not allowed'},405);
+  let body:{url?:string;mode?:WebsiteAnalysisMode};
+  try{body=await request.json() as {url?:string;mode?:WebsiteAnalysisMode}}
+  catch{return json({error:'Invalid JSON request body.'},400)}
+
+  const mode:WebsiteAnalysisMode=body.mode||'full';
+  const allowed:WebsiteAnalysisMode[]=['full','seo','meta','status','redirect','robots','sitemap','ssl','security','technology'];
+  if(!allowed.includes(mode))return json({error:'Unsupported analysis mode.'},400);
+
+  try{
+    const input=normalizePublicUrl(body.url||'');
+    if(mode==='robots'){
+      const robots=await fetchRobots(input.origin);
+      return json({mode,inputUrl:input.toString(),robots,fetchedAt:new Date().toISOString()});
+    }
+    if(mode==='sitemap'){
+      let robots:ReturnType<typeof robotsSummary>|null=null;
+      try{robots=await fetchRobots(input.origin)}catch{}
+      const sitemap=await fetchSitemap(input.origin,robots?.sitemaps||[]);
+      return json({mode,inputUrl:input.toString(),robots,sitemap,fetchedAt:new Date().toISOString()});
+    }
+
+    const page=await fetchPublicPage(input.toString());
+    const html=analyzeHtml(page);
+    const security=securitySignals(page.headers,page.finalUrl);
+    const technologies=detectTechnologies(page,html);
+    let robots:ReturnType<typeof robotsSummary>|null=null;
+    let sitemap:ReturnType<typeof sitemapSummary>|null=null;
+
+    if(mode==='full'||mode==='seo'){
+      const origin=new URL(page.finalUrl).origin;
+      try{robots=await fetchRobots(origin)}catch{}
+      try{sitemap=await fetchSitemap(origin,robots?.sitemaps||[])}catch{}
+    }
+
+    let httpRedirectToHttps:boolean|null=null;
+    if(mode==='ssl'){
+      try{
+        const final=new URL(page.finalUrl);
+        const httpUrl=new URL(final.toString());
+        httpUrl.protocol='http:';
+        httpUrl.port='';
+        const httpCheck=await fetchPublicPage(httpUrl.toString(),5,4096);
+        httpRedirectToHttps=httpCheck.finalUrl.startsWith('https://');
+      }catch{httpRedirectToHttps=null}
+    }
+
+    const safeHeaders={
+      server:page.headers['server']||'',
+      contentType:page.headers['content-type']||'',
+      cacheControl:page.headers['cache-control']||'',
+      contentEncoding:page.headers['content-encoding']||'',
+      xRobotsTag:page.headers['x-robots-tag']||'',
+      location:page.headers['location']||''
+    };
+
+    return json({
+      mode,
+      inputUrl:input.toString(),
+      page:{
+        requestedUrl:page.requestedUrl,
+        finalUrl:page.finalUrl,
+        status:page.status,
+        statusText:page.statusText,
+        elapsedMs:page.elapsedMs,
+        redirects:page.redirectChain,
+        headers:safeHeaders,
+        htmlBytes:new TextEncoder().encode(page.text).byteLength
+      },
+      meta:html,
+      robots,
+      sitemap,
+      security,
+      ssl:{
+        https:security.https,
+        secureConnection:security.https&&page.status>0,
+        hsts:Boolean(security.headers.hsts),
+        httpRedirectToHttps
+      },
+      technologies,
+      seoScore:seoScore(page,html,robots,sitemap),
+      fetchedAt:new Date().toISOString()
+    });
+  }catch(error){
+    const message=error instanceof Error?error.message:String(error);
+    return json({error:message},400);
+  }
+}
+
 async function sitemapCount(env: Env) {
   try {
     const response = await env.ASSETS.fetch(new Request('https://toolmera.com/sitemap.xml'));
@@ -1018,6 +1458,8 @@ export default {
       if(url.hostname==='www.toolmera.com'){
         return Response.redirect(`https://toolmera.com${url.pathname}${url.search}`,301);
       }
+
+      if(url.pathname==='/api/tools/website-analysis')return await handleWebsiteAnalysis(request);
 
       if(url.pathname.startsWith('/api/admin/')){
         if(!hasAccess(request,env))return json({error:'Unauthorized'},401);
