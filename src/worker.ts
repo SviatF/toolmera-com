@@ -994,8 +994,12 @@ function htmlDecode(value:string){
 }
 
 function tagAttr(tag:string,name:string){
-  const match=tag.match(new RegExp('(?:^|\\s)'+name+'\\s*=\\s*(?:"([^"]*)"|\\'([^\\']*)\\'|([^\\s>]+))','i'));
-  return htmlDecode((match?.[1]||match?.[2]||match?.[3]||'').trim());
+  const doubleQuoted=tag.match(new RegExp("(?:^|\\s)"+name+"\\s*=\\s*\"([^\"]*)\"","i"));
+  if(doubleQuoted)return htmlDecode((doubleQuoted[1]||'').trim());
+  const singleQuoted=tag.match(new RegExp("(?:^|\\s)"+name+"\\s*=\\s*'([^']*)'","i"));
+  if(singleQuoted)return htmlDecode((singleQuoted[1]||'').trim());
+  const bare=tag.match(new RegExp("(?:^|\\s)"+name+"\\s*=\\s*([^\\s>]+)","i"));
+  return htmlDecode((bare?.[1]||'').trim());
 }
 
 function stripHtml(value:string){
