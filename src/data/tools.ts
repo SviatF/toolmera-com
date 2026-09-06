@@ -35,6 +35,14 @@ export type ToolKind =
   | 'url-encoder'
   | 'slug-generator'
   | 'jwt-decoder'
+  | 'character-counter'
+  | 'remove-duplicate-lines'
+  | 'sort-lines'
+  | 'text-diff'
+  | 'json-to-csv'
+  | 'xml-formatter'
+  | 'date-calculator'
+  | 'time-duration'
   | 'qr-generator'
   | 'uuid-generator'
   | 'password-generator'
@@ -252,6 +260,40 @@ export const tools: Tool[] = [
     id: 'jwt', name: 'JWT Decoder', short: 'Decode JWT header and payload locally without verifying signatures.', category: 'developer', categoryLabel: 'Developer', slug: 'jwt-decoder', kind: 'jwt-decoder', accent: 'pink',
     title: 'JWT Decoder — Decode Header & Payload Locally', description: 'Decode JSON Web Token header and payload data locally, inspect standard timestamps and clearly separate decoding from signature verification.', intro: 'Paste a JWT to inspect its header and payload locally. Toolmera does not verify the token signature or trust claims on this page.', benefits: ['Header & payload decode', 'exp / iat timestamps', 'No signature verification claim'], faq: commonFaq,
   },
+
+  {
+    id: 'character-counter', name: 'Character Counter', short: 'Count characters, spaces, lines and UTF-8 bytes instantly.', category: 'text', categoryLabel: 'Text', slug: 'character-counter', kind: 'character-counter', accent: 'violet', badge: 'Popular',
+    title: 'Character Counter — Count Characters, Spaces & Bytes', description: 'Count characters with and without whitespace, lines, words and UTF-8 bytes directly in your browser.', intro: 'Measure text length instantly with Unicode-aware character counting and a separate UTF-8 byte count.', benefits: ['Unicode-aware characters', 'With & without whitespace', 'UTF-8 byte count'], faq: commonFaq,
+  },
+  {
+    id: 'remove-duplicate-lines', name: 'Remove Duplicate Lines', short: 'Deduplicate lists while controlling case, whitespace and sorting.', category: 'text', categoryLabel: 'Text', slug: 'remove-duplicate-lines', kind: 'remove-duplicate-lines', accent: 'cyan',
+    title: 'Remove Duplicate Lines Online — Free Dedupe Tool', description: 'Remove repeated lines from text with options for case sensitivity, trimming, blank lines and sorting.', intro: 'Clean keyword lists, URLs, IDs, exports and other line-based text without sending the content to a server.', benefits: ['Preserve first occurrence', 'Case & whitespace controls', 'Optional sorting'], faq: commonFaq,
+  },
+  {
+    id: 'sort-lines', name: 'Sort Lines', short: 'Sort text lines alphabetically or naturally in either direction.', category: 'text', categoryLabel: 'Text', slug: 'sort-lines', kind: 'sort-lines', accent: 'blue',
+    title: 'Sort Lines Online — Alphabetical & Natural Sort', description: 'Sort lines A–Z or Z–A with natural numeric ordering, case controls and optional blank-line removal.', intro: 'Sort pasted lists, filenames, keywords and identifiers while keeping the entire operation in your browser.', benefits: ['A–Z & Z–A', 'Natural numeric sort', 'Blank-line control'], faq: commonFaq,
+  },
+  {
+    id: 'text-diff', name: 'Text Diff Checker', short: 'Compare two blocks of text line by line.', category: 'text', categoryLabel: 'Text', slug: 'text-diff-checker', kind: 'text-diff', accent: 'pink',
+    title: 'Text Diff Checker — Compare Text Online', description: 'Compare two text blocks line by line and see added, removed and unchanged lines with a private browser-side diff.', intro: 'Find line-level changes between drafts, configs, lists or code snippets without uploading the text.', benefits: ['Line-by-line diff', 'Added & removed counts', 'Browser-local comparison'], faq: commonFaq,
+  },
+  {
+    id: 'json-csv', name: 'JSON to CSV Converter', short: 'Convert JSON objects or arrays into spreadsheet-ready CSV.', category: 'developer', categoryLabel: 'Developer', slug: 'json-to-csv-converter', kind: 'json-to-csv', accent: 'cyan', badge: 'Popular',
+    title: 'JSON to CSV Converter — Convert JSON Online', description: 'Convert JSON arrays or objects to CSV with optional nested-key flattening and selectable delimiters.', intro: 'Turn API-style JSON into spreadsheet-ready CSV locally, then copy or download the result.', benefits: ['Flatten nested objects', 'Comma, semicolon or tab', 'Copy & download CSV'], faq: commonFaq,
+  },
+  {
+    id: 'xml-formatter', name: 'XML Formatter', short: 'Validate and pretty-print XML with configurable indentation.', category: 'developer', categoryLabel: 'Developer', slug: 'xml-formatter', kind: 'xml-formatter', accent: 'green',
+    title: 'XML Formatter — Beautify & Validate XML Online', description: 'Validate and format XML in your browser with 2-space, 4-space or tab indentation.', intro: 'Paste XML to validate its structure and make nested elements easier to read without a server round trip.', benefits: ['XML validation', 'Configurable indentation', 'Copy-ready output'], faq: commonFaq,
+  },
+  {
+    id: 'date-calculator', name: 'Date Calculator', short: 'Add or subtract years, months, weeks and days from a date.', category: 'time', categoryLabel: 'Time & Date', slug: 'date-calculator', kind: 'date-calculator', accent: 'amber', badge: 'Popular',
+    title: 'Date Calculator — Add or Subtract Days, Weeks & Months', description: 'Add or subtract years, months, weeks and days from any calendar date with end-of-month handling.', intro: 'Calculate a future or past calendar date using separate year, month, week and day adjustments.', benefits: ['Add or subtract time', 'Calendar month handling', 'Weekday result'], faq: commonFaq,
+  },
+  {
+    id: 'time-duration', name: 'Time Duration Calculator', short: 'Calculate elapsed time between two date-time values.', category: 'time', categoryLabel: 'Time & Date', slug: 'time-duration-calculator', kind: 'time-duration', accent: 'pink',
+    title: 'Time Duration Calculator — Hours & Minutes Between Times', description: 'Calculate elapsed days, hours, minutes and seconds between two local date-time values.', intro: 'Measure the exact elapsed duration between a start and end date-time and see the total in multiple units.', benefits: ['Days, hours & minutes', 'Total hours & minutes', 'Local date-time inputs'], faq: commonFaq,
+  },
+
   {
     id: 'emi-in', name: 'EMI Calculator', short: 'Calculate monthly loan EMI, interest and repayment.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'emi-calculator', kind: 'emi', accent: 'blue', badge: 'India',
     title: 'EMI Calculator India — Loan EMI Calculator', description: 'Calculate monthly EMI, total interest and repayment for loans in India.', intro: 'Estimate your monthly EMI for personal, car or home loans with a clear repayment summary.', benefits: ['Monthly EMI', 'Total interest', 'Total repayment'], faq: commonFaq,

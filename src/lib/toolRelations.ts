@@ -64,6 +64,16 @@ const graph:Record<string,string[]>={
   'url-encoder':['base64','slug','json'],
   'jwt':['json','base64','url-encoder'],
 
+
+  'character-counter':['word-counter','case-converter','slug'],
+  'remove-duplicate-lines':['sort-lines','text-diff','word-counter','case-converter'],
+  'sort-lines':['remove-duplicate-lines','case-converter','text-diff'],
+  'text-diff':['remove-duplicate-lines','word-counter','json'],
+  'json-csv':['json','xml-formatter','base64'],
+  'xml-formatter':['json','json-csv','url-encoder'],
+  'date-calculator':['date-difference','time-duration','time-zone','age'],
+  'time-duration':['date-difference','date-calculator','time-zone','unix-timestamp'],
+
   // India finance/tax — local cluster plus relevant global bridges.
   'emi-in':['home-emi-in','car-emi-in','loan','simple-interest','percentage'],
   'home-emi-in':['emi-in','car-emi-in','loan','compound','percentage'],
@@ -216,6 +226,48 @@ export function howToForTool(tool:Tool):HowToStep[]{
     {title:'Choose the target unit',description:'Select the unit you want to convert into or use a quick pair.'},
     {title:'Read the conversion',description:'The result and available comparison values update immediately.'},
   ];
+
+  if(tool.kind==='character-counter')return[
+    {title:'Paste or type text',description:'Enter the text whose visible length, whitespace and encoded size you want to measure.'},
+    {title:'Review each count',description:'Compare characters, non-whitespace characters, words, lines and UTF-8 bytes.'},
+    {title:'Use the metric that matches the limit',description:'Choose character count for writing constraints or byte count when a system limit is defined in bytes.'},
+  ];
+  if(tool.kind==='remove-duplicate-lines')return[
+    {title:'Paste one item per line',description:'Add the list, IDs, URLs, keywords or other line-based text you want to clean.'},
+    {title:'Choose matching rules',description:'Set case sensitivity, whitespace trimming, blank-line behavior and optional sorting.'},
+    {title:'Copy the unique list',description:'Review how many lines were removed and copy the deduplicated output.'},
+  ];
+  if(tool.kind==='sort-lines')return[
+    {title:'Paste the lines',description:'Enter the list or text block you want to reorder.'},
+    {title:'Set the sort behavior',description:'Choose A–Z or Z–A, natural numeric ordering, case behavior and blank-line handling.'},
+    {title:'Copy the sorted result',description:'Review the reordered lines and copy the output.'},
+  ];
+  if(tool.kind==='text-diff')return[
+    {title:'Paste the original and changed text',description:'Put the earlier version on the left and the newer version on the right.'},
+    {title:'Review line-level changes',description:'Added, removed and unchanged lines are aligned with a browser-side LCS diff.'},
+    {title:'Copy the comparison',description:'Copy the prefixed diff when you need it in a review, ticket or note.'},
+  ];
+  if(tool.kind==='json-to-csv')return[
+    {title:'Paste a JSON object or array',description:'Use structured object data such as an API response or export.'},
+    {title:'Choose CSV options',description:'Select a delimiter and decide whether nested objects should become dotted columns.'},
+    {title:'Copy or download CSV',description:'Convert the data, then copy the table or download the CSV file.'},
+  ];
+  if(tool.kind==='xml-formatter')return[
+    {title:'Paste the XML document',description:'Enter compact or inconsistently formatted XML.'},
+    {title:'Choose indentation and format',description:'Toolmera validates well-formedness with the browser XML parser before formatting.'},
+    {title:'Review and copy the XML',description:'Inspect the normalized serialization and copy it when it matches your workflow.'},
+  ];
+  if(tool.kind==='date-calculator')return[
+    {title:'Choose a starting date',description:'Set the calendar date you want to move forward or backward from.'},
+    {title:'Add or subtract calendar units',description:'Enter years, months, weeks and days and choose the direction.'},
+    {title:'Review the resulting date',description:'Toolmera clamps month changes to valid calendar days and shows the final weekday.'},
+  ];
+  if(tool.kind==='time-duration')return[
+    {title:'Enter start and end date-times',description:'Use local date-time values with the end after the start.'},
+    {title:'Calculate elapsed time',description:'Toolmera measures the interval in milliseconds and decomposes it into calendar-day-sized blocks, hours, minutes and seconds.'},
+    {title:'Review total units',description:'Use the breakdown or the total hours, minutes and seconds shown below it.'},
+  ];
+
   if(tool.kind==='percentage')return[
     {title:'Choose the percentage question',description:'Select part of a total, percent of a number, change or percentage difference.'},
     {title:'Enter the known values',description:'Fill in the two values required by the selected formula.'},
