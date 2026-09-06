@@ -27,7 +27,10 @@ const themeInit = `
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" data-theme="light" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeInit }} /></head>
+      <head>
+        <meta name="msvalidate.01" content="5818F0C47D78793BAAEB4C2894FFB6FE" />
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
       <body><GoogleTagManager/><PublicAnalyticsEvents/>{children}</body>
     </html>
   );
