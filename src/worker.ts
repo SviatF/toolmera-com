@@ -862,7 +862,7 @@ async function handleIndexing(request:Request,env:Env){
 }
 
 
-type WebsiteAnalysisMode='full'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology';
+type WebsiteAnalysisMode='full'|'traffic'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology';
 
 type PublicFetchResult={
   requestedUrl:string;
@@ -1213,6 +1213,70 @@ async function fetchSitemap(origin:string,declared:string[]=[]){
   return sitemapSummary(result.text,result.finalUrl,result.status);
 }
 
+type TrancoRankRow={date:string;rank:number};
+
+function trafficPopularityLevel(rank:number|null){
+  if(!rank)return 'Limited public data';
+  if(rank<=1000)return 'Very high';
+  if(rank<=10000)return 'High';
+  if(rank<=100000)return 'Strong';
+  if(rank<=500000)return 'Moderate';
+  return 'Visible';
+}
+
+async function fetchTrafficPopularity(domain:string){
+  const base={
+    domain,
+    source:'Tranco 30-day popularity ranking',
+    sourceAvailable:true,
+    ranked:false,
+    latestRank:null as number|null,
+    averageRank30d:null as number|null,
+    bestRank30d:null as number|null,
+    worstRank30d:null as number|null,
+    change30d:null as number|null,
+    popularityLevel:'Limited public data',
+    daysObserved:0,
+    history:[] as TrancoRankRow[],
+    note:'Popularity rank is a public traffic/popularity proxy, not a monthly visit count or first-party analytics measurement.',
+    error:'' as string
+  };
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),8000);
+  try{
+    const response=await fetch('https://tranco-list.eu/api/ranks/domain/'+encodeURIComponent(domain),{
+      signal:controller.signal,
+      headers:{accept:'application/json','user-agent':'ToolmeraTrafficChecker/1.0 (+https://toolmera.com/website-analysis/website-traffic-checker/)'}
+    });
+    if(response.status===404)return base;
+    if(!response.ok)throw new Error('Popularity source returned HTTP '+response.status+'.');
+    const payload=await response.json() as {ranks?:{date?:unknown;rank?:unknown}[]};
+    const rows=(Array.isArray(payload.ranks)?payload.ranks:[])
+      .map(row=>({date:String(row.date||''),rank:Number(row.rank)}))
+      .filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&Number.isFinite(row.rank)&&row.rank>0)
+      .sort((a,b)=>a.date.localeCompare(b.date))
+      .slice(-30);
+    if(!rows.length)return base;
+    const latest=rows[rows.length-1].rank;
+    const oldest=rows[0].rank;
+    const ranks=rows.map(row=>row.rank);
+    return{
+      ...base,
+      ranked:true,
+      latestRank:latest,
+      averageRank30d:Math.round(ranks.reduce((sum,rank)=>sum+rank,0)/ranks.length),
+      bestRank30d:Math.min(...ranks),
+      worstRank30d:Math.max(...ranks),
+      change30d:oldest-latest,
+      popularityLevel:trafficPopularityLevel(latest),
+      daysObserved:rows.length,
+      history:rows
+    };
+  }catch(error){
+    return{...base,sourceAvailable:false,error:error instanceof Error?error.message:String(error)};
+  }finally{clearTimeout(timer)}
+}
+
 async function handleWebsiteAnalysis(request:Request){
   if(request.method!=='POST')return json({error:'Method not allowed'},405);
   let body:{url?:string;mode?:WebsiteAnalysisMode};
@@ -1220,11 +1284,36 @@ async function handleWebsiteAnalysis(request:Request){
   catch{return json({error:'Invalid JSON request body.'},400)}
 
   const mode:WebsiteAnalysisMode=body.mode||'full';
-  const allowed:WebsiteAnalysisMode[]=['full','seo','meta','status','redirect','robots','sitemap','ssl','security','technology'];
+  const allowed:WebsiteAnalysisMode[]=['full','traffic','seo','meta','status','redirect','robots','sitemap','ssl','security','technology'];
   if(!allowed.includes(mode))return json({error:'Unsupported analysis mode.'},400);
 
   try{
     const input=normalizePublicUrl(body.url||'');
+    if(mode==='traffic'){
+      const domain=input.hostname.toLowerCase().replace(/^www\./,'');
+      const [traffic,pageResult]=await Promise.all([
+        fetchTrafficPopularity(domain),
+        fetchPublicPage(input.toString(),5,300000).catch(()=>null)
+      ]);
+      const page=pageResult?{
+        requestedUrl:pageResult.requestedUrl,
+        finalUrl:pageResult.finalUrl,
+        status:pageResult.status,
+        statusText:pageResult.statusText,
+        elapsedMs:pageResult.elapsedMs,
+        redirects:pageResult.redirectChain,
+        headers:{
+          server:pageResult.headers['server']||'',
+          contentType:pageResult.headers['content-type']||'',
+          cacheControl:pageResult.headers['cache-control']||'',
+          contentEncoding:pageResult.headers['content-encoding']||'',
+          xRobotsTag:pageResult.headers['x-robots-tag']||'',
+          location:pageResult.headers['location']||''
+        },
+        htmlBytes:new TextEncoder().encode(pageResult.text).byteLength
+      }:undefined;
+      return json({mode,inputUrl:input.toString(),traffic,page,fetchedAt:new Date().toISOString()});
+    }
     if(mode==='robots'){
       const robots=await fetchRobots(input.origin);
       return json({mode,inputUrl:input.toString(),robots,fetchedAt:new Date().toISOString()});
