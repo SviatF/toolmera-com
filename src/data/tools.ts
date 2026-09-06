@@ -28,6 +28,13 @@ export type ToolKind =
   | 'unit-weight'
   | 'unit-volume'
   | 'unit-area'
+  | 'unit-speed'
+  | 'data-storage'
+  | 'color-converter'
+  | 'time-zone'
+  | 'url-encoder'
+  | 'slug-generator'
+  | 'jwt-decoder'
   | 'qr-generator'
   | 'uuid-generator'
   | 'password-generator'
@@ -216,6 +223,34 @@ export const tools: Tool[] = [
   {
     id: 'area', name: 'Area Converter', short: 'Convert land and surface area units.', category: 'converters', categoryLabel: 'Converters', slug: 'area-converter', kind: 'unit-area', accent: 'green',
     title: 'Free Area Converter — Acres, Sq Ft, Hectares & Sq Meters', description: 'Convert square meters, square feet, acres, hectares, square yards, square miles and other area units.', intro: 'Convert land and surface area measurements across metric and customary square units.', benefits: ['8 area units', 'Land measurement units', 'All-unit matrix'], faq: commonFaq,
+  },
+  {
+    id: 'speed', name: 'Speed Converter', short: 'Convert km/h, mph, m/s, knots and ft/s instantly.', category: 'converters', categoryLabel: 'Converters', slug: 'speed-converter', kind: 'unit-speed', accent: 'cyan',
+    title: 'Speed Converter — MPH, KM/H, M/S & Knots', description: 'Convert speed between kilometers per hour, miles per hour, meters per second, feet per second and knots.', intro: 'Convert common road, aviation, marine and scientific speed units instantly with exact reference factors.', benefits: ['5 common speed units', 'Exact conversion factors', 'All-unit comparison'], faq: commonFaq,
+  },
+  {
+    id: 'data-storage', name: 'Data Storage Converter', short: 'Convert bytes, KB, MB, GB, TB and binary IEC units.', category: 'converters', categoryLabel: 'Converters', slug: 'data-storage-converter', kind: 'data-storage', accent: 'blue',
+    title: 'Data Storage Converter — Bytes, KB, MB, GB & GiB', description: 'Convert digital storage values using decimal SI units or binary IEC units such as KiB, MiB and GiB.', intro: 'Convert file and storage sizes without mixing decimal KB/MB/GB with binary KiB/MiB/GiB definitions.', benefits: ['SI & IEC modes', 'Bytes through petabytes', 'Clear decimal vs binary labels'], faq: commonFaq,
+  },
+  {
+    id: 'color', name: 'Color Converter', short: 'Convert HEX, RGB and HSL colors with a live preview.', category: 'converters', categoryLabel: 'Converters', slug: 'color-converter', kind: 'color-converter', accent: 'violet',
+    title: 'Color Converter — HEX, RGB & HSL', description: 'Convert colors between HEX, RGB and HSL with validation, live preview and copy-ready values.', intro: 'Enter a HEX, RGB or HSL color and convert it into the other common web color formats instantly.', benefits: ['HEX, RGB & HSL', 'Live color preview', 'Copy-ready output'], faq: commonFaq,
+  },
+  {
+    id: 'time-zone', name: 'Time Zone Converter', short: 'Convert a date and time between IANA time zones.', category: 'time', categoryLabel: 'Time & Date', slug: 'time-zone-converter', kind: 'time-zone', accent: 'blue', badge: 'Popular',
+    title: 'Time Zone Converter — Convert Date & Time Between Zones', description: 'Convert a wall-clock date and time between IANA time zones with local offset and daylight-saving rules handled by the browser.', intro: 'Choose a source time zone, enter a local date and time, then see the same instant in another time zone.', benefits: ['IANA time zones', 'DST-aware browser rules', 'Swap source & destination'], faq: commonFaq,
+  },
+  {
+    id: 'url-encoder', name: 'URL Encoder / Decoder', short: 'Encode or decode URL components and complete URLs.', category: 'developer', categoryLabel: 'Developer', slug: 'url-encoder-decoder', kind: 'url-encoder', accent: 'cyan',
+    title: 'URL Encoder & Decoder — Percent-Encoding Tool', description: 'Encode or decode URL components and full URLs locally using browser-native percent-encoding rules.', intro: 'Percent-encode text for a URL component or decode encoded values back into readable text without sending the payload to a server.', benefits: ['Component & full URL modes', 'Encode & decode', 'Browser-native APIs'], faq: commonFaq,
+  },
+  {
+    id: 'slug', name: 'Slug Generator', short: 'Turn titles and phrases into clean URL slugs.', category: 'text', categoryLabel: 'Text', slug: 'slug-generator', kind: 'slug-generator', accent: 'violet',
+    title: 'Slug Generator — Create Clean URL Slugs', description: 'Create lowercase URL slugs from titles or phrases with configurable separators and optional Unicode preservation.', intro: 'Turn a title or phrase into a compact URL-friendly slug, then copy the result in one click.', benefits: ['Hyphen or underscore', 'Diacritic cleanup', 'Optional Unicode preservation'], faq: commonFaq,
+  },
+  {
+    id: 'jwt', name: 'JWT Decoder', short: 'Decode JWT header and payload locally without verifying signatures.', category: 'developer', categoryLabel: 'Developer', slug: 'jwt-decoder', kind: 'jwt-decoder', accent: 'pink',
+    title: 'JWT Decoder — Decode Header & Payload Locally', description: 'Decode JSON Web Token header and payload data locally, inspect standard timestamps and clearly separate decoding from signature verification.', intro: 'Paste a JWT to inspect its header and payload locally. Toolmera does not verify the token signature or trust claims on this page.', benefits: ['Header & payload decode', 'exp / iat timestamps', 'No signature verification claim'], faq: commonFaq,
   },
   {
     id: 'emi-in', name: 'EMI Calculator', short: 'Calculate monthly loan EMI, interest and repayment.', category: 'finance', categoryLabel: 'India Finance', country: 'in', slug: 'emi-calculator', kind: 'emi', accent: 'blue', badge: 'India',
