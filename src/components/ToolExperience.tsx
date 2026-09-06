@@ -2712,6 +2712,7 @@ type WebsiteAnalysisResponse={
   traffic?:{
     domain:string;
     source:string;
+    sourceAvailable:boolean;
     ranked:boolean;
     latestRank:number|null;
     averageRank30d:number|null;
@@ -2722,6 +2723,7 @@ type WebsiteAnalysisResponse={
     daysObserved:number;
     history:{date:string;rank:number}[];
     note:string;
+    error?:string;
   };
 };
 
@@ -2831,7 +2833,7 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
         <div className="websiteReportGrid">
           <section className="websiteReportPanel"><span className="sectionKicker">PUBLIC TRAFFIC SIGNALS</span><h3>{result.traffic.domain}</h3>
             <div className="websiteSignalList">
-              <WebsiteSignal label="Ranking status" value={result.traffic.ranked?'Ranked in the public popularity dataset':'No top-1M rank found'} ok={result.traffic.ranked}/>
+              <WebsiteSignal label="Ranking status" value={!result.traffic.sourceAvailable?'Popularity source temporarily unavailable':result.traffic.ranked?'Ranked in the public popularity dataset':'No top-1M rank found'} ok={result.traffic.sourceAvailable?result.traffic.ranked:null}/>
               <WebsiteSignal label="30-day movement" value={result.traffic.change30d===null?'Not enough history':result.traffic.change30d===0?'No net rank change':(result.traffic.change30d>0?'+':'')+result.traffic.change30d.toLocaleString()+' places'}/>
               <WebsiteSignal label="Worst rank" value={result.traffic.worstRank30d?'#'+result.traffic.worstRank30d.toLocaleString():'—'}/>
               <WebsiteSignal label="Days observed" value={result.traffic.daysObserved}/>
@@ -2843,7 +2845,7 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
             {result.traffic.history.length?<div className="trafficHistory">{result.traffic.history.slice(-14).map(row=><div key={row.date}><span>{row.date}</span><strong>#{row.rank.toLocaleString()}</strong></div>)}</div>:<p className="websiteMuted">This domain has no rank history in the returned public dataset. That does not prove the website has zero traffic.</p>}
           </section>
         </div>
-        <div className="toolNote"><ShieldCheck size={15}/><span>{result.traffic.note}</span></div>
+        <div className="toolNote"><ShieldCheck size={15}/><span>{result.traffic.note}{result.traffic.error?' Source status: '+result.traffic.error:''}</span></div>
       </div>}
 
       {mode==='meta'&&meta&&<div className="websiteReport">
