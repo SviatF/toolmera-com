@@ -37,6 +37,11 @@ const groupedCategoryTools: Record<string,{title:string;description:string;ids:s
   time: [
     { title: 'Epoch & Timestamps', description: 'Convert Unix time to readable dates and back.', ids: ['unix-timestamp'] },
   ],
+  'website-analysis': [
+    { title: 'Full Audit & SEO', description: 'Run broad website audits or focus on on-page search signals.', ids: ['website-analyzer','seo-checker','meta-tag-checker'] },
+    { title: 'Crawl & HTTP', description: 'Inspect statuses, redirects and crawl-control files.', ids: ['http-status-checker','redirect-checker','robots-checker','sitemap-checker'] },
+    { title: 'Security & Technology', description: 'Review HTTPS, browser security headers and public technology fingerprints.', ids: ['ssl-checker','security-headers-checker','technology-checker'] },
+  ],
 };
 
 export function generateStaticParams(){return categories.map(c=>({category:c.slug}))}
