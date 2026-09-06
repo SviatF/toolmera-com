@@ -3,7 +3,7 @@
 import {
   Activity, BarChart3, ChevronRight, CircleAlert, Cloud, ExternalLink, FileSearch,
   Gauge, Globe2, LayoutDashboard, Link2, ListChecks, RefreshCw, Search, Settings,
-  ShieldCheck, Sparkles, TrendingDown, TrendingUp, Unplug, UsersRound, X
+  ShieldCheck, Sparkles, TrendingDown, TrendingUp, Unplug, UsersRound, X, CheckCircle2, Clock3, ServerCog
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -97,6 +97,46 @@ type CloudflareData={
   statuses:{status:number;requests:number}[];
   trend:{hour:string;requests:number;visits:number;bandwidthBytes:number}[];
   fetchedAt:string;
+};
+
+type IndexInspectionRow={
+  url:string;
+  verdict:string;
+  indexed:boolean;
+  coverageState:string;
+  robotsTxtState:string;
+  indexingState:string;
+  pageFetchState:string;
+  lastCrawlTime:string|null;
+  googleCanonical:string|null;
+  userCanonical:string|null;
+  canonicalMatch:boolean|null;
+  crawledAs:string|null;
+  sitemapKnown:boolean;
+  referringUrls:number;
+  error?:string;
+};
+type IndexInspectionBatch={
+  connected:true;
+  source:string;
+  total:number;
+  offset:number;
+  limit:number;
+  nextOffset:number|null;
+  results:IndexInspectionRow[];
+  fetchedAt:string;
+};
+
+type CrossPageRow={
+  path:string;
+  gscClicks:number;
+  gscImpressions:number;
+  gscPosition:number;
+  ga4Sessions:number;
+  ga4Users:number;
+  cfRequests:number;
+  bingClicks:number;
+  bingImpressions:number;
 };
 
 type Opportunity={
@@ -193,11 +233,15 @@ export function AdminDashboard(){
   const [ga4,setGa4]=useState<Ga4Data|null>(null);
   const [cloudflare,setCloudflare]=useState<CloudflareData|null>(null);
   const [bing,setBing]=useState<BingData|null>(null);
+  const [indexing,setIndexing]=useState<IndexInspectionRow[]>([]);
+  const [indexingScannedAt,setIndexingScannedAt]=useState<string|null>(null);
+  const [indexingProgress,setIndexingProgress]=useState({done:0,total:0});
   const [loading,setLoading]=useState(true);
   const [gscLoading,setGscLoading]=useState(false);
   const [ga4Loading,setGa4Loading]=useState(false);
   const [cloudflareLoading,setCloudflareLoading]=useState(false);
   const [bingLoading,setBingLoading]=useState(false);
+  const [indexingLoading,setIndexingLoading]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState('');
   const [selected,setSelected]=useState<Opportunity|null>(null);
@@ -208,6 +252,12 @@ export function AdminDashboard(){
     try{
       setStatuses(JSON.parse(localStorage.getItem('toolmera-admin-statuses')||'{}'));
       setNotes(JSON.parse(localStorage.getItem('toolmera-admin-notes')||'{}'));
+      const cached=JSON.parse(localStorage.getItem('toolmera-indexing-scan-v1')||'null') as {scannedAt?:string;results?:IndexInspectionRow[]}|null;
+      if(cached?.results?.length){
+        setIndexing(cached.results);
+        setIndexingScannedAt(cached.scannedAt||null);
+        setIndexingProgress({done:cached.results.length,total:cached.results.length});
+      }
     }catch{}
   },[]);
   useEffect(()=>{if(Object.keys(statuses).length)localStorage.setItem('toolmera-admin-statuses',JSON.stringify(statuses))},[statuses]);
@@ -278,6 +328,37 @@ export function AdminDashboard(){
     }finally{setBingLoading(false)}
   },[range]);
 
+  const runIndexingScan=useCallback(async()=>{
+    setIndexingLoading(true);
+    setError('');
+    setIndexing([]);
+    setIndexingProgress({done:0,total:0});
+    try{
+      let offset=0;
+      let total=0;
+      const collected:IndexInspectionRow[]=[];
+      while(true){
+        const response=await fetch('/api/admin/indexing?offset='+offset+'&limit=10',{cache:'no-store'});
+        const data=await response.json() as IndexInspectionBatch|{detail?:string;message?:string};
+        if(!response.ok)throw new Error('detail' in data&&data.detail?data.detail:'Could not load URL Inspection data.');
+        const batch=data as IndexInspectionBatch;
+        total=batch.total;
+        collected.push(...batch.results);
+        setIndexing([...collected]);
+        setIndexingProgress({done:collected.length,total});
+        if(batch.nextOffset==null)break;
+        offset=batch.nextOffset;
+      }
+      const scannedAt=new Date().toISOString();
+      setIndexingScannedAt(scannedAt);
+      localStorage.setItem('toolmera-indexing-scan-v1',JSON.stringify({scannedAt,results:collected}));
+    }catch(e){
+      setError(e instanceof Error?e.message:'Could not inspect sitemap URLs.');
+    }finally{
+      setIndexingLoading(false);
+    }
+  },[]);
+
   useEffect(()=>{
     (async()=>{
       const s=await loadStatus();
@@ -305,6 +386,42 @@ export function AdminDashboard(){
   const pages=useMemo(()=>gsc?.pages.filter(p=>p.page.toLowerCase().includes(filter.toLowerCase()))||[],[gsc,filter]);
   const queries=useMemo(()=>gsc?.queries.filter(q=>q.query.toLowerCase().includes(filter.toLowerCase()))||[],[gsc,filter]);
   const maxTrend=Math.max(1,...(gsc?.trend.map(r=>r.impressions)||[1]));
+  const pathOnly=(value:string)=>{
+    if(!value)return '/';
+    try{return new URL(value,'https://toolmera.com').pathname||'/'}
+    catch{return value.split('?')[0]||'/'}
+  };
+  const crossPages=useMemo(()=>{
+    const map=new Map<string,CrossPageRow>();
+    const ensure=(path:string)=>{
+      const key=pathOnly(path);
+      if(!map.has(key))map.set(key,{path:key,gscClicks:0,gscImpressions:0,gscPosition:0,ga4Sessions:0,ga4Users:0,cfRequests:0,bingClicks:0,bingImpressions:0});
+      return map.get(key)!;
+    };
+    gsc?.pages.forEach(row=>{const item=ensure(row.page);item.gscClicks=row.clicks;item.gscImpressions=row.impressions;item.gscPosition=row.position});
+    ga4?.landingPages.forEach(row=>{const item=ensure(row.page);item.ga4Sessions=row.sessions;item.ga4Users=row.users});
+    cloudflare?.paths.forEach(row=>{const item=ensure(row.path);item.cfRequests=row.requests});
+    bing?.pages.forEach(row=>{const item=ensure(row.page);item.bingClicks=row.clicks;item.bingImpressions=row.impressions});
+    return [...map.values()].filter(row=>!row.path.startsWith('/admin')).sort((a,b)=>(b.gscImpressions+b.ga4Sessions+b.cfRequests+b.bingImpressions)-(a.gscImpressions+a.ga4Sessions+a.cfRequests+a.bingImpressions));
+  },[gsc,ga4,cloudflare,bing]);
+
+  const indexingSummary=useMemo(()=>{
+    const inspected=indexing.filter(row=>!row.error).length;
+    const indexed=indexing.filter(row=>row.indexed&&!row.error).length;
+    const notIndexed=indexing.filter(row=>!row.indexed&&!row.error).length;
+    const canonicalIssues=indexing.filter(row=>row.canonicalMatch===false&&!row.error).length;
+    const fetchIssues=indexing.filter(row=>row.pageFetchState!=='SUCCESSFUL'&&!row.error).length;
+    return {inspected,indexed,notIndexed,canonicalIssues,fetchIssues};
+  },[indexing]);
+
+  const integrationsLive=[Boolean(gsc),Boolean(ga4),Boolean(cloudflare),Boolean(bing)].filter(Boolean).length;
+  const systemHealth=error?'Degraded':integrationsLive===4?'Operational':'Connecting';
+  const technicalWarnings=[
+    cloudflare&&cloudflare.summary.errorRate>.02?Cloudflare edge error rate is ${pct(cloudflare.summary.errorRate)}:null,
+    bing&&bing.summary.crawlErrors>0?Bing reports ${number(bing.summary.crawlErrors)} crawl errors:null,
+    indexingSummary.fetchIssues>0?Google inspection found ${number(indexingSummary.fetchIssues)} fetch issues:null,
+    indexingSummary.canonicalIssues>0?Google inspection found ${number(indexingSummary.canonicalIssues)} canonical mismatches:null,
+  ].filter(Boolean) as string[];
 
   const sourceState=(key:keyof AdminStatus['integrations'])=>{
     const configured=status?.integrations[key]?.configured;
