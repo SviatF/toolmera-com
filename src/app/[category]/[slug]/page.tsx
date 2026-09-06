@@ -55,14 +55,14 @@ export default async function ToolPage({params}:{params:Promise<{category:string
     <section className="shell toolHero compactToolHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><Link href={`/${category}/`}>{tool.categoryLabel}</Link><ChevronRight/><span>{tool.name}</span></div>
       <span className="eyebrow neonText">FAST. PRIVATE. NO SIGN-UP.</span>
-      <h1>{tool.name}</h1>
+      <h1>{tool.kind==='website-analysis'?`Free ${tool.name}`:tool.name}</h1>
       <p>{seo?.intro||tool.intro}</p>
     </section>
 
     <div className="shell"><ToolExperience tool={tool}/></div>
 
     <section className="shell toolTrustRow">
-      <div><ShieldCheck/><span><strong>Privacy-minded</strong><small>Browser-first whenever possible</small></span></div>
+      <div><ShieldCheck/><span><strong>{tool.kind==='website-analysis'?'Public-data only':'Privacy-minded'}</strong><small>{tool.kind==='website-analysis'?'Live public HTTP/HTTPS checks':'Browser-first whenever possible'}</small></span></div>
       <div><Zap/><span><strong>Instant workflow</strong><small>No setup or account required</small></span></div>
       <div><UserRoundCheck/><span><strong>Free core tool</strong><small>Open it and get the task done</small></span></div>
     </section>
