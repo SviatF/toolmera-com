@@ -301,6 +301,10 @@ export const tools: Tool[] = [
     title: 'Free Website Analyzer — SEO, Security & Technical Site Audit', description: 'Analyze a public website for on-page SEO, crawlability, metadata, headings, robots.txt, sitemap, security headers and detected technologies.', intro: 'Enter a public URL to run a practical website audit based on live HTML, HTTP headers, crawl files and verifiable technical signals.', benefits: ['Live URL & HTTP analysis', 'SEO and crawl diagnostics', 'Security & technology signals'], faq: commonFaq,
   },
   {
+    id: 'website-traffic-checker', name: 'Website Traffic Checker', short: 'Check public website popularity, 30-day rank history and traffic-level signals for a domain.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'website-traffic-checker', kind: 'website-analysis', accent: 'green', badge: 'Popular',
+    title: 'Free Website Traffic Checker — Check Site Popularity & Traffic Rank', description: 'Check website traffic popularity for free with a live domain rank, 30-day trend, average rank, best and worst rank, plus public reachability signals.', intro: 'Enter a domain to check its public popularity trend and traffic-level signals without inventing monthly visit counts.', benefits: ['30-day popularity rank history', 'Traffic popularity level', 'No fake monthly-visit estimates'], faq: commonFaq,
+  },
+  {
     id: 'seo-checker', name: 'SEO Checker', short: 'Check on-page and technical SEO signals from a live public URL.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'seo-checker', kind: 'website-analysis', accent: 'blue',
     title: 'Free SEO Checker — On-Page & Technical SEO Website Audit', description: 'Check title tags, meta descriptions, headings, canonical tags, indexability, image alt text, schema, robots.txt and sitemap signals.', intro: 'Audit the SEO signals search engines can verify from a public page response and its crawl-control files.', benefits: ['On-page SEO checks', 'Indexability signals', 'Actionable SEO score'], faq: commonFaq,
   },
@@ -400,7 +404,7 @@ export const categories = [
   { slug: 'time', label: 'Time & Date', description: 'Convert timestamps and work with time values.', accent: 'pink' as Accent },
   { slug: 'text', label: 'Text Tools', description: 'Count, transform and clean text.', accent: 'violet' as Accent },
   { slug: 'developer', label: 'Developer Tools', description: 'Format, encode and inspect developer data.', accent: 'pink' as Accent },
-  { slug: 'website-analysis', label: 'Website Analysis', description: 'Audit SEO, crawlability, redirects, security and website technology.', accent: 'green' as Accent },
+  { slug: 'website-analysis', label: 'Website Analysis', description: 'Check traffic popularity, SEO, crawlability, redirects, security and website technology.', accent: 'green' as Accent },
 ];
 
 export function toolUrl(tool: Tool) {
