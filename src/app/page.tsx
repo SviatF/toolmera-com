@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3, Globe2 } from 'lucide-react';
+import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3, Globe2, Activity, Cpu, Radio, ScanLine } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
@@ -36,6 +36,8 @@ export default function Home() {
   const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
+  const toolCount = tools.length;
+  const categoryCount = categories.length;
 
   return <><Header/><main>
     <section className="hero">
@@ -49,7 +51,21 @@ export default function Home() {
           <ToolSearch tools={tools}/>
           <div className="popular"><b>Popular:</b><Link href="/generators/qr-code-generator/">QR Code Generator</Link><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/generators/password-generator/">Password Generator</Link></div>
         </div>
-        <div className="heroAside"><span>TOOLS</span><span>FOR A SMARTER</span><span>EVERYDAY.</span><i/></div>
+        <div className="heroAside heroTelemetry" aria-label="Toolmera live product telemetry">
+          <div className="telemetryTop"><span className="telemetryLiveDot"/><b>TOOLMERA SYSTEM</b><small>LIVE</small></div>
+          <div className="telemetryStats">
+            <div><strong>{toolCount}</strong><span>TOOLS ONLINE</span></div>
+            <div><strong>{categoryCount}</strong><span>CATEGORIES</span></div>
+          </div>
+          <div className="telemetryStream">
+            <div><span className="telemetryIcon"><Code2 size={14}/></span><span><b>JSON FORMAT</b><small>browser · ready</small></span><i>READY</i></div>
+            <div><span className="telemetryIcon"><FileText size={14}/></span><span><b>PDF MERGE</b><small>local processing</small></span><i>LOCAL</i></div>
+            <div><span className="telemetryIcon"><ScanLine size={14}/></span><span><b>SITE ANALYZE</b><small>public signals</small></span><i>LIVE</i></div>
+            <div><span className="telemetryIcon"><QrCode size={14}/></span><span><b>QR GENERATE</b><small>instant render</small></span><i>FAST</i></div>
+          </div>
+          <div className="telemetrySignal" aria-hidden="true"><span/><span/><span/><span/><span/><span/><span/><span/><span/><span/><span/><span/></div>
+          <div className="telemetryFooter"><span><Radio size={13}/> BROWSER-FIRST</span><span><Cpu size={13}/> EDGE READY</span><Activity size={14}/></div>
+        </div>
       </div>
     </section>
 
