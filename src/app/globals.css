@@ -941,3 +941,76 @@ html[data-theme="light"] .reviewStamp p{color:#667085}
   .indexingControlRow{align-items:stretch;flex-direction:column}
   .inspectionButton{width:100%!important}
 }
+
+
+/* Batch 8 tool interfaces */
+.colorPreviewLarge{
+  min-height:150px;border-radius:16px;border:1px solid rgba(255,255,255,.1);
+  margin:16px 0;display:flex;align-items:flex-end;padding:16px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 14px 30px rgba(0,0,0,.16)
+}
+.colorPreviewLarge span{
+  font:700 12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:rgba(5,7,10,.72);color:#fff;border:1px solid rgba(255,255,255,.16);
+  padding:7px 9px;border-radius:8px;backdrop-filter:blur(10px)
+}
+.timezoneFields{grid-template-columns:1fr 1fr auto}
+.timezoneResults{display:grid;gap:10px;margin-top:16px}
+.timezoneResults>div{
+  display:grid;grid-template-columns:170px 1fr auto;align-items:center;gap:12px;
+  border:1px solid var(--line);border-radius:13px;padding:13px 14px;background:rgba(255,255,255,.018)
+}
+.timezoneResults>div.targetZoneResult{
+  border-color:color-mix(in srgb,var(--accent) 30%,rgba(255,255,255,.08));
+  background:color-mix(in srgb,var(--accent) 4%,rgba(255,255,255,.018))
+}
+.timezoneResults span{font-size:9px;color:var(--muted)}
+.timezoneResults strong{font-size:11px;color:var(--text);font-weight:650}
+.timezoneResults button{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(255,255,255,.025);color:var(--muted);display:grid;place-items:center;cursor:pointer
+}
+.slugCheck{align-self:end;min-height:44px}
+.slugOutput{
+  margin-top:16px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;
+  border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(255,255,255,.018)
+}
+.slugOutput>span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.slugOutput code{font-size:13px;color:var(--text);word-break:break-all}
+.jwtInput{min-height:130px}
+.jwtStatus{
+  margin:15px 0;border:1px solid rgba(73,170,255,.16);background:rgba(73,170,255,.035);
+  border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap
+}
+.jwtStatus>span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.jwtStatus strong{font-size:11px;color:var(--text)}
+.jwtStatus small{font-size:8px;color:#7f90a1}
+.jwtGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.jwtGrid>div{min-width:0}
+.jwtGrid .queueHead{margin-bottom:8px}
+.jwtGrid .textArea{min-height:240px}
+.jwtWarning{display:flex;align-items:flex-start;gap:8px;margin-top:14px}
+.jwtWarning svg{flex:0 0 auto;margin-top:1px}
+
+html[data-theme="light"] .timezoneResults>div,
+html[data-theme="light"] .slugOutput{
+  background:#fff;border-color:rgba(15,23,42,.09);box-shadow:0 3px 12px rgba(15,23,42,.025)
+}
+html[data-theme="light"] .timezoneResults>div.targetZoneResult{
+  background:color-mix(in srgb,var(--accent) 3%,#fff);
+  border-color:color-mix(in srgb,var(--accent) 20%,rgba(15,23,42,.09))
+}
+html[data-theme="light"] .timezoneResults strong,
+html[data-theme="light"] .slugOutput code{color:#273444}
+html[data-theme="light"] .timezoneResults button{background:#f7f9fc;color:#667085;border-color:rgba(15,23,42,.09)}
+html[data-theme="light"] .jwtStatus{background:rgba(22,119,255,.035);border-color:rgba(22,119,255,.13)}
+html[data-theme="light"] .jwtStatus strong{color:#273444}
+
+@media(max-width:760px){
+  .timezoneFields{grid-template-columns:1fr}
+  .timezoneResults>div{grid-template-columns:1fr auto}
+  .timezoneResults>div>span{grid-column:1/-1}
+  .slugOutput{grid-template-columns:1fr auto}
+  .slugOutput>span{grid-column:1/-1}
+  .jwtGrid{grid-template-columns:1fr}
+}
