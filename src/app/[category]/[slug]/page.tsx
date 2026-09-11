@@ -11,6 +11,7 @@ import { toolSeoContent } from '@/data/seoContent';
 import { websiteTrafficBenefits, websiteTrafficSeo } from '@/data/websiteTrafficSeo';
 import { websiteSitemapBenefits, websiteSitemapSeo } from '@/data/websiteSitemapSeo';
 import { websiteRedirectBenefits, websiteRedirectSeo } from '@/data/websiteRedirectSeo';
+import { unixTimestampBenefits, unixTimestampSeo } from '@/data/unixTimestampSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -20,6 +21,7 @@ function seoForTool(toolId:string){
   if(toolId==='website-traffic-checker')return websiteTrafficSeo;
   if(toolId==='sitemap-checker')return websiteSitemapSeo;
   if(toolId==='redirect-checker')return websiteRedirectSeo;
+  if(toolId==='unix-timestamp')return unixTimestampSeo;
   return toolSeoContent[toolId];
 }
 
@@ -27,6 +29,7 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='website-traffic-checker')return websiteTrafficBenefits;
   if(toolId==='sitemap-checker')return websiteSitemapBenefits;
   if(toolId==='redirect-checker')return websiteRedirectBenefits;
+  if(toolId==='unix-timestamp')return unixTimestampBenefits;
   return fallback;
 }
 
