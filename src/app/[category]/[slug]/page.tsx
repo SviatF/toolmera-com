@@ -20,6 +20,7 @@ import { lengthConverterBenefits, lengthConverterSeo } from '@/data/lengthConver
 import { metaTagCheckerBenefits, metaTagCheckerSeo } from '@/data/metaTagCheckerSeo';
 import { compoundInterestBenefits, compoundInterestSeo } from '@/data/compoundInterestSeo';
 import { removeDuplicateLinesBenefits, removeDuplicateLinesSeo } from '@/data/removeDuplicateLinesSeo';
+import { speedConverterBenefits, speedConverterSeo } from '@/data/speedConverterSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -38,6 +39,7 @@ function seoForTool(toolId:string){
   if(toolId==='meta-tag-checker')return metaTagCheckerSeo;
   if(toolId==='compound')return compoundInterestSeo;
   if(toolId==='remove-duplicate-lines')return removeDuplicateLinesSeo;
+  if(toolId==='speed')return speedConverterSeo;
   return toolSeoContent[toolId];
 }
 
@@ -54,12 +56,14 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='meta-tag-checker')return metaTagCheckerBenefits;
   if(toolId==='compound')return compoundInterestBenefits;
   if(toolId==='remove-duplicate-lines')return removeDuplicateLinesBenefits;
+  if(toolId==='speed')return speedConverterBenefits;
   return fallback;
 }
 
 function h1ForTool(tool:{id:string;kind:string;name:string}){
   if(tool.id==='meta-tag-checker')return 'Free Title Tag & Meta Tag Checker';
   if(tool.id==='remove-duplicate-lines')return 'Free Dedupe Tool — Remove Duplicate Lines';
+  if(tool.id==='speed')return 'Free MPH & Speed Converter';
   return tool.kind==='website-analysis'?`Free ${tool.name}`:tool.name;
 }
 
