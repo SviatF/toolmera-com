@@ -17,9 +17,11 @@ type GscData={
 };
 type SortKey='query'|'clicks'|'impressions'|'ctr'|'position'|'priority';
 type SortDirection='asc'|'desc';
-type QuickFilter='all'|'priority'|'3plus'|'top20'|'quick';
+type QuickFilter='all'|'priority'|'cannibalized'|'3plus'|'top20'|'quick';
 type OpportunityPriority='P0'|'P1'|'P2'|'Watch';
 type OpportunityAction='Optimize now'|'Grow winner'|'Next'|'Watch';
+type CannibalRisk='High'|'Medium'|'Low';
+type CannibalAction='Consolidate intent'|'Strengthen primary'|'Monitor';
 
 type EnrichedQuery=QueryRow&{
   page:string|null;
@@ -38,6 +40,16 @@ type PageOpportunity=MetricRow&{
   score:number;
   priority:OpportunityPriority;
   action:OpportunityAction;
+};
+
+type Cannibalization=MetricRow&{
+  query:string;
+  pages:QueryPageRow[];
+  primaryPage:string;
+  primaryShare:number;
+  score:number;
+  risk:CannibalRisk;
+  action:CannibalAction;
 };
 
 const number=(value:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(value);
@@ -112,6 +124,18 @@ function actionFor(row:MetricRow,score:number):OpportunityAction{
   return 'Watch';
 }
 
+function cannibalRiskFor(score:number):CannibalRisk{
+  if(score>=55)return 'High';
+  if(score>=35)return 'Medium';
+  return 'Low';
+}
+
+function cannibalActionFor(impressions:number,pageCount:number,primaryShare:number):CannibalAction{
+  if(impressions<3)return 'Monitor';
+  if(pageCount>=3||primaryShare<.65)return 'Consolidate intent';
+  return 'Strengthen primary';
+}
+
 function bucketTone(bucket:EnrichedQuery['bucket']){
   if(bucket==='TOP 1–10')return styles.green;
   if(bucket==='11–20')return styles.blue;
@@ -138,6 +162,18 @@ function actionTone(action:OpportunityAction){
   if(action==='Optimize now')return styles.red;
   if(action==='Grow winner')return styles.green;
   if(action==='Next')return styles.blue;
+  return styles.muted;
+}
+
+function cannibalRiskTone(risk:CannibalRisk){
+  if(risk==='High')return styles.red;
+  if(risk==='Medium')return styles.amber;
+  return styles.muted;
+}
+
+function cannibalActionTone(action:CannibalAction){
+  if(action==='Consolidate intent')return styles.red;
+  if(action==='Strengthen primary')return styles.amber;
   return styles.muted;
 }
 
@@ -304,12 +340,76 @@ export function AdminQueryIntelligence(){
     }).sort((a,b)=>(b.score-a.score)||(b.impressions-a.impressions)||(a.position-b.position));
   },[data]);
 
+  const cannibalizations=useMemo<Cannibalization[]>(()=>{
+    if(!data)return [];
+    const queryMetrics=new Map(data.queries.map(row=>[row.query.toLowerCase(),row]));
+    const grouped=new Map<string,{query:string;pages:Map<string,QueryPageRow>}>();
+
+    data.queryPages.forEach(row=>{
+      if(!row.query||!row.page||row.impressions<=0)return;
+      const key=row.query.toLowerCase();
+      const group=grouped.get(key)||{query:row.query,pages:new Map<string,QueryPageRow>()};
+      const current=group.pages.get(row.page);
+      if(current){
+        const impressions=current.impressions+row.impressions;
+        group.pages.set(row.page,{
+          query:row.query,
+          page:row.page,
+          clicks:current.clicks+row.clicks,
+          impressions,
+          ctr:impressions?(current.clicks+row.clicks)/impressions:0,
+          position:impressions?((current.position*current.impressions)+(row.position*row.impressions))/impressions:0,
+        });
+      }else group.pages.set(row.page,{...row});
+      grouped.set(key,group);
+    });
+
+    const result:Cannibalization[]=[];
+    grouped.forEach((group,key)=>{
+      const pages=[...group.pages.values()].sort((a,b)=>(b.impressions-a.impressions)||(a.position-b.position));
+      if(pages.length<2)return;
+      const pageImpressions=pages.reduce((sum,row)=>sum+row.impressions,0);
+      const pageClicks=pages.reduce((sum,row)=>sum+row.clicks,0);
+      const weightedPosition=pageImpressions?pages.reduce((sum,row)=>sum+(row.position*row.impressions),0)/pageImpressions:0;
+      const aggregate=queryMetrics.get(key);
+      const impressions=aggregate?.impressions||pageImpressions;
+      const clicks=aggregate?.clicks??pageClicks;
+      const ctr=aggregate?.ctr??(impressions?clicks/impressions:0);
+      const position=aggregate?.position||weightedPosition;
+      const primaryShare=pageImpressions?pages[0].impressions/pageImpressions:1;
+      const splitFactor=1-primaryShare;
+      const pageFactor=clamp((pages.length-1)/3,0,1);
+      const score=Math.round(clamp(
+        demandFactor(impressions)*.45+
+        splitFactor*.25+
+        pageFactor*.15+
+        proximityFactor(position)*.15,
+      0,1)*100);
+      result.push({
+        query:aggregate?.query||group.query,
+        pages,
+        primaryPage:pages[0].page,
+        primaryShare,
+        clicks,
+        impressions,
+        ctr,
+        position,
+        score,
+        risk:cannibalRiskFor(score),
+        action:cannibalActionFor(impressions,pages.length,primaryShare),
+      });
+    });
+
+    return result.sort((a,b)=>(b.score-a.score)||(b.impressions-a.impressions)||(a.position-b.position));
+  },[data]);
+
   const rows=useMemo(()=>{
     const search=filter.trim().toLowerCase();
     const filtered=enriched.filter(row=>{
       const matchesSearch=!search||row.query.toLowerCase().includes(search)||(row.page||'').toLowerCase().includes(search);
       if(!matchesSearch)return false;
       if(quickFilter==='priority')return row.priority>=30;
+      if(quickFilter==='cannibalized')return row.pageCount>=2;
       if(quickFilter==='3plus')return row.impressions>=3;
       if(quickFilter==='top20')return row.position>0&&row.position<=20;
       if(quickFilter==='quick')return row.impressions>=3&&row.position>0&&row.position<=20;
@@ -335,7 +435,9 @@ export function AdminQueryIntelligence(){
     strong:enriched.filter(row=>row.impressions>=3).length,
     quick:enriched.filter(row=>row.impressions>=3&&row.position>0&&row.position<=20).length,
     optimize:pageOpportunities.filter(row=>row.action==='Optimize now').length,
-  }),[enriched,pageOpportunities]);
+    cannibalized:cannibalizations.length,
+    cannibalHigh:cannibalizations.filter(row=>row.risk==='High').length,
+  }),[enriched,pageOpportunities,cannibalizations]);
 
   const toggleSort=(key:SortKey)=>setSort(current=>current.key===key
     ?{key,direction:current.direction==='asc'?'desc':'asc'}
@@ -351,6 +453,7 @@ export function AdminQueryIntelligence(){
       <div className={styles.summaryCard}><span>3+ impressions</span><strong>{summary.strong}</strong><small>Signals worth watching</small></div>
       <div className={styles.summaryCard}><span>Quick wins</span><strong>{summary.quick}</strong><small>3+ impressions and TOP 20</small></div>
       <div className={styles.summaryCard}><span>Optimize now</span><strong>{summary.optimize}</strong><small>Pages with highest current upside</small></div>
+      <div className={styles.summaryCard}><span>2+ ranking pages</span><strong>{summary.cannibalized}</strong><small>{summary.cannibalHigh} high-risk query{summary.cannibalHigh===1?'':'ies'}</small></div>
     </div>
 
     <section className={`${styles.panel} ${styles.queuePanel}`}>
@@ -370,6 +473,29 @@ export function AdminQueryIntelligence(){
       <div className={styles.legend}><b>Score 60–100:</b><span>P0</span><b>42–59:</b><span>P1</span><b>25–41:</b><span>P2</span><b>0–24:</b><span>Watch</span><b>TOP 20:</b><span>number of ranking queries for that page.</span></div>
     </section>
 
+    <section className={`${styles.panel} ${styles.cannibalPanel}`}>
+      <div className={styles.panelHead}>
+        <div><span className={styles.kicker}>CANNIBALIZATION DETECTOR · QUERY LEVEL</span><h2>Queries ranking with multiple pages</h2><p className={styles.panelCopy}>Potential cannibalization is flagged when the same GSC query appears for 2+ Toolmera URLs. It is a diagnostic signal, not proof that pages should be merged.</p></div>
+        <span className={`${styles.live} ${summary.cannibalHigh?styles.warningLive:''}`}>{summary.cannibalHigh?`${summary.cannibalHigh} high risk`:'Watching'}</span>
+      </div>
+      {data&&cannibalizations.length?<div className={styles.cannibalTable}>
+        <div className={`${styles.cannibalRow} ${styles.queueHead}`}><span>Risk</span><span>Query</span><span>Primary page</span><span>Other ranking pages</span><span>Impr.</span><span>Avg pos.</span><span>Primary share</span><span>Action</span></div>
+        {cannibalizations.slice(0,10).map(row=>{
+          const secondary=row.pages.slice(1);
+          return <div className={styles.cannibalRow} key={row.query.toLowerCase()}>
+            <span className={styles.scoreCell}><b>{row.score}</b><em className={`${styles.pill} ${cannibalRiskTone(row.risk)}`}>{row.risk}</em></span>
+            <strong className={styles.query} title={row.query}>{row.query}</strong>
+            <a className={styles.queuePage} href={row.primaryPage} target="_blank" rel="noreferrer" title={row.primaryPage}><strong>{pathOnly(row.primaryPage)}</strong><small>{number(row.pages[0].impressions)} impressions · pos {pos(row.pages[0].position)}</small></a>
+            <div className={styles.competingPages}>{secondary.slice(0,2).map(page=><a key={page.page} href={page.page} target="_blank" rel="noreferrer" title={page.page}>{pathOnly(page.page)}</a>)}{secondary.length>2&&<small>+{secondary.length-2} more</small>}</div>
+            <span className={styles.metric}>{number(row.impressions)}</span><span className={styles.metric}>{pos(row.position)}</span>
+            <span className={styles.shareCell}><span><i style={{width:`${Math.round(row.primaryShare*100)}%`}}/></span><small>{Math.round(row.primaryShare*100)}%</small></span>
+            <span className={`${styles.pill} ${cannibalActionTone(row.action)}`}>{row.action}</span>
+          </div>;
+        })}
+      </div>:loading?<div className={styles.loading}><strong>Checking ranking-page overlap…</strong><span>Grouping GSC query/page rows by search query.</span></div>:<div className={styles.empty}><strong>No multi-page query overlap detected</strong><span>Each recorded query currently maps to one ranking URL in the available GSC data.</span></div>}
+      <div className={styles.legend}><b>High risk:</b><span>meaningful demand plus a strong split across multiple URLs.</span><b>Consolidate intent:</b><span>review titles, content intent and internal links before merging or redirecting anything.</span><b>Primary share:</b><span>share of query/page impressions held by the leading URL.</span></div>
+    </section>
+
     <section className={styles.panel}>
       <div className={styles.panelHead}>
         <div><span className={styles.kicker}>GOOGLE SEARCH CONSOLE · QUERY → PAGE</span><h2>Search query intelligence</h2></div>
@@ -378,7 +504,7 @@ export function AdminQueryIntelligence(){
 
       <div className={styles.controls}>
         <div className={styles.filters}>
-          {([['all','All'],['priority','Priority 30+'],['3plus','3+ impressions'],['top20','TOP 20'],['quick','Quick wins']] as [QuickFilter,string][]).map(([key,label])=><button key={key} className={`${styles.filterButton} ${quickFilter===key?styles.active:''}`} onClick={()=>setQuickFilter(key)}>{label}</button>)}
+          {([['all','All'],['priority','Priority 30+'],['cannibalized','2+ pages'],['3plus','3+ impressions'],['top20','TOP 20'],['quick','Quick wins']] as [QuickFilter,string][]).map(([key,label])=><button key={key} className={`${styles.filterButton} ${quickFilter===key?styles.active:''}`} onClick={()=>setQuickFilter(key)}>{label}</button>)}
         </div>
         <div className={styles.search}><Search size={14}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Filter query or landing page…"/></div>
       </div>
