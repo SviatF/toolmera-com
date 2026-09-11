@@ -17,6 +17,7 @@ import { percentageCalculatorBenefits, percentageCalculatorSeo } from '@/data/pe
 import { volumeConverterBenefits, volumeConverterSeo } from '@/data/volumeConverterSeo';
 import { compressJpgBenefits, compressJpgSeo } from '@/data/compressJpgSeo';
 import { lengthConverterBenefits, lengthConverterSeo } from '@/data/lengthConverterSeo';
+import { metaTagCheckerBenefits, metaTagCheckerSeo } from '@/data/metaTagCheckerSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -32,6 +33,7 @@ function seoForTool(toolId:string){
   if(toolId==='volume')return volumeConverterSeo;
   if(toolId==='compress-jpg')return compressJpgSeo;
   if(toolId==='length')return lengthConverterSeo;
+  if(toolId==='meta-tag-checker')return metaTagCheckerSeo;
   return toolSeoContent[toolId];
 }
 
@@ -45,7 +47,13 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='volume')return volumeConverterBenefits;
   if(toolId==='compress-jpg')return compressJpgBenefits;
   if(toolId==='length')return lengthConverterBenefits;
+  if(toolId==='meta-tag-checker')return metaTagCheckerBenefits;
   return fallback;
+}
+
+function h1ForTool(tool:{id:string;kind:string;name:string}){
+  if(tool.id==='meta-tag-checker')return 'Free Title Tag & Meta Tag Checker';
+  return tool.kind==='website-analysis'?`Free ${tool.name}`:tool.name;
 }
 
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
@@ -92,7 +100,7 @@ export default async function ToolPage({params}:{params:Promise<{category:string
     <section className="shell toolHero compactToolHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><Link href={`/${category}/`}>{tool.categoryLabel}</Link><ChevronRight/><span>{tool.name}</span></div>
       <span className="eyebrow neonText">FAST. PRIVATE. NO SIGN-UP.</span>
-      <h1>{tool.kind==='website-analysis'?`Free ${tool.name}`:tool.name}</h1>
+      <h1>{h1ForTool(tool)}</h1>
       <p>{seo?.intro||tool.intro}</p>
     </section>
 
