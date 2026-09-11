@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { AdminDashboard } from '@/components/AdminDashboard';
-import { QuerySortEnhancer } from '@/components/QuerySortEnhancer';
+import { AdminQueryIntelligence } from '@/components/AdminQueryIntelligence';
 
 export const metadata: Metadata = {
   title: 'TOOLMERA Admin — SEO Intelligence',
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <><AdminDashboard /><QuerySortEnhancer /></>;
+  return <><AdminDashboard /><AdminQueryIntelligence /></>;
 }
