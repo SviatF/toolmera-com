@@ -19,6 +19,7 @@ import { compressJpgBenefits, compressJpgSeo } from '@/data/compressJpgSeo';
 import { lengthConverterBenefits, lengthConverterSeo } from '@/data/lengthConverterSeo';
 import { metaTagCheckerBenefits, metaTagCheckerSeo } from '@/data/metaTagCheckerSeo';
 import { compoundInterestBenefits, compoundInterestSeo } from '@/data/compoundInterestSeo';
+import { removeDuplicateLinesBenefits, removeDuplicateLinesSeo } from '@/data/removeDuplicateLinesSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -36,6 +37,7 @@ function seoForTool(toolId:string){
   if(toolId==='length')return lengthConverterSeo;
   if(toolId==='meta-tag-checker')return metaTagCheckerSeo;
   if(toolId==='compound')return compoundInterestSeo;
+  if(toolId==='remove-duplicate-lines')return removeDuplicateLinesSeo;
   return toolSeoContent[toolId];
 }
 
@@ -51,11 +53,13 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='length')return lengthConverterBenefits;
   if(toolId==='meta-tag-checker')return metaTagCheckerBenefits;
   if(toolId==='compound')return compoundInterestBenefits;
+  if(toolId==='remove-duplicate-lines')return removeDuplicateLinesBenefits;
   return fallback;
 }
 
 function h1ForTool(tool:{id:string;kind:string;name:string}){
   if(tool.id==='meta-tag-checker')return 'Free Title Tag & Meta Tag Checker';
+  if(tool.id==='remove-duplicate-lines')return 'Free Dedupe Tool — Remove Duplicate Lines';
   return tool.kind==='website-analysis'?`Free ${tool.name}`:tool.name;
 }
 
