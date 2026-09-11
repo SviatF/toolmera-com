@@ -11,6 +11,8 @@ import adminLogo from '@/lib/favcion (1).webp';
 
 type View='overview'|'indexing'|'opportunities'|'pages'|'queries'|'countries'|'errors'|'integrations'|'settings';
 type Status='Open'|'In progress'|'Done'|'Ignored';
+type QuerySortKey='query'|'clicks'|'impressions'|'ctr'|'position';
+type QuerySortDirection='asc'|'desc';
 
 type IntegrationStatus={configured:boolean;siteUrl?:string|null;propertyId?:string|null;missing?:string[]};
 type AdminStatus={
@@ -246,9 +248,16 @@ export function AdminDashboard(){
   const [indexingLoading,setIndexingLoading]=useState(false);
   const [error,setError]=useState('');
   const [filter,setFilter]=useState('');
+  const [querySort,setQuerySort]=useState<{key:QuerySortKey;direction:QuerySortDirection}>({key:'position',direction:'asc'});
   const [selected,setSelected]=useState<Opportunity|null>(null);
   const [statuses,setStatuses]=useState<Record<string,Status>>({});
   const [notes,setNotes]=useState<Record<string,string>>({});
+
+  const toggleQuerySort=(key:QuerySortKey)=>{
+    setQuerySort(current=>current.key===key
+      ?{key,direction:current.direction==='asc'?'desc':'asc'}
+      :{key,direction:key==='query'||key==='position'?'asc':'desc'});
+  };
 
   useEffect(()=>{
     try{
@@ -386,7 +395,22 @@ export function AdminDashboard(){
 
   const opportunities=useMemo(()=>gsc?.queryPages.map(opportunityFor).filter(Boolean).sort((a,b)=>(b?.score||0)-(a?.score||0)).slice(0,50) as Opportunity[]||[],[gsc]);
   const pages=useMemo(()=>gsc?.pages.filter(p=>p.page.toLowerCase().includes(filter.toLowerCase()))||[],[gsc,filter]);
-  const queries=useMemo(()=>gsc?.queries.filter(q=>q.query.toLowerCase().includes(filter.toLowerCase()))||[],[gsc,filter]);
+  const queries=useMemo(()=>{
+    const rows=gsc?.queries.filter(q=>q.query.toLowerCase().includes(filter.toLowerCase()))||[];
+    return [...rows].sort((a,b)=>{
+      const direction=querySort.direction==='asc'?1:-1;
+      if(querySort.key==='query')return a.query.localeCompare(b.query)*direction;
+      const getValue=(row:QueryRow)=>querySort.key==='clicks'?row.clicks:querySort.key==='impressions'?row.impressions:querySort.key==='ctr'?row.ctr:row.position;
+      const aValue=getValue(a);
+      const bValue=getValue(b);
+      if(querySort.key==='position'){
+        const aMissing=!aValue;
+        const bMissing=!bValue;
+        if(aMissing!==bMissing)return aMissing?1:-1;
+      }
+      return (aValue-bValue)*direction;
+    });
+  },[gsc,filter,querySort]);
   const maxTrend=Math.max(1,...(gsc?.trend.map(r=>r.impressions)||[1]));
   const pathOnly=(value:string)=>{
     if(!value)return '/';
@@ -590,7 +614,7 @@ export function AdminDashboard(){
           </div>:<EmptyState title="No page-level data yet" body="Page rows populate automatically from GSC, GA4, Cloudflare and Bing as each source collects traffic."/>}
         </section>:<>
           <section className="adminPanel"><div className="adminPanelHead"><div><span>GOOGLE SEARCH CONSOLE</span><h2>Search queries</h2></div>{gsc?<Pill tone="green">Live</Pill>:<Pill>Not connected</Pill>}</div>
-            {gsc?<div className="adminTable queryTable"><div className="tableHead"><span>Query</span><span>Source</span><span>Clicks</span><span>Impressions</span><span>CTR</span><span>Position</span><span>Status</span></div>{queries.map(q=><div key={q.query}><strong>{q.query}</strong><span>GSC</span><span>{number(q.clicks)}</span><span>{number(q.impressions)}</span><span>{pct(q.ctr)}</span><span>{pos(q.position)}</span><Pill tone="green">Live</Pill></div>)}</div>:<EmptyState title="No Google query data yet" body="GSC query rows will appear automatically after Google records impressions."/>}
+            {gsc?<div className="adminTable queryTable"><div className="tableHead"><span><button type="button" onClick={()=>toggleQuerySort('query')} title="Sort by query" style={{background:'none',border:0,padding:0,color:'inherit',font:'inherit',cursor:'pointer'}}>Query {querySort.key==='query'?(querySort.direction==='asc'?'↑':'↓'):'↕'}</button></span><span>Source</span><span><button type="button" onClick={()=>toggleQuerySort('clicks')} title="Sort by clicks" style={{background:'none',border:0,padding:0,color:'inherit',font:'inherit',cursor:'pointer'}}>Clicks {querySort.key==='clicks'?(querySort.direction==='asc'?'↑':'↓'):'↕'}</button></span><span><button type="button" onClick={()=>toggleQuerySort('impressions')} title="Sort by impressions" style={{background:'none',border:0,padding:0,color:'inherit',font:'inherit',cursor:'pointer'}}>Impressions {querySort.key==='impressions'?(querySort.direction==='asc'?'↑':'↓'):'↕'}</button></span><span><button type="button" onClick={()=>toggleQuerySort('ctr')} title="Sort by CTR" style={{background:'none',border:0,padding:0,color:'inherit',font:'inherit',cursor:'pointer'}}>CTR {querySort.key==='ctr'?(querySort.direction==='asc'?'↑':'↓'):'↕'}</button></span><span><button type="button" onClick={()=>toggleQuerySort('position')} title="Sort by position" style={{background:'none',border:0,padding:0,color:'inherit',font:'inherit',cursor:'pointer'}}>Position {querySort.key==='position'?(querySort.direction==='asc'?'↑':'↓'):'↕'}</button></span><span>Status</span></div>{queries.map(q=><div key={q.query}><strong>{q.query}</strong><span>GSC</span><span>{number(q.clicks)}</span><span>{number(q.impressions)}</span><span>{pct(q.ctr)}</span><span>{pos(q.position)}</span><Pill tone="green">Live</Pill></div>)}</div>:<EmptyState title="No Google query data yet" body="GSC query rows will appear automatically after Google records impressions."/>}
           </section>
           {bing&&<section className="adminPanel" style={{marginTop:14}}><div className="adminPanelHead"><div><span>BING WEBMASTER TOOLS</span><h2>Bing queries</h2></div><Pill tone="green">Live</Pill></div>{bing.queries.length?<div className="compactTable">{bing.queries.filter(q=>q.query.toLowerCase().includes(filter.toLowerCase())).slice(0,50).map(q=><div key={q.query}><span>{q.query}</span><strong>{number(q.clicks)} clicks</strong><span>{number(q.impressions)} imp. · Pos. {q.avgPosition?q.avgPosition.toFixed(1):'—'}</span></div>)}</div>:<EmptyState title="No Bing query data yet" body="Bing search-performance data is updated on its own reporting cadence."/>}</section>}
         </>}
