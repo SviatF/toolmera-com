@@ -8,13 +8,14 @@ import { ToolExperience } from '@/components/ToolExperience';
 import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
+import { websiteTrafficBenefits, websiteTrafficSeo } from '@/data/websiteTrafficSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
 export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)return{};
-  const seo=toolSeoContent[tool.id];
+  const seo=tool.id==='website-traffic-checker'?websiteTrafficSeo:toolSeoContent[tool.id];
   const title=freeTitle(seo?.title||tool.title);
   const description=seo?.description||tool.description;
   const url=`https://toolmera.com/${category}/${slug}/`;
@@ -29,7 +30,8 @@ export async function generateMetadata({params}:{params:Promise<{category:string
 
 export default async function ToolPage({params}:{params:Promise<{category:string;slug:string}>}){
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)notFound();
-  const seo=toolSeoContent[tool.id];
+  const seo=tool.id==='website-traffic-checker'?websiteTrafficSeo:toolSeoContent[tool.id];
+  const benefits=tool.id==='website-traffic-checker'?websiteTrafficBenefits:tool.benefits;
   const workflowIds=new Set(seo?.related?.map(item=>item.id)||[]);
   const semantic=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id));
   const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).slice(0,4);
@@ -68,7 +70,7 @@ export default async function ToolPage({params}:{params:Promise<{category:string
     </section>
 
     <section className="shell toolContent">
-      <div><span className="sectionKicker">WHY TOOLMERA</span><h2>Built to get the task done.</h2><ul>{tool.benefits.map(x=><li key={x}>{x}</li>)}</ul></div>
+      <div><span className="sectionKicker">WHY TOOLMERA</span><h2>Built to get the task done.</h2><ul>{benefits.map(x=><li key={x}>{x}</li>)}</ul></div>
       <div><span className="sectionKicker">ABOUT THIS TOOL</span><h2>{seo?.title||tool.title}</h2><p>{seo?.description||tool.description}</p></div>
     </section>
 
@@ -112,5 +114,5 @@ export default async function ToolPage({params}:{params:Promise<{category:string
 
     <section className="shell faqSection"><span className="sectionKicker">FAQ</span><h2>Common questions</h2>{faq.map(f=><details key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}</section>
     {schemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}
-  </main><Footer/></>
+  </main><Footer/></>;
 }
