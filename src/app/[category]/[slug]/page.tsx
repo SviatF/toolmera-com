@@ -16,6 +16,7 @@ import { dateCalculatorBenefits, dateCalculatorSeo } from '@/data/dateCalculator
 import { percentageCalculatorBenefits, percentageCalculatorSeo } from '@/data/percentageCalculatorSeo';
 import { volumeConverterBenefits, volumeConverterSeo } from '@/data/volumeConverterSeo';
 import { compressJpgBenefits, compressJpgSeo } from '@/data/compressJpgSeo';
+import { lengthConverterBenefits, lengthConverterSeo } from '@/data/lengthConverterSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -30,6 +31,7 @@ function seoForTool(toolId:string){
   if(toolId==='percentage')return percentageCalculatorSeo;
   if(toolId==='volume')return volumeConverterSeo;
   if(toolId==='compress-jpg')return compressJpgSeo;
+  if(toolId==='length')return lengthConverterSeo;
   return toolSeoContent[toolId];
 }
 
@@ -42,6 +44,7 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='percentage')return percentageCalculatorBenefits;
   if(toolId==='volume')return volumeConverterBenefits;
   if(toolId==='compress-jpg')return compressJpgBenefits;
+  if(toolId==='length')return lengthConverterBenefits;
   return fallback;
 }
 
