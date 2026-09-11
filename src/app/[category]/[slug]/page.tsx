@@ -14,6 +14,7 @@ import { websiteRedirectBenefits, websiteRedirectSeo } from '@/data/websiteRedir
 import { unixTimestampBenefits, unixTimestampSeo } from '@/data/unixTimestampSeo';
 import { dateCalculatorBenefits, dateCalculatorSeo } from '@/data/dateCalculatorSeo';
 import { percentageCalculatorBenefits, percentageCalculatorSeo } from '@/data/percentageCalculatorSeo';
+import { volumeConverterBenefits, volumeConverterSeo } from '@/data/volumeConverterSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -26,6 +27,7 @@ function seoForTool(toolId:string){
   if(toolId==='unix-timestamp')return unixTimestampSeo;
   if(toolId==='date-calculator')return dateCalculatorSeo;
   if(toolId==='percentage')return percentageCalculatorSeo;
+  if(toolId==='volume')return volumeConverterSeo;
   return toolSeoContent[toolId];
 }
 
@@ -36,6 +38,7 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='unix-timestamp')return unixTimestampBenefits;
   if(toolId==='date-calculator')return dateCalculatorBenefits;
   if(toolId==='percentage')return percentageCalculatorBenefits;
+  if(toolId==='volume')return volumeConverterBenefits;
   return fallback;
 }
 
