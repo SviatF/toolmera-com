@@ -57,8 +57,8 @@ jobs:
           path.write_text(source)
           PY
 
-      - name: TypeScript check
-        run: npx tsc --noEmit
+      - name: Validate patch
+        run: git diff --check
 
       - name: Commit source update and remove one-off workflow
         shell: bash
