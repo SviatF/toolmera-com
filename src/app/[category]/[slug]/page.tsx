@@ -12,6 +12,7 @@ import { websiteTrafficBenefits, websiteTrafficSeo } from '@/data/websiteTraffic
 import { websiteSitemapBenefits, websiteSitemapSeo } from '@/data/websiteSitemapSeo';
 import { websiteRedirectBenefits, websiteRedirectSeo } from '@/data/websiteRedirectSeo';
 import { unixTimestampBenefits, unixTimestampSeo } from '@/data/unixTimestampSeo';
+import { dateCalculatorBenefits, dateCalculatorSeo } from '@/data/dateCalculatorSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -22,6 +23,7 @@ function seoForTool(toolId:string){
   if(toolId==='sitemap-checker')return websiteSitemapSeo;
   if(toolId==='redirect-checker')return websiteRedirectSeo;
   if(toolId==='unix-timestamp')return unixTimestampSeo;
+  if(toolId==='date-calculator')return dateCalculatorSeo;
   return toolSeoContent[toolId];
 }
 
@@ -30,6 +32,7 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='sitemap-checker')return websiteSitemapBenefits;
   if(toolId==='redirect-checker')return websiteRedirectBenefits;
   if(toolId==='unix-timestamp')return unixTimestampBenefits;
+  if(toolId==='date-calculator')return dateCalculatorBenefits;
   return fallback;
 }
 
