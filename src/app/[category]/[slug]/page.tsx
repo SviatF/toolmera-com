@@ -10,6 +10,7 @@ import { findTool, tools, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
 import { websiteTrafficBenefits, websiteTrafficSeo } from '@/data/websiteTrafficSeo';
 import { websiteSitemapBenefits, websiteSitemapSeo } from '@/data/websiteSitemapSeo';
+import { websiteRedirectBenefits, websiteRedirectSeo } from '@/data/websiteRedirectSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -18,12 +19,14 @@ export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=
 function seoForTool(toolId:string){
   if(toolId==='website-traffic-checker')return websiteTrafficSeo;
   if(toolId==='sitemap-checker')return websiteSitemapSeo;
+  if(toolId==='redirect-checker')return websiteRedirectSeo;
   return toolSeoContent[toolId];
 }
 
 function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='website-traffic-checker')return websiteTrafficBenefits;
   if(toolId==='sitemap-checker')return websiteSitemapBenefits;
+  if(toolId==='redirect-checker')return websiteRedirectBenefits;
   return fallback;
 }
 
