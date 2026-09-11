@@ -18,6 +18,7 @@ import { volumeConverterBenefits, volumeConverterSeo } from '@/data/volumeConver
 import { compressJpgBenefits, compressJpgSeo } from '@/data/compressJpgSeo';
 import { lengthConverterBenefits, lengthConverterSeo } from '@/data/lengthConverterSeo';
 import { metaTagCheckerBenefits, metaTagCheckerSeo } from '@/data/metaTagCheckerSeo';
+import { compoundInterestBenefits, compoundInterestSeo } from '@/data/compoundInterestSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -34,6 +35,7 @@ function seoForTool(toolId:string){
   if(toolId==='compress-jpg')return compressJpgSeo;
   if(toolId==='length')return lengthConverterSeo;
   if(toolId==='meta-tag-checker')return metaTagCheckerSeo;
+  if(toolId==='compound')return compoundInterestSeo;
   return toolSeoContent[toolId];
 }
 
@@ -48,6 +50,7 @@ function benefitsForTool(toolId:string,fallback:string[]){
   if(toolId==='compress-jpg')return compressJpgBenefits;
   if(toolId==='length')return lengthConverterBenefits;
   if(toolId==='meta-tag-checker')return metaTagCheckerBenefits;
+  if(toolId==='compound')return compoundInterestBenefits;
   return fallback;
 }
 
