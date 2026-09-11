@@ -9,13 +9,27 @@ import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
 import { websiteTrafficBenefits, websiteTrafficSeo } from '@/data/websiteTrafficSeo';
+import { websiteSitemapBenefits, websiteSitemapSeo } from '@/data/websiteSitemapSeo';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
 export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=>({category:t.category,slug:t.slug}))}
+
+function seoForTool(toolId:string){
+  if(toolId==='website-traffic-checker')return websiteTrafficSeo;
+  if(toolId==='sitemap-checker')return websiteSitemapSeo;
+  return toolSeoContent[toolId];
+}
+
+function benefitsForTool(toolId:string,fallback:string[]){
+  if(toolId==='website-traffic-checker')return websiteTrafficBenefits;
+  if(toolId==='sitemap-checker')return websiteSitemapBenefits;
+  return fallback;
+}
+
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)return{};
-  const seo=tool.id==='website-traffic-checker'?websiteTrafficSeo:toolSeoContent[tool.id];
+  const seo=seoForTool(tool.id);
   const title=freeTitle(seo?.title||tool.title);
   const description=seo?.description||tool.description;
   const url=`https://toolmera.com/${category}/${slug}/`;
@@ -30,8 +44,8 @@ export async function generateMetadata({params}:{params:Promise<{category:string
 
 export default async function ToolPage({params}:{params:Promise<{category:string;slug:string}>}){
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)notFound();
-  const seo=tool.id==='website-traffic-checker'?websiteTrafficSeo:toolSeoContent[tool.id];
-  const benefits=tool.id==='website-traffic-checker'?websiteTrafficBenefits:tool.benefits;
+  const seo=seoForTool(tool.id);
+  const benefits=benefitsForTool(tool.id,tool.benefits);
   const workflowIds=new Set(seo?.related?.map(item=>item.id)||[]);
   const semantic=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id));
   const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).slice(0,4);
