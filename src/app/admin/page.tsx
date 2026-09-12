@@ -3,6 +3,7 @@ import { AdminDashboard } from '@/components/AdminDashboard';
 import { AdminQueryIntelligence } from '@/components/AdminQueryIntelligence';
 import { AdminInternalLinkBoost } from '@/components/AdminInternalLinkBoost';
 import { AdminSeoExperiments } from '@/components/AdminSeoExperiments';
+import { AdminSeoActionCenter } from '@/components/AdminSeoActionCenter';
 
 export const metadata: Metadata = {
   title: 'TOOLMERA Admin — SEO Intelligence',
@@ -11,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <><AdminDashboard /><AdminQueryIntelligence /><AdminInternalLinkBoost /><AdminSeoExperiments /></>;
+  return <><AdminDashboard /><AdminQueryIntelligence /><AdminInternalLinkBoost /><AdminSeoActionCenter /><AdminSeoExperiments /></>;
 }
