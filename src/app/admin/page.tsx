@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { AdminQueryIntelligence } from '@/components/AdminQueryIntelligence';
+import { AdminPageRankingCoverage } from '@/components/AdminPageRankingCoverage';
 import { AdminInternalLinkBoost } from '@/components/AdminInternalLinkBoost';
 import { AdminSeoExperiments } from '@/components/AdminSeoExperiments';
 import { AdminSeoActionCenter } from '@/components/AdminSeoActionCenter';
@@ -18,5 +19,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <><AdminDashboard /><AdminQueryIntelligence /><AdminInternalLinkBoost /><AdminSeoActionCenter /><AdminSeoTaskSync /><AdminSeoVerificationRecorder /><AdminSeoAutopilotGuardrails /><AdminSeoApprovalWorkflow /><AdminSeoActivityLog /><AdminSeoOutcomeLearning /><AdminSeoExperiments /></>;
+  return <><AdminDashboard /><AdminQueryIntelligence /><AdminPageRankingCoverage /><AdminInternalLinkBoost /><AdminSeoActionCenter /><AdminSeoTaskSync /><AdminSeoVerificationRecorder /><AdminSeoAutopilotGuardrails /><AdminSeoApprovalWorkflow /><AdminSeoActivityLog /><AdminSeoOutcomeLearning /><AdminSeoExperiments /></>;
 }
