@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Clock3, History, RefreshCw, UserRound } from 'lucide-react';
+import { CheckCircle2, Clock3, History, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './AdminSeoActivityLog.module.css';
@@ -12,7 +12,7 @@ type AuditEvent={
   at:string;
   revision:number;
   taskId:string;
-  kind:'status'|'owner'|'verification';
+  kind:'status'|'owner'|'verification'|'approval';
   actor:string;
   from?:string;
   to?:string;
@@ -24,11 +24,16 @@ type AuditEvent={
   impressionChange?:number|null;
   clickChange?:number|null;
   positionGain?:number;
+  approval?:'Approved'|'Rejected'|'Overridden'|'Snoozed';
+  guardrailDecision?:'AUTO-APPROVE'|'HUMAN REVIEW'|'BLOCK';
+  note?:string;
+  snoozedUntil?:string;
 };
 type SharedState={history?:AuditEvent[];revision:number;updatedAt:string};
-type Filter='all'|'status'|'owner'|'done'|'verified';
+type Filter='all'|'status'|'owner'|'done'|'verified'|'approvals';
 
 function eventTitle(event:AuditEvent){
+  if(event.kind==='approval')return `Approval · ${event.approval||event.to||'Decision recorded'}`;
   if(event.kind==='verification')return `Verification closed · ${event.verification||'Result recorded'}`;
   if(event.kind==='owner')return `Assignee changed to ${event.to||event.actor}`;
   if(event.to==='Done')return 'Task marked Done';
@@ -39,6 +44,11 @@ function eventTitle(event:AuditEvent){
 }
 
 function eventTone(event:AuditEvent){
+  if(event.kind==='approval'){
+    if(event.approval==='Approved'||event.approval==='Overridden')return styles.green;
+    if(event.approval==='Rejected')return styles.red;
+    return styles.amber;
+  }
   if(event.kind==='verification'){
     if(event.verification==='Winner')return styles.green;
     if(event.verification==='Loser')return styles.red;
@@ -121,13 +131,15 @@ export function AdminSeoActivityLog(){
     if(!host)return;
     void load();
     const interval=window.setInterval(()=>void load(true),15000);
-    return()=>window.clearInterval(interval);
+    const onApproval=()=>void load(true);
+    window.addEventListener('toolmera-seo-approval-changed',onApproval);
+    return()=>{window.clearInterval(interval);window.removeEventListener('toolmera-seo-approval-changed',onApproval)};
   },[host,load]);
 
   const summary=useMemo(()=>({
     done:history.filter(item=>item.kind==='status'&&item.to==='Done').length,
-    started:history.filter(item=>item.kind==='status'&&item.to==='In progress').length,
     verified:history.filter(item=>item.kind==='verification').length,
+    approvals:history.filter(item=>item.kind==='approval').length,
     reassigned:history.filter(item=>item.kind==='owner').length,
   }),[history]);
 
@@ -136,6 +148,7 @@ export function AdminSeoActivityLog(){
     if(filter==='owner')return item.kind==='owner';
     if(filter==='done')return item.kind==='status'&&item.to==='Done';
     if(filter==='verified')return item.kind==='verification';
+    if(filter==='approvals')return item.kind==='approval';
     return true;
   }).slice(0,50),[history,filter]);
 
@@ -145,8 +158,8 @@ export function AdminSeoActivityLog(){
     <div className={styles.head}>
       <div>
         <span className={styles.kicker}>SEO ACTIVITY LOG · PERSISTENT AUDIT TRAIL</span>
-        <h2>Who changed what, when, and did it actually work?</h2>
-        <p>Durable history of task status, assignee changes and automatic post-action verification. Completed work keeps its baseline, final 7-day result and ranking deltas across devices and browser resets.</p>
+        <h2>Who changed what, who approved it, and did it actually work?</h2>
+        <p>Durable history of task state, approval decisions, assignees and automatic post-action verification. Reviewer overrides and their written reasons survive devices and browser resets.</p>
       </div>
       <div className={styles.actions}>
         <button onClick={()=>void load()} disabled={loading}><RefreshCw size={11}/>{loading?'Refreshing':'Refresh'}</button>
@@ -156,28 +169,29 @@ export function AdminSeoActivityLog(){
 
     <div className={styles.summary}>
       <div><span>Completed</span><strong>{summary.done}</strong><small>Done events</small></div>
-      <div><span>Started</span><strong>{summary.started}</strong><small>In progress</small></div>
       <div><span>Verified</span><strong>{summary.verified}</strong><small>Closed-loop results</small></div>
+      <div><span>Approvals</span><strong>{summary.approvals}</strong><small>Review decisions</small></div>
       <div><span>Reassigned</span><strong>{summary.reassigned}</strong><small>Owner changes</small></div>
     </div>
 
     <div className={styles.toolbar}>
-      <div className={styles.filters}>{(['all','status','owner','done','verified'] as Filter[]).map(value=><button key={value} className={filter===value?styles.active:''} onClick={()=>setFilter(value)}>{value==='all'?'All activity':value==='status'?'Status changes':value==='owner'?'Assignees':value==='done'?'Completed':'Verified'}</button>)}</div>
+      <div className={styles.filters}>{(['all','status','owner','done','verified','approvals'] as Filter[]).map(value=><button key={value} className={filter===value?styles.active:''} onClick={()=>setFilter(value)}>{value==='all'?'All activity':value==='status'?'Status changes':value==='owner'?'Assignees':value==='done'?'Completed':value==='verified'?'Verified':'Approvals'}</button>)}</div>
       <small>{updatedAt?`Last shared update ${compactDate(updatedAt)}`:'Waiting for shared task activity'}</small>
     </div>
 
     {error&&<div className={styles.error}>{error}</div>}
-    {!error&&visible.length===0?<div className={styles.empty}><History size={18}/><strong>No activity yet</strong><span>Change a task status or assignee in SEO Action Center and it will appear here permanently.</span></div>:
+    {!error&&visible.length===0?<div className={styles.empty}><History size={18}/><strong>No activity yet</strong><span>Task, approval and verification decisions will appear here permanently.</span></div>:
     <div className={styles.timeline}>{visible.map(event=><article className={styles.event} key={event.id}>
-      <div className={`${styles.icon} ${eventTone(event)}`}>{event.kind==='owner'?<UserRound size={12}/>:event.kind==='verification'||event.to==='Done'?<CheckCircle2 size={12}/>:<Clock3 size={12}/>}</div>
+      <div className={`${styles.icon} ${eventTone(event)}`}>{event.kind==='owner'?<UserRound size={12}/>:event.kind==='approval'?<ShieldCheck size={12}/>:event.kind==='verification'||event.to==='Done'?<CheckCircle2 size={12}/>:<Clock3 size={12}/>}</div>
       <div className={styles.main}>
         <div className={styles.eventTop}><strong>{eventTitle(event)}</strong><span>{compactDate(event.at)}</span></div>
         <a href={event.snapshot.path||'/'} target="_blank" rel="noreferrer">{event.snapshot.toolName||'Unknown page'}</a>
         <p>{event.snapshot.title||event.snapshot.type}{event.snapshot.query?` · “${event.snapshot.query}”`:''}</p>
         <div className={styles.meta}><span>{event.snapshot.priority||'—'}</span><span>{event.snapshot.type||'Task'}</span><span>by {event.actor||'Admin'}</span><span>revision {event.revision}</span></div>
+        {event.kind==='approval'&&event.note&&<p>{event.note}</p>}
       </div>
       <div className={styles.change}>
-        {event.kind==='verification'?<><small>Final result</small><strong>{event.verification||'Recorded'}</strong></>:event.kind==='status'?<><small>Status</small><strong>{event.from||'Open'} → {event.to||'—'}</strong></>:<><small>Assignee</small><strong>{event.from||'—'} → {event.to||'—'}</strong></>}
+        {event.kind==='approval'?<><small>Approval</small><strong>{event.from?`${event.from} → `:''}{event.approval||event.to||'Recorded'}</strong>{event.guardrailDecision&&<small>Gate: {event.guardrailDecision}</small>}{event.snoozedUntil&&<small>Until {event.snoozedUntil}</small>}</>:event.kind==='verification'?<><small>Final result</small><strong>{event.verification||'Recorded'}</strong></>:event.kind==='status'?<><small>Status</small><strong>{event.from||'Open'} → {event.to||'—'}</strong></>:<><small>Assignee</small><strong>{event.from||'—'} → {event.to||'—'}</strong></>}
         {event.kind==='verification'&&<div className={styles.baseline}><span><small>Impr. Δ</small><b>{percentDelta(event.impressionChange)}</b></span><span><small>Pos. Δ</small><b>{positionDelta(event.positionGain)}</b></span><span><small>Clicks Δ</small><b>{percentDelta(event.clickChange)}</b></span></div>}
         {event.to==='Done'&&event.baseline7&&<div className={styles.baseline}><span><small>7d impr.</small><b>{Math.round(event.baseline7.impressions)}</b></span><span><small>Position</small><b>{event.baseline7.position?event.baseline7.position.toFixed(1):'—'}</b></span><span><small>Verify</small><b>{event.verifyAt||'—'}</b></span></div>}
       </div>
