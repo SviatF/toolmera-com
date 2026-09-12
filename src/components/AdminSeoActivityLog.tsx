@@ -12,18 +12,24 @@ type AuditEvent={
   at:string;
   revision:number;
   taskId:string;
-  kind:'status'|'owner';
+  kind:'status'|'owner'|'verification';
   actor:string;
   from?:string;
   to?:string;
   snapshot:TaskSnapshot;
   baseline7?:MetricSnapshot;
   verifyAt?:string;
+  verification?:string;
+  current7?:MetricSnapshot;
+  impressionChange?:number|null;
+  clickChange?:number|null;
+  positionGain?:number;
 };
 type SharedState={history?:AuditEvent[];revision:number;updatedAt:string};
-type Filter='all'|'status'|'owner'|'done';
+type Filter='all'|'status'|'owner'|'done'|'verified';
 
 function eventTitle(event:AuditEvent){
+  if(event.kind==='verification')return `Verification closed · ${event.verification||'Result recorded'}`;
   if(event.kind==='owner')return `Assignee changed to ${event.to||event.actor}`;
   if(event.to==='Done')return 'Task marked Done';
   if(event.to==='In progress')return 'Task started';
@@ -33,6 +39,12 @@ function eventTitle(event:AuditEvent){
 }
 
 function eventTone(event:AuditEvent){
+  if(event.kind==='verification'){
+    if(event.verification==='Winner')return styles.green;
+    if(event.verification==='Loser')return styles.red;
+    if(event.verification==='Neutral')return styles.blue;
+    return styles.amber;
+  }
   if(event.kind==='owner')return styles.blue;
   if(event.to==='Done')return styles.green;
   if(event.to==='Snoozed')return styles.amber;
@@ -44,6 +56,17 @@ function compactDate(value:string){
   if(!value)return '—';
   const date=new Date(value);
   return `${date.toLocaleDateString([],{month:'short',day:'2-digit'})} · ${date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+}
+
+function percentDelta(value:number|null|undefined){
+  if(value===null)return 'NEW';
+  if(value===undefined||!Number.isFinite(value))return '—';
+  return `${value>=0?'+':''}${Math.round(value*100)}%`;
+}
+
+function positionDelta(value:number|undefined){
+  if(value===undefined||!Number.isFinite(value))return '—';
+  return `${value>=0?'+':''}${value.toFixed(1)}`;
 }
 
 export function AdminSeoActivityLog(){
@@ -104,7 +127,7 @@ export function AdminSeoActivityLog(){
   const summary=useMemo(()=>({
     done:history.filter(item=>item.kind==='status'&&item.to==='Done').length,
     started:history.filter(item=>item.kind==='status'&&item.to==='In progress').length,
-    snoozed:history.filter(item=>item.kind==='status'&&item.to==='Snoozed').length,
+    verified:history.filter(item=>item.kind==='verification').length,
     reassigned:history.filter(item=>item.kind==='owner').length,
   }),[history]);
 
@@ -112,6 +135,7 @@ export function AdminSeoActivityLog(){
     if(filter==='status')return item.kind==='status';
     if(filter==='owner')return item.kind==='owner';
     if(filter==='done')return item.kind==='status'&&item.to==='Done';
+    if(filter==='verified')return item.kind==='verification';
     return true;
   }).slice(0,50),[history,filter]);
 
@@ -121,8 +145,8 @@ export function AdminSeoActivityLog(){
     <div className={styles.head}>
       <div>
         <span className={styles.kicker}>SEO ACTIVITY LOG · PERSISTENT AUDIT TRAIL</span>
-        <h2>Who changed what, when, and what baseline was captured?</h2>
-        <p>Durable history of task status and assignee changes. Completed tasks preserve their verification date and 7-day GSC baseline so execution history survives devices and browser resets.</p>
+        <h2>Who changed what, when, and did it actually work?</h2>
+        <p>Durable history of task status, assignee changes and automatic post-action verification. Completed work keeps its baseline, final 7-day result and ranking deltas across devices and browser resets.</p>
       </div>
       <div className={styles.actions}>
         <button onClick={()=>void load()} disabled={loading}><RefreshCw size={11}/>{loading?'Refreshing':'Refresh'}</button>
@@ -133,19 +157,19 @@ export function AdminSeoActivityLog(){
     <div className={styles.summary}>
       <div><span>Completed</span><strong>{summary.done}</strong><small>Done events</small></div>
       <div><span>Started</span><strong>{summary.started}</strong><small>In progress</small></div>
-      <div><span>Snoozed</span><strong>{summary.snoozed}</strong><small>Deferred work</small></div>
+      <div><span>Verified</span><strong>{summary.verified}</strong><small>Closed-loop results</small></div>
       <div><span>Reassigned</span><strong>{summary.reassigned}</strong><small>Owner changes</small></div>
     </div>
 
     <div className={styles.toolbar}>
-      <div className={styles.filters}>{(['all','status','owner','done'] as Filter[]).map(value=><button key={value} className={filter===value?styles.active:''} onClick={()=>setFilter(value)}>{value==='all'?'All activity':value==='status'?'Status changes':value==='owner'?'Assignees':'Completed'}</button>)}</div>
+      <div className={styles.filters}>{(['all','status','owner','done','verified'] as Filter[]).map(value=><button key={value} className={filter===value?styles.active:''} onClick={()=>setFilter(value)}>{value==='all'?'All activity':value==='status'?'Status changes':value==='owner'?'Assignees':value==='done'?'Completed':'Verified'}</button>)}</div>
       <small>{updatedAt?`Last shared update ${compactDate(updatedAt)}`:'Waiting for shared task activity'}</small>
     </div>
 
     {error&&<div className={styles.error}>{error}</div>}
     {!error&&visible.length===0?<div className={styles.empty}><History size={18}/><strong>No activity yet</strong><span>Change a task status or assignee in SEO Action Center and it will appear here permanently.</span></div>:
     <div className={styles.timeline}>{visible.map(event=><article className={styles.event} key={event.id}>
-      <div className={`${styles.icon} ${eventTone(event)}`}>{event.kind==='owner'?<UserRound size={12}/>:event.to==='Done'?<CheckCircle2 size={12}/>:<Clock3 size={12}/>}</div>
+      <div className={`${styles.icon} ${eventTone(event)}`}>{event.kind==='owner'?<UserRound size={12}/>:event.kind==='verification'||event.to==='Done'?<CheckCircle2 size={12}/>:<Clock3 size={12}/>}</div>
       <div className={styles.main}>
         <div className={styles.eventTop}><strong>{eventTitle(event)}</strong><span>{compactDate(event.at)}</span></div>
         <a href={event.snapshot.path||'/'} target="_blank" rel="noreferrer">{event.snapshot.toolName||'Unknown page'}</a>
@@ -153,7 +177,8 @@ export function AdminSeoActivityLog(){
         <div className={styles.meta}><span>{event.snapshot.priority||'—'}</span><span>{event.snapshot.type||'Task'}</span><span>by {event.actor||'Admin'}</span><span>revision {event.revision}</span></div>
       </div>
       <div className={styles.change}>
-        {event.kind==='status'?<><small>Status</small><strong>{event.from||'Open'} → {event.to||'—'}</strong></>:<><small>Assignee</small><strong>{event.from||'—'} → {event.to||'—'}</strong></>}
+        {event.kind==='verification'?<><small>Final result</small><strong>{event.verification||'Recorded'}</strong></>:event.kind==='status'?<><small>Status</small><strong>{event.from||'Open'} → {event.to||'—'}</strong></>:<><small>Assignee</small><strong>{event.from||'—'} → {event.to||'—'}</strong></>}
+        {event.kind==='verification'&&<div className={styles.baseline}><span><small>Impr. Δ</small><b>{percentDelta(event.impressionChange)}</b></span><span><small>Pos. Δ</small><b>{positionDelta(event.positionGain)}</b></span><span><small>Clicks Δ</small><b>{percentDelta(event.clickChange)}</b></span></div>}
         {event.to==='Done'&&event.baseline7&&<div className={styles.baseline}><span><small>7d impr.</small><b>{Math.round(event.baseline7.impressions)}</b></span><span><small>Position</small><b>{event.baseline7.position?event.baseline7.position.toFixed(1):'—'}</b></span><span><small>Verify</small><b>{event.verifyAt||'—'}</b></span></div>}
       </div>
     </article>)}</div>}
