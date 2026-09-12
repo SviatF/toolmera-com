@@ -13,17 +13,41 @@ type DurableObjectNamespaceLike={
 };
 
 type TaskWorkerEnv={SEO_TASKS?:DurableObjectNamespaceLike;REQUIRE_ACCESS?:string};
+type AuditTaskSnapshot={
+  toolName:string;
+  path:string;
+  priority:string;
+  type:string;
+  title:string;
+  query:string;
+};
+type AuditMetricSnapshot={clicks:number;impressions:number;ctr:number;position:number};
+type AuditEvent={
+  id:string;
+  at:string;
+  revision:number;
+  taskId:string;
+  kind:'status'|'owner';
+  actor:string;
+  from?:string;
+  to?:string;
+  snapshot:AuditTaskSnapshot;
+  baseline7?:AuditMetricSnapshot;
+  verifyAt?:string;
+};
 type SharedTaskState={
   version:1;
   tasks:Record<string,unknown>;
   owner:string;
   updatedAt:string;
   revision:number;
+  history:AuditEvent[];
 };
 
 type StatePayload={tasks?:unknown;owner?:unknown};
 
 const storageKey='toolmera-seo-task-state-v1';
+const historyLimit=500;
 
 function apiJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{
@@ -37,11 +61,82 @@ function apiJson(data:unknown,status=200){
 }
 
 function blankState():SharedTaskState{
-  return {version:1,tasks:{},owner:'Sviat',updatedAt:'',revision:0};
+  return {version:1,tasks:{},owner:'Sviat',updatedAt:'',revision:0,history:[]};
 }
 
 function isPlainRecord(value:unknown):value is Record<string,unknown>{
   return Boolean(value)&&typeof value==='object'&&!Array.isArray(value);
+}
+
+function asString(value:unknown,fallback=''){
+  return typeof value==='string'?value.slice(0,240):fallback;
+}
+
+function metricSnapshot(value:unknown):AuditMetricSnapshot|undefined{
+  if(!isPlainRecord(value))return undefined;
+  const number=(input:unknown)=>typeof input==='number'&&Number.isFinite(input)?input:0;
+  return{
+    clicks:number(value.clicks),
+    impressions:number(value.impressions),
+    ctr:number(value.ctr),
+    position:number(value.position),
+  };
+}
+
+function taskSnapshot(value:unknown):AuditTaskSnapshot{
+  const record=isPlainRecord(value)?value:{};
+  const snapshot=isPlainRecord(record.snapshot)?record.snapshot:{};
+  return{
+    toolName:asString(snapshot.toolName,'Unknown page'),
+    path:asString(snapshot.path,'/'),
+    priority:asString(snapshot.priority,'—'),
+    type:asString(snapshot.type,'Task'),
+    title:asString(snapshot.title,'SEO task'),
+    query:asString(snapshot.query,''),
+  };
+}
+
+function taskStatus(value:unknown){
+  if(!isPlainRecord(value))return 'Open';
+  const status=asString(value.status,'Open');
+  return ['Open','In progress','Done','Snoozed'].includes(status)?status:'Open';
+}
+
+function taskOwner(value:unknown,fallback:string){
+  if(!isPlainRecord(value))return fallback;
+  return asString(value.owner,fallback).trim()||fallback;
+}
+
+function auditEvents(previous:Record<string,unknown>,next:Record<string,unknown>,revision:number,at:string,defaultOwner:string){
+  const events:AuditEvent[]=[];
+  for(const [taskId,nextValue] of Object.entries(next)){
+    if(!isPlainRecord(nextValue))continue;
+    const previousValue=previous[taskId];
+    const fromStatus=taskStatus(previousValue);
+    const toStatus=taskStatus(nextValue);
+    const previousOwner=taskOwner(previousValue,defaultOwner);
+    const nextOwner=taskOwner(nextValue,defaultOwner);
+    const snapshot=taskSnapshot(nextValue);
+
+    if(fromStatus!==toStatus){
+      events.push({
+        id:`r${revision}-${encodeURIComponent(taskId)}-status`,
+        at,revision,taskId,kind:'status',actor:nextOwner||defaultOwner,
+        from:fromStatus,to:toStatus,snapshot,
+        baseline7:toStatus==='Done'?metricSnapshot(nextValue.baseline7):undefined,
+        verifyAt:toStatus==='Done'?asString(nextValue.verifyAt):undefined,
+      });
+    }
+
+    if(previousOwner!==nextOwner&&nextOwner){
+      events.push({
+        id:`r${revision}-${encodeURIComponent(taskId)}-owner`,
+        at,revision,taskId,kind:'owner',actor:nextOwner,
+        from:previousOwner,to:nextOwner,snapshot,
+      });
+    }
+  }
+  return events;
 }
 
 function sanitizePayload(payload:StatePayload){
@@ -68,7 +163,8 @@ export class SeoTaskStore{
 
     if(request.method==='GET'){
       const current=await this.state.storage.get<SharedTaskState>(storageKey);
-      return apiJson(current||blankState());
+      if(!current)return apiJson(blankState());
+      return apiJson({...current,history:Array.isArray(current.history)?current.history:[]});
     }
 
     if(request.method==='PUT'){
@@ -77,13 +173,18 @@ export class SeoTaskStore{
       catch{return apiJson({error:'Invalid JSON request body.'},400)}
       try{
         const clean=sanitizePayload(payload);
-        const current=await this.state.storage.get<SharedTaskState>(storageKey);
+        const currentRaw=await this.state.storage.get<SharedTaskState>(storageKey);
+        const current=currentRaw?{...currentRaw,history:Array.isArray(currentRaw.history)?currentRaw.history:[]}:blankState();
+        const revision=current.revision+1;
+        const updatedAt=new Date().toISOString();
+        const events=auditEvents(current.tasks,clean.tasks,revision,updatedAt,clean.owner);
         const next:SharedTaskState={
           version:1,
           tasks:clean.tasks,
           owner:clean.owner,
-          updatedAt:new Date().toISOString(),
-          revision:(current?.revision||0)+1,
+          updatedAt,
+          revision,
+          history:[...events,...current.history].slice(0,historyLimit),
         };
         await this.state.storage.put(storageKey,next);
         return apiJson(next);
