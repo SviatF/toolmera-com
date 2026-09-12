@@ -1,16 +1,5 @@
 import type { Metadata } from 'next';
 import { AdminDashboard } from '@/components/AdminDashboard';
-import { AdminQueryIntelligence } from '@/components/AdminQueryIntelligence';
-import { AdminPageRankingCoverage } from '@/components/AdminPageRankingCoverage';
-import { AdminInternalLinkBoost } from '@/components/AdminInternalLinkBoost';
-import { AdminSeoExperiments } from '@/components/AdminSeoExperiments';
-import { AdminSeoActionCenter } from '@/components/AdminSeoActionCenter';
-import { AdminSeoTaskSync } from '@/components/AdminSeoTaskSync';
-import { AdminSeoActivityLog } from '@/components/AdminSeoActivityLog';
-import { AdminSeoVerificationRecorder } from '@/components/AdminSeoVerificationRecorder';
-import { AdminSeoOutcomeLearning } from '@/components/AdminSeoOutcomeLearning';
-import { AdminSeoAutopilotGuardrails } from '@/components/AdminSeoAutopilotGuardrails';
-import { AdminSeoApprovalWorkflow } from '@/components/AdminSeoApprovalWorkflow';
 
 export const metadata: Metadata = {
   title: 'TOOLMERA Admin — SEO Intelligence',
@@ -19,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <><AdminDashboard /><AdminQueryIntelligence /><AdminPageRankingCoverage /><AdminInternalLinkBoost /><AdminSeoActionCenter /><AdminSeoTaskSync /><AdminSeoVerificationRecorder /><AdminSeoAutopilotGuardrails /><AdminSeoApprovalWorkflow /><AdminSeoActivityLog /><AdminSeoOutcomeLearning /><AdminSeoExperiments /></>;
+  // Emergency safe mode: advanced SEO modules are temporarily unmounted.
+  // Several modules used DOM polling/portal discovery and could repeatedly remount,
+  // multiplying /api/admin requests while the Queries view stayed open.
+  // Keep the core dashboard live while the shared-data architecture is rebuilt.
+  return <AdminDashboard />;
 }
