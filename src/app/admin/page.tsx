@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { AdminQueryIntelligence } from '@/components/AdminQueryIntelligence';
+import { AdminInternalLinkBoost } from '@/components/AdminInternalLinkBoost';
 
 export const metadata: Metadata = {
   title: 'TOOLMERA Admin — SEO Intelligence',
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <><AdminDashboard /><AdminQueryIntelligence /></>;
+  return <><AdminDashboard /><AdminQueryIntelligence /><AdminInternalLinkBoost /></>;
 }
