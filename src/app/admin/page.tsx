@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AdminDashboard } from '@/components/AdminDashboard';
+import { AdminSeoSafeSuite } from '@/components/AdminSeoSafeSuite';
 
 export const metadata: Metadata = {
   title: 'TOOLMERA Admin — SEO Intelligence',
@@ -8,9 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  // Emergency safe mode: advanced SEO modules are temporarily unmounted.
-  // Several modules used DOM polling/portal discovery and could repeatedly remount,
-  // multiplying /api/admin requests while the Queries view stayed open.
-  // Keep the core dashboard live while the shared-data architecture is rebuilt.
-  return <AdminDashboard />;
+  // Safe architecture: the legacy portal/polling SEO widgets stay unmounted.
+  // AdminSeoSafeSuite reads one shared 7d + 28d GSC payload and computes
+  // opportunity, trend, cannibalization, experiment locks and link ideas locally.
+  return <><AdminDashboard /><AdminSeoSafeSuite /></>;
 }
