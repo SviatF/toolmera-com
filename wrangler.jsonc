@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "toolmera-com",
-  "main": "src/worker.ts",
+  "main": "src/workerWithTasks.ts",
   "compatibility_date": "2026-09-05",
   "keep_vars": true,
   "secrets": {
@@ -14,6 +14,22 @@
     "GSC_SITE_URL": "sc-domain:toolmera.com",
     "GA4_PROPERTY_ID": "552958073"
   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SEO_TASKS",
+        "class_name": "SeoTaskStore"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "seo-task-store-v1",
+      "new_sqlite_classes": [
+        "SeoTaskStore"
+      ]
+    }
+  ],
   "assets": {
     "directory": "./out",
     "binding": "ASSETS",
