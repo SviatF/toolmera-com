@@ -16,6 +16,8 @@ type GscData={connected:true;range:string;pages?:PageRow[];queryPages?:QueryPage
 type Priority='P0'|'P1'|'P2'|'HOLD';
 type ActionType='Cannibalization'|'Decay audit'|'Internal links'|'CTR'|'Content gap'|'Scale winner'|'Observation';
 type Trend='New'|'Growing'|'Stable'|'Declining';
+type TaskStatus='Open'|'In progress'|'Done'|'Snoozed';
+type Verification='Pending'|'Winner'|'Neutral'|'Loser'|'Low data';
 
 type PageSignal={
   tool:Tool;
@@ -48,7 +50,30 @@ type ActionItem={
   metrics:MetricRow;
 };
 
+type TaskSnapshot={
+  toolId:string;
+  toolName:string;
+  path:string;
+  priority:Priority;
+  type:ActionType;
+  title:string;
+  query:string;
+};
+
+type TaskRecord={
+  status:TaskStatus;
+  owner:string;
+  updatedAt:string;
+  completedAt?:string;
+  snoozedUntil?:string;
+  verifyAt?:string;
+  baseline7?:MetricRow;
+  snapshot:TaskSnapshot;
+};
+
 const empty:MetricRow={clicks:0,impressions:0,ctr:0,position:0};
+const taskStorageKey='toolmera-seo-task-state-v1';
+const ownerStorageKey='toolmera-seo-task-owner-v1';
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value));
 const number=(value:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(value);
 const pct=(value:number)=>`${(value*100).toFixed(2)}%`;
@@ -66,9 +91,14 @@ function utcDay(value:string|Date){
   return Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate());
 }
 
-function daysSince(value:string){
-  return Math.max(0,Math.floor((utcDay(new Date())-utcDay(value))/86400000));
+function todayIso(){return new Date().toISOString().slice(0,10)}
+function addDays(value:string,days:number){
+  const date=new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate()+days);
+  return date.toISOString().slice(0,10);
 }
+function daysSince(value:string){return Math.max(0,Math.floor((utcDay(new Date())-utcDay(value))/86400000))}
+function daysUntil(value:string){return Math.ceil((utcDay(value)-utcDay(new Date()))/86400000)}
 
 function weeklyBaseline(current:MetricRow,total28:MetricRow):MetricRow{
   const priorImpressions=Math.max(0,total28.impressions-current.impressions);
@@ -140,6 +170,28 @@ function experimentVerdict(current:MetricRow,previous:MetricRow,finalDataDays:nu
   return 'Neutral' as const;
 }
 
+function taskVerification(record:TaskRecord,signal:PageSignal|undefined):Verification|null{
+  if(record.status!=='Done'||!record.verifyAt)return null;
+  if(daysUntil(record.verifyAt)>0)return 'Pending';
+  if(!record.baseline7||!signal)return 'Low data';
+  const current=signal.current;
+  const baseline=record.baseline7;
+  if(current.impressions+baseline.impressions<2)return 'Low data';
+  const impressions=relativeChange(current.impressions,baseline.impressions);
+  const positionGain=current.position&&baseline.position?baseline.position-current.position:0;
+  let score=0;
+  if(impressions===null&&current.impressions>=2)score+=2;
+  else if(impressions!==null&&impressions>=.25)score+=2;
+  else if(impressions!==null&&impressions<=-.25)score-=2;
+  if(positionGain>=3)score+=2;
+  else if(positionGain<=-3)score-=2;
+  if(current.clicks>baseline.clicks&&current.clicks>=1)score+=1;
+  else if(baseline.clicks>=1&&current.clicks<baseline.clicks)score-=1;
+  if(score>=2)return 'Winner';
+  if(score<=-2)return 'Loser';
+  return 'Neutral';
+}
+
 function priorityScore(priority:Priority,opportunity:number){
   const base:Record<Priority,number>={P0:400,P1:300,P2:200,HOLD:100};
   return base[priority]+opportunity;
@@ -160,12 +212,50 @@ function actionTone(type:ActionType){
   return styles.amber;
 }
 
+function statusTone(status:TaskStatus){
+  if(status==='Done')return styles.green;
+  if(status==='In progress')return styles.blue;
+  if(status==='Snoozed')return styles.amber;
+  return styles.muted;
+}
+
+function verificationTone(verdict:Verification){
+  if(verdict==='Winner')return styles.green;
+  if(verdict==='Loser')return styles.red;
+  if(verdict==='Neutral')return styles.blue;
+  if(verdict==='Pending')return styles.amber;
+  return styles.muted;
+}
+
 export function AdminSeoActionCenter(){
   const [host,setHost]=useState<HTMLElement|null>(null);
   const [seven,setSeven]=useState<GscData|null>(null);
   const [twentyEight,setTwentyEight]=useState<GscData|null>(null);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
+  const [taskStates,setTaskStates]=useState<Record<string,TaskRecord>>({});
+  const [taskHydrated,setTaskHydrated]=useState(false);
+  const [defaultOwner,setDefaultOwner]=useState('Sviat');
+
+  useEffect(()=>{
+    try{
+      const saved=window.localStorage.getItem(taskStorageKey);
+      if(saved)setTaskStates(JSON.parse(saved) as Record<string,TaskRecord>);
+      const savedOwner=window.localStorage.getItem(ownerStorageKey);
+      if(savedOwner)setDefaultOwner(savedOwner);
+    }catch{}
+    setTaskHydrated(true);
+  },[]);
+
+  useEffect(()=>{
+    if(!taskHydrated)return;
+    try{window.localStorage.setItem(taskStorageKey,JSON.stringify(taskStates))}catch{}
+  },[taskStates,taskHydrated]);
+
+  useEffect(()=>{
+    if(!taskHydrated)return;
+    try{window.localStorage.setItem(ownerStorageKey,defaultOwner)}catch{}
+  },[defaultOwner,taskHydrated]);
 
   useEffect(()=>{
     const sync=()=>{
@@ -296,6 +386,8 @@ export function AdminSeoActionCenter(){
     }).filter(row=>row.metrics.impressions>0||row.experimentDaysLeft!==null);
   },[seven,twentyEight]);
 
+  const signalByTool=useMemo(()=>new Map(signals.map(signal=>[signal.tool.id,signal])),[signals]);
+
   const actionItems=useMemo<ActionItem[]>(()=>{
     const actions:ActionItem[]=[];
     const push=(signal:PageSignal,priority:Priority,type:ActionType,title:string,detail:string,reason:string,suffix:string)=>{
@@ -354,6 +446,55 @@ export function AdminSeoActionCenter(){
       .slice(0,30);
   },[signals]);
 
+  const updateTaskStatus=useCallback((item:ActionItem,status:TaskStatus)=>{
+    const today=todayIso();
+    const signal=signalByTool.get(item.tool.id);
+    setTaskStates(previous=>{
+      const existing=previous[item.id];
+      const record:TaskRecord={
+        status,
+        owner:(existing?.owner||defaultOwner||'Admin').trim()||'Admin',
+        updatedAt:today,
+        snapshot:{
+          toolId:item.tool.id,
+          toolName:item.tool.name,
+          path:item.path,
+          priority:item.priority,
+          type:item.type,
+          title:item.title,
+          query:item.query,
+        },
+      };
+      if(status==='Done'){
+        record.completedAt=today;
+        record.verifyAt=addDays(today,9);
+        record.baseline7=signal?.current||empty;
+      }else if(status==='Snoozed'){
+        record.snoozedUntil=addDays(today,7);
+      }
+      return {...previous,[item.id]:record};
+    });
+  },[defaultOwner,signalByTool]);
+
+  const updateTaskOwner=useCallback((item:ActionItem,owner:string)=>{
+    const today=todayIso();
+    setTaskStates(previous=>{
+      const existing=previous[item.id];
+      return {...previous,[item.id]:{
+        status:existing?.status||'Open',
+        owner,
+        updatedAt:today,
+        completedAt:existing?.completedAt,
+        snoozedUntil:existing?.snoozedUntil,
+        verifyAt:existing?.verifyAt,
+        baseline7:existing?.baseline7,
+        snapshot:existing?.snapshot||{
+          toolId:item.tool.id,toolName:item.tool.name,path:item.path,priority:item.priority,type:item.type,title:item.title,query:item.query,
+        },
+      }};
+    });
+  },[]);
+
   const summary=useMemo(()=>({
     p0:actionItems.filter(item=>item.priority==='P0').length,
     p1:actionItems.filter(item=>item.priority==='P1').length,
@@ -362,6 +503,26 @@ export function AdminSeoActionCenter(){
     pages:new Set(actionItems.map(item=>item.tool.id)).size,
   }),[actionItems]);
 
+  const taskSummary=useMemo(()=>{
+    const currentIds=new Set(actionItems.map(item=>item.id));
+    const current=Object.entries(taskStates).filter(([id])=>currentIds.has(id)).map(([,record])=>record);
+    const allDone=Object.values(taskStates).filter(record=>record.status==='Done');
+    const verifyDue=allDone.filter(record=>record.verifyAt&&daysUntil(record.verifyAt)<=0).length;
+    return {
+      open:actionItems.length-current.filter(record=>record.status!=='Open').length,
+      progress:current.filter(record=>record.status==='In progress').length,
+      done:allDone.length,
+      snoozed:current.filter(record=>record.status==='Snoozed').length,
+      verifyDue,
+    };
+  },[actionItems,taskStates]);
+
+  const verificationRows=useMemo(()=>Object.entries(taskStates)
+    .filter(([,record])=>record.status==='Done'&&record.snapshot)
+    .map(([id,record])=>({id,record,signal:signalByTool.get(record.snapshot.toolId),verification:taskVerification(record,signalByTool.get(record.snapshot.toolId))}))
+    .sort((a,b)=>(b.record.completedAt||'').localeCompare(a.record.completedAt||''))
+    .slice(0,10),[taskStates,signalByTool]);
+
   if(!host)return null;
 
   return createPortal(<section className={styles.panel}>
@@ -369,9 +530,10 @@ export function AdminSeoActionCenter(){
       <div>
         <span className={styles.kicker}>SEO ACTION CENTER · SIGNAL → TASK → EXECUTION</span>
         <h2>Exactly what should we do next?</h2>
-        <p>Turns GSC opportunity, trend, experiments, CTR gaps, cannibalization and internal-link coverage into a prioritized execution queue. Observation locks suppress rewrite tasks until the current test has enough final Search Console data.</p>
+        <p>Turns GSC opportunity, trend, experiments, CTR gaps, cannibalization and internal-link coverage into a prioritized execution queue. Task state is saved in this browser, and completed work is automatically re-checked after seven final-data days plus Search Console’s two-day reporting lag.</p>
       </div>
       <div className={styles.actions}>
+        <label className={styles.ownerField}><span>Assignee</span><input value={defaultOwner} onChange={event=>setDefaultOwner(event.target.value)} placeholder="Name"/></label>
         <button onClick={()=>void load()} disabled={loading}>{loading?'Refreshing…':'Refresh'}</button>
         <span><ListChecks size={12}/>{summary.pages} pages · {actionItems.length} tasks</span>
       </div>
@@ -384,18 +546,52 @@ export function AdminSeoActionCenter(){
       <div><span>Hold</span><strong>{summary.hold}</strong><small>Do not touch yet</small></div>
     </div>
 
+    <div className={styles.stateBar}>
+      <span><b>{taskSummary.open}</b> Open</span><span><b>{taskSummary.progress}</b> In progress</span><span><b>{taskSummary.done}</b> Done</span><span><b>{taskSummary.snoozed}</b> Snoozed</span><span className={taskSummary.verifyDue?styles.verifyDue:''}><b>{taskSummary.verifyDue}</b> Verify due</span>
+    </div>
+
     {error&&<div className={styles.error}>{error}</div>}
     {loading&&!twentyEight?<div className={styles.empty}><strong>Building the execution queue…</strong><span>Combining 7-day and 28-day GSC signals with SEO experiments and internal-link coverage.</span></div>:
-    actionItems.length?<div className={styles.list}>{actionItems.map((item,index)=><article className={styles.card} key={item.id}>
-      <div className={styles.rank}>{String(index+1).padStart(2,'0')}</div>
-      <div className={styles.badges}><span className={`${styles.pill} ${priorityTone(item.priority)}`}>{item.priority}</span><span className={`${styles.pill} ${actionTone(item.type)}`}>{item.type}</span></div>
-      <a className={styles.page} href={item.path} target="_blank" rel="noreferrer"><strong>{item.tool.name}</strong><small>{item.path}</small></a>
-      <div className={styles.task}><strong>{item.title}</strong><p>{item.detail}</p><small>{item.signal}</small></div>
-      <div className={styles.metrics}><span><small>Impr.</small><b>{number(item.metrics.impressions)}</b></span><span><small>Position</small><b>{pos(item.metrics.position)}</b></span><span><small>CTR</small><b>{pct(item.metrics.ctr)}</b></span></div>
-      <div className={styles.query}><small>Primary query</small><strong>“{item.query}”</strong></div>
-      <a className={styles.open} href={item.path} target="_blank" rel="noreferrer" aria-label={`Open ${item.tool.name}`}><ExternalLink size={12}/></a>
-    </article>)}</div>:<div className={styles.empty}><strong>No executable SEO tasks yet</strong><span>The current GSC window does not contain enough evidence for a prioritized action.</span></div>}
+    actionItems.length?<div className={styles.list}>{actionItems.map((item,index)=>{
+      const task=taskStates[item.id];
+      const status=task?.status||'Open';
+      const verification=task?taskVerification(task,signalByTool.get(item.tool.id)):null;
+      return <article className={`${styles.card} ${status==='Done'?styles.cardDone:''}`} key={item.id}>
+        <div className={styles.rank}>{String(index+1).padStart(2,'0')}</div>
+        <div className={styles.badges}><span className={`${styles.pill} ${priorityTone(item.priority)}`}>{item.priority}</span><span className={`${styles.pill} ${actionTone(item.type)}`}>{item.type}</span></div>
+        <a className={styles.page} href={item.path} target="_blank" rel="noreferrer"><strong>{item.tool.name}</strong><small>{item.path}</small></a>
+        <div className={styles.task}><strong>{item.title}</strong><p>{item.detail}</p><small>{item.signal}</small></div>
+        <div className={styles.metrics}><span><small>Impr.</small><b>{number(item.metrics.impressions)}</b></span><span><small>Position</small><b>{pos(item.metrics.position)}</b></span><span><small>CTR</small><b>{pct(item.metrics.ctr)}</b></span></div>
+        <div className={styles.query}><small>Primary query</small><strong>“{item.query}”</strong></div>
+        <div className={styles.taskState}>
+          <select className={`${styles.statusSelect} ${statusTone(status)}`} value={status} onChange={event=>updateTaskStatus(item,event.target.value as TaskStatus)}>
+            <option>Open</option><option>In progress</option><option>Done</option><option>Snoozed</option>
+          </select>
+          <input value={task?.owner??defaultOwner} onChange={event=>updateTaskOwner(item,event.target.value)} aria-label={`Owner for ${item.title}`} />
+          <small>{status==='Done'&&task?.verifyAt?verification==='Pending'?`Verify ${task.verifyAt}`:`Result: ${verification}`:status==='Snoozed'&&task?.snoozedUntil?`Until ${task.snoozedUntil}`:task?.updatedAt?`Updated ${task.updatedAt}`:'Not started'}</small>
+        </div>
+        <a className={styles.open} href={item.path} target="_blank" rel="noreferrer" aria-label={`Open ${item.tool.name}`}><ExternalLink size={12}/></a>
+      </article>})}</div>:<div className={styles.empty}><strong>No executable SEO tasks yet</strong><span>The current GSC window does not contain enough evidence for a prioritized action.</span></div>}
 
-    <div className={styles.legend}><b>P0:</b><span>conflict or clear deterioration.</span><b>P1:</b><span>best near-term ranking/CTR/internal-link upside.</span><b>P2:</b><span>careful expansion of a winner or near-win.</span><b>HOLD:</b><span>observation lock or insufficient repeat demand.</span></div>
+    {verificationRows.length>0&&<div className={styles.verificationSection}>
+      <div className={styles.verificationHead}><div><span className={styles.kicker}>POST-ACTION VERIFICATION</span><h3>Did the completed SEO work actually help?</h3></div><small>Baseline = 7-day GSC snapshot when task was marked Done</small></div>
+      <div className={styles.verificationList}>{verificationRows.map(row=>{
+        const verification=row.verification||'Low data';
+        const baseline=row.record.baseline7||empty;
+        const current=row.signal?.current||empty;
+        const positionGain=current.position&&baseline.position?baseline.position-current.position:0;
+        const impressionChange=relativeChange(current.impressions,baseline.impressions);
+        return <div className={styles.verificationRow} key={row.id}>
+          <span className={`${styles.pill} ${verificationTone(verification)}`}>{verification}</span>
+          <div><strong>{row.record.snapshot.toolName}</strong><small>{row.record.snapshot.title}</small></div>
+          <div><small>Owner</small><strong>{row.record.owner||'Admin'}</strong></div>
+          <div><small>Completed</small><strong>{row.record.completedAt||'—'}</strong></div>
+          <div><small>Impr. Δ</small><strong>{verification==='Pending'?'—':impressionChange===null?'NEW':`${impressionChange>=0?'+':''}${Math.round(impressionChange*100)}%`}</strong></div>
+          <div><small>Pos. Δ</small><strong>{verification==='Pending'?'—':`${positionGain>=0?'+':''}${positionGain.toFixed(1)}`}</strong></div>
+          <a href={row.record.snapshot.path} target="_blank" rel="noreferrer"><ExternalLink size={11}/></a>
+        </div>})}</div>
+    </div>}
+
+    <div className={styles.legend}><b>P0:</b><span>conflict or clear deterioration.</span><b>P1:</b><span>best near-term ranking/CTR/internal-link upside.</span><b>P2:</b><span>careful expansion of a winner or near-win.</span><b>HOLD:</b><span>observation lock or insufficient repeat demand.</span><b>Done:</b><span>stores the 7-day baseline and schedules verification after nine calendar days.</span></div>
   </section>,host);
 }
