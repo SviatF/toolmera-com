@@ -4,6 +4,10 @@
   "main": "src/workerCostGuard.ts",
   "compatibility_date": "2026-09-05",
   "keep_vars": true,
+  "limits": {
+    "cpu_ms": 100,
+    "subrequests": 30
+  },
   "secrets": {
     "required": [
       "GOOGLE_CLIENT_EMAIL",
