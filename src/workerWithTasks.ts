@@ -22,18 +22,31 @@ type AuditTaskSnapshot={
   query:string;
 };
 type AuditMetricSnapshot={clicks:number;impressions:number;ctr:number;position:number};
+type AuditVerificationSnapshot={
+  verdict:string;
+  verifiedAt:string;
+  current7?:AuditMetricSnapshot;
+  impressionChange?:number|null;
+  clickChange?:number|null;
+  positionGain?:number;
+};
 type AuditEvent={
   id:string;
   at:string;
   revision:number;
   taskId:string;
-  kind:'status'|'owner';
+  kind:'status'|'owner'|'verification';
   actor:string;
   from?:string;
   to?:string;
   snapshot:AuditTaskSnapshot;
   baseline7?:AuditMetricSnapshot;
   verifyAt?:string;
+  verification?:string;
+  current7?:AuditMetricSnapshot;
+  impressionChange?:number|null;
+  clickChange?:number|null;
+  positionGain?:number;
 };
 type SharedTaskState={
   version:1;
@@ -72,6 +85,10 @@ function asString(value:unknown,fallback=''){
   return typeof value==='string'?value.slice(0,240):fallback;
 }
 
+function finiteNumber(value:unknown){
+  return typeof value==='number'&&Number.isFinite(value)?value:undefined;
+}
+
 function metricSnapshot(value:unknown):AuditMetricSnapshot|undefined{
   if(!isPlainRecord(value))return undefined;
   const number=(input:unknown)=>typeof input==='number'&&Number.isFinite(input)?input:0;
@@ -80,6 +97,23 @@ function metricSnapshot(value:unknown):AuditMetricSnapshot|undefined{
     impressions:number(value.impressions),
     ctr:number(value.ctr),
     position:number(value.position),
+  };
+}
+
+function verificationSnapshot(value:unknown):AuditVerificationSnapshot|undefined{
+  if(!isPlainRecord(value))return undefined;
+  const verdict=asString(value.verdict);
+  const verifiedAt=asString(value.verifiedAt);
+  if(!verdict||!verifiedAt)return undefined;
+  const impressionChange=value.impressionChange===null?null:finiteNumber(value.impressionChange);
+  const clickChange=value.clickChange===null?null:finiteNumber(value.clickChange);
+  return{
+    verdict,
+    verifiedAt,
+    current7:metricSnapshot(value.current7),
+    impressionChange,
+    clickChange,
+    positionGain:finiteNumber(value.positionGain),
   };
 }
 
@@ -133,6 +167,23 @@ function auditEvents(previous:Record<string,unknown>,next:Record<string,unknown>
         id:`r${revision}-${encodeURIComponent(taskId)}-owner`,
         at,revision,taskId,kind:'owner',actor:nextOwner,
         from:previousOwner,to:nextOwner,snapshot,
+      });
+    }
+
+    const previousVerification=isPlainRecord(previousValue)?verificationSnapshot(previousValue.verification):undefined;
+    const nextVerification=verificationSnapshot(nextValue.verification);
+    if(nextVerification&&(!previousVerification||previousVerification.verifiedAt!==nextVerification.verifiedAt||previousVerification.verdict!==nextVerification.verdict)){
+      events.push({
+        id:`r${revision}-${encodeURIComponent(taskId)}-verification`,
+        at:nextVerification.verifiedAt||at,
+        revision,taskId,kind:'verification',actor:'System',snapshot,
+        baseline7:metricSnapshot(nextValue.baseline7),
+        verifyAt:asString(nextValue.verifyAt),
+        verification:nextVerification.verdict,
+        current7:nextVerification.current7,
+        impressionChange:nextVerification.impressionChange,
+        clickChange:nextVerification.clickChange,
+        positionGain:nextVerification.positionGain,
       });
     }
   }
