@@ -57,15 +57,15 @@ function toolPath(tool:Tool){
 function targetBoostScore(metrics:MetricRow){
   if(metrics.position<8||metrics.position>30||metrics.impressions<=0)return 0;
   const demand=clamp(Math.log1p(metrics.impressions)/Math.log(31),0,1);
-  const proximity=metrics.position<=12?1:metrics.position<=20?.82:.58;
-  const topTenEdge=metrics.position<=10?.12:0;
-  return Math.round(clamp((demand*.58)+(proximity*.42)+topTenEdge,0,1)*100);
+  const proximity=metrics.position<=12 ? 1 : metrics.position<=20 ? 0.82 : 0.58;
+  const topTenEdge=metrics.position<=10 ? 0.12 : 0;
+  return Math.round(clamp((demand*0.58)+(proximity*0.42)+topTenEdge,0,1)*100);
 }
 
 function sourceAuthority(metrics:MetricRow){
   const demand=clamp(Math.log1p(metrics.impressions)/Math.log(31),0,1);
-  const position=metrics.position>0&&metrics.position<=10?1:metrics.position<=20?.72:metrics.position<=50?.4:.15;
-  return demand*.72+position*.28;
+  const position=metrics.position>0&&metrics.position<=10 ? 1 : metrics.position<=20 ? 0.72 : metrics.position<=50 ? 0.4 : 0.15;
+  return demand*0.72+position*0.28;
 }
 
 export function AdminInternalLinkBoost(){
@@ -158,8 +158,8 @@ export function AdminInternalLinkBoost(){
           const sameCluster=source.category===target.category;
           if(!semanticPair&&!sameCluster)return null;
           const sourceMetrics=metricByPath.get(sourcePath)||emptyMetric;
-          const relationScore=semanticPair?1:.58;
-          const score=(relationScore*.72)+(sourceAuthority(sourceMetrics)*.28);
+          const relationScore=semanticPair?1:0.58;
+          const score=(relationScore*0.72)+(sourceAuthority(sourceMetrics)*0.28);
           return {
             tool:source,
             path:sourcePath,
