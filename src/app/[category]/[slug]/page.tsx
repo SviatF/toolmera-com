@@ -22,6 +22,7 @@ import { compoundInterestBenefits, compoundInterestSeo } from '@/data/compoundIn
 import { removeDuplicateLinesBenefits, removeDuplicateLinesSeo } from '@/data/removeDuplicateLinesSeo';
 import { speedConverterBenefits, speedConverterSeo } from '@/data/speedConverterSeo';
 import { websiteAnalyzerBenefits, websiteAnalyzerSeo } from '@/data/websiteAnalyzerSeo';
+import { internalLinkBoostsFrom } from '@/data/internalLinkBoosts';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -90,9 +91,20 @@ export default async function ToolPage({params}:{params:Promise<{category:string
   const {category,slug}=await params;const tool=findTool(category,slug);if(!tool)notFound();
   const seo=seoForTool(tool.id);
   const benefits=benefitsForTool(tool.id,tool.benefits);
-  const workflowIds=new Set(seo?.related?.map(item=>item.id)||[]);
+  const workflowLinks:{id:string;anchor:string}[]=[];
+  const workflowIds=new Set<string>();
+  for(const item of seo?.related||[]){
+    if(workflowIds.has(item.id)||!tools.some(t=>t.id===item.id))continue;
+    workflowIds.add(item.id);
+    workflowLinks.push(item);
+  }
+  for(const item of internalLinkBoostsFrom(tool.id)){
+    if(workflowIds.has(item.to)||!tools.some(t=>t.id===item.to))continue;
+    workflowIds.add(item.to);
+    workflowLinks.push({id:item.to,anchor:item.anchor});
+  }
   const semantic=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id));
-  const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).slice(0,4);
+  const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).filter(item=>!workflowIds.has(item.id)).slice(0,4);
   const howTo=howToForTool(tool);
   const url=`https://toolmera.com/${category}/${slug}/`;
   const description=seo?.description||tool.description;
@@ -154,11 +166,11 @@ export default async function ToolPage({params}:{params:Promise<{category:string
       <div>{seo.sources.map(source=><a key={source.href} href={source.href} target="_blank" rel="noreferrer">{source.label}<ArrowRight size={14}/></a>)}</div>
     </section>}
 
-    {seo?.related?.length&&<section className="shell workflowLinks">
+    {workflowLinks.length>0&&<section className="shell workflowLinks">
       <span className="sectionKicker">NEXT STEP</span>
       <h2>Continue your workflow</h2>
       <div>
-        {seo.related.map(item=>{
+        {workflowLinks.map(item=>{
           const next=tools.find(t=>t.id===item.id);if(!next)return null;
           return <Link href={toolUrl(next)} key={item.id}>{item.anchor}<ArrowRight size={15}/></Link>
         })}
