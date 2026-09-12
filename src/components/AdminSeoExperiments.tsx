@@ -128,7 +128,14 @@ function expectedCtr(position:number){
 function opportunityScore(row:MetricRow){
   if(row.impressions<=0)return 0;
   const demand=clamp(Math.log1p(row.impressions)/Math.log(51),0,1);
-  const proximity=!row.position?.08:row.position<=3?.45:row.position<=10?.76:row.position<=20?1:row.position<=30?.88:row.position<=50?.58:row.position<=75?.32:.18;
+  let proximity=.18;
+  if(!row.position)proximity=.08;
+  else if(row.position<=3)proximity=.45;
+  else if(row.position<=10)proximity=.76;
+  else if(row.position<=20)proximity=1;
+  else if(row.position<=30)proximity=.88;
+  else if(row.position<=50)proximity=.58;
+  else if(row.position<=75)proximity=.32;
   const expected=expectedCtr(row.position);
   const ctrHeadroom=expected?clamp((expected-row.ctr)/expected,0,1):.5;
   return Math.round(clamp(demand*proximity*(.72+.28*ctrHeadroom),0,1)*100);
