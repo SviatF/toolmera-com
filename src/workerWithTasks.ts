@@ -12,7 +12,7 @@ type DurableObjectNamespaceLike={
   get(id:DurableObjectIdLike):DurableObjectStubLike;
 };
 
-type TaskWorkerEnv={SEO_TASKS?:DurableObjectNamespaceLike};
+type TaskWorkerEnv={SEO_TASKS?:DurableObjectNamespaceLike;REQUIRE_ACCESS?:string};
 type SharedTaskState={
   version:1;
   tasks:Record<string,unknown>;
@@ -97,6 +97,7 @@ export class SeoTaskStore{
 }
 
 async function handleSharedTaskState(request:Request,env:TaskWorkerEnv){
+  if(env.REQUIRE_ACCESS==='true'&&!request.headers.get('Cf-Access-Jwt-Assertion'))return apiJson({error:'Unauthorized'},401);
   if(!env.SEO_TASKS){
     return apiJson({
       connected:false,
