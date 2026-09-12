@@ -195,45 +195,47 @@ export function AdminSeoDeployment(){
       if(!current||record.updatedAt>current.updatedAt)latestByAction.set(record.actionKey,record);
     });
 
-    return Object.values(approvals)
-      .filter(approval=>(approval.decision==='Approved'||approval.decision==='Overridden')&&approval.snapshot.type==='Internal links')
-      .map(approval=>{
-        const target=tools.find(item=>toolPath(item)===normalizePath(approval.snapshot.path));
-        if(!target)return null;
-        const targetPath=toolPath(target);
-        const targetRelated=new Set(semanticRelatedTools(target,tools,10).map(item=>item.id));
-        const sources=tools
-          .filter(source=>source.id!==target.id)
-          .map(source=>{
-            if(hasInternalLinkBoost(source.id,target.id)||livePairs.has(`${source.id}->${target.id}`))return null;
-            if(semanticRelatedTools(source,tools,4).some(item=>item.id===target.id))return null;
-            const semanticPair=targetRelated.has(source.id);
-            const sameCluster=source.category===target.category;
-            if(!semanticPair&&!sameCluster)return null;
-            const metrics=metricsByPath.get(toolPath(source))||empty;
-            const relationScore=semanticPair?1:.58;
-            return {
-              tool:source,
-              path:toolPath(source),
-              metrics,
-              relation:semanticPair?'Semantic pair' as const:'Same cluster' as const,
-              score:relationScore*.72+sourceAuthority(metrics)*.28,
-            };
-          })
-          .filter((item):item is SourceCandidate=>item!==null)
-          .sort((a,b)=>(b.score-a.score)||(b.metrics.impressions-a.metrics.impressions))
-          .slice(0,3);
-        const topQuery=topQueryByPath.get(targetPath)?.query||target.name;
-        const links=sources.map((source,index)=>({
-          from:source.tool.id,
-          to:target.id,
-          anchor:anchorFor(target,topQuery,index),
-          reason:`${source.relation} approved deployment to strengthen ${target.name}.`,
-        }));
-        return {actionKey:approval.actionKey,approval,target,targetPath,topQuery,sources,links,latest:latestByAction.get(approval.actionKey)};
-      })
-      .filter((item):item is DeploymentPlan=>item!==null)
-      .sort((a,b)=>a.target.name.localeCompare(b.target.name));
+    const result:DeploymentPlan[]=[];
+    for(const approval of Object.values(approvals)){
+      if(!((approval.decision==='Approved'||approval.decision==='Overridden')&&approval.snapshot.type==='Internal links'))continue;
+      const target=tools.find(item=>toolPath(item)===normalizePath(approval.snapshot.path));
+      if(!target)continue;
+      const targetPath=toolPath(target);
+      const targetRelated=new Set(semanticRelatedTools(target,tools,10).map(item=>item.id));
+      const sources=tools
+        .filter(source=>source.id!==target.id)
+        .map(source=>{
+          if(hasInternalLinkBoost(source.id,target.id)||livePairs.has(`${source.id}->${target.id}`))return null;
+          if(semanticRelatedTools(source,tools,4).some(item=>item.id===target.id))return null;
+          const semanticPair=targetRelated.has(source.id);
+          const sameCluster=source.category===target.category;
+          if(!semanticPair&&!sameCluster)return null;
+          const metrics=metricsByPath.get(toolPath(source))||empty;
+          const relationScore=semanticPair?1:.58;
+          return {
+            tool:source,
+            path:toolPath(source),
+            metrics,
+            relation:semanticPair?'Semantic pair' as const:'Same cluster' as const,
+            score:relationScore*.72+sourceAuthority(metrics)*.28,
+          };
+        })
+        .filter((item):item is SourceCandidate=>item!==null)
+        .sort((a,b)=>(b.score-a.score)||(b.metrics.impressions-a.metrics.impressions))
+        .slice(0,3);
+      const topQuery=topQueryByPath.get(targetPath)?.query||target.name;
+      const links:DeployLink[]=sources.map((source,index)=>({
+        from:source.tool.id,
+        to:target.id,
+        anchor:anchorFor(target,topQuery,index),
+        reason:`${source.relation} approved deployment to strengthen ${target.name}.`,
+      }));
+      const latest=latestByAction.get(approval.actionKey);
+      result.push(latest
+        ?{actionKey:approval.actionKey,approval,target,targetPath,topQuery,sources,links,latest}
+        :{actionKey:approval.actionKey,approval,target,targetPath,topQuery,sources,links});
+    }
+    return result.sort((a,b)=>a.target.name.localeCompare(b.target.name));
   },[approvals,deployments,gsc]);
 
   const run=useCallback(async(mode:'dry-run'|'deploy'|'rollback',plan:DeploymentPlan)=>{
