@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
 import { categories, toolsForCategory } from '@/data/tools';
 import { categorySeoContent } from '@/data/seoContent';
+import { categoryHubEnhancements } from '@/data/categoryHubEnhancements';
 import { freeTitle } from '@/lib/seo';
 
 const groupedCategoryTools: Record<string,{title:string;description:string;ids:string[]}[]> = {
@@ -28,7 +29,13 @@ const groupedCategoryTools: Record<string,{title:string;description:string;ids:s
   ],
   converters: [
     { title: 'Physical Measurements', description: 'Length, mass, surface area and volume conversions.', ids: ['length','weight','area','volume'] },
-    { title: 'Temperature', description: 'Convert Celsius, Fahrenheit and Kelvin.', ids: ['temperature'] },
+    { title: 'Movement & Environment', description: 'Convert speed and temperature values.', ids: ['speed','temperature'] },
+    { title: 'Digital & Web', description: 'Convert storage sizes and common web color formats.', ids: ['data-storage','color-converter'] },
+  ],
+  text: [
+    { title: 'Count & Measure', description: 'Measure words, characters, sentences and text length.', ids: ['word-counter','character-counter'] },
+    { title: 'Clean & Organize', description: 'Remove duplicates, sort lines and normalize text case.', ids: ['remove-duplicate-lines','sort-lines','case-converter'] },
+    { title: 'Compare & Publish', description: 'Compare revisions or prepare clean URL slugs.', ids: ['text-diff','slug-generator'] },
   ],
   generators: [
     { title: 'Codes & Identifiers', description: 'Create QR codes and UUID v4 identifiers.', ids: ['qr-code','uuid'] },
@@ -38,7 +45,7 @@ const groupedCategoryTools: Record<string,{title:string;description:string;ids:s
     { title: 'Epoch & Timestamps', description: 'Convert Unix time to readable dates and back.', ids: ['unix-timestamp'] },
   ],
   'website-analysis': [
-    { title: 'Full Audit & SEO', description: 'Run broad website audits or focus on on-page search signals.', ids: ['website-analyzer','seo-checker','meta-tag-checker'] },
+    { title: 'Full Audit & SEO', description: 'Run broad website audits or focus on on-page search signals.', ids: ['website-analyzer','seo-checker','meta-tag-checker','website-traffic-checker'] },
     { title: 'Crawl & HTTP', description: 'Inspect statuses, redirects and crawl-control files.', ids: ['http-status-checker','redirect-checker','robots-checker','sitemap-checker'] },
     { title: 'Security & Technology', description: 'Review HTTPS, browser security headers and public technology fingerprints.', ids: ['ssl-checker','security-headers-checker','technology-checker'] },
   ],
@@ -64,8 +71,10 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
   const {category}=await params;const cat=categories.find(c=>c.slug===category);if(!cat)notFound();
   const list=toolsForCategory(category);
   const seo=categorySeoContent[category];
+  const hub=categoryHubEnhancements[category];
+  const popularLinks=(hub?.popular||[]).map(item=>({item,tool:list.find(tool=>tool.id===item.id)})).filter(row=>Boolean(row.tool));
   const categoryUrl=`https://toolmera.com/${category}/`;
-  const categorySchemas=[
+  const categorySchemas:Record<string,unknown>[]=[
     {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
       {"@type":"ListItem",position:1,name:"Home",item:"https://toolmera.com/"},
       {"@type":"ListItem",position:2,name:cat.label,item:categoryUrl}
@@ -74,6 +83,11 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       "@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com/${category}/${tool.slug}/`
     }))}
   ];
+  if(hub?.faq?.length){
+    categorySchemas.push({"@context":"https://schema.org","@type":"FAQPage",mainEntity:hub.faq.map(item=>({
+      "@type":"Question",name:item.q,acceptedAnswer:{"@type":"Answer",text:item.a}
+    }))});
+  }
 
   return <><Header/><main className="subPage">
     <section className="shell categoryHero compactHero">
@@ -83,6 +97,12 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <p>{seo?.intro||`${cat.description} Fast, focused and designed with privacy in mind.`}</p>
       <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
+
+    {popularLinks.length>0&&<section className="shell workflowLinks">
+      <span className="sectionKicker">POPULAR TOOLS</span>
+      <h2>Start with the highest-value workflows</h2>
+      <div>{popularLinks.map(({item,tool})=>tool&&<Link href={`/${category}/${tool.slug}/`} key={item.id}>{item.anchor}<ArrowRight size={15}/></Link>)}</div>
+    </section>}
 
     {groupedCategoryTools[category]
       ? <section className="shell section categoryToolSection calculatorGroups">
@@ -114,11 +134,13 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <div><Sparkles/><strong>One-task focus</strong><span>Open the tool, finish the task, move on.</span></div>
     </section>
 
+    {hub?.faq?.length&&<section className="shell faqSection"><span className="sectionKicker">FAQ</span><h2>Common questions about {cat.label.toLowerCase()}</h2>{hub.faq.map(item=><details key={item.q}><summary>{item.q}</summary><p>{item.a}</p></details>)}</section>}
+
     {!seo&&<section className="shell seoPanel categorySeoPanel">
       <span className="sectionKicker">ABOUT {cat.label.toUpperCase()}</span>
       <h2>Useful {cat.label.toLowerCase()}, without the clutter.</h2>
       <p>Toolmera keeps every utility focused on a specific intent, while related tools and category navigation make the next step easy to find. The platform is built as a fast, static-first product with browser-side processing wherever the task allows it.</p>
       <Link className="inlineArrowLink" href="/tools/">Browse every Toolmera tool <ArrowRight size={16}/></Link>
     </section>}
-  </main>{categorySchemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>
+  </main>{categorySchemas.map((schema,i)=><script key={i} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>;
 }
