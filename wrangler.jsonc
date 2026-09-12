@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "toolmera-com",
-  "main": "src/workerSelfSeo.ts",
+  "main": "src/workerCostGuard.ts",
   "compatibility_date": "2026-09-05",
   "keep_vars": true,
   "secrets": {
