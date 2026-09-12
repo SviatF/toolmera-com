@@ -4,6 +4,7 @@ import { ExternalLink, Link2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { tools, type Tool } from '@/data/tools';
+import { hasInternalLinkBoost, internalLinkBoosts } from '@/data/internalLinkBoosts';
 import { semanticRelatedTools } from '@/lib/toolRelations';
 import styles from './AdminInternalLinkBoost.module.css';
 
@@ -152,8 +153,9 @@ export function AdminInternalLinkBoost(){
         .filter(source=>source.id!==target.id)
         .map(source=>{
           const sourcePath=toolPath(source);
+          const alreadyDeployed=hasInternalLinkBoost(source.id,target.id);
           const existingOutgoing=semanticRelatedTools(source,tools,4).some(item=>item.id===target.id);
-          if(existingOutgoing)return null;
+          if(alreadyDeployed||existingOutgoing)return null;
           const semanticPair=targetRelated.has(source.id);
           const sameCluster=source.category===target.category;
           if(!semanticPair&&!sameCluster)return null;
@@ -196,11 +198,11 @@ export function AdminInternalLinkBoost(){
       <div>
         <span className={styles.kicker}>INTERNAL LINK BOOST ENGINE · GSC × SEMANTIC GRAPH</span>
         <h2>Quick-win pages that need stronger internal links</h2>
-        <p>Targets are ranking roughly positions 8–30. Source pages are selected from Toolmera’s semantic graph and category clusters, while links that already exist in the Related Tools graph are excluded.</p>
+        <p>Targets are ranking roughly positions 8–30. Approved links are deployed from one central registry and automatically rendered as contextual workflow links on the source pages; already-deployed relationships are removed from this candidate queue.</p>
       </div>
       <div className={styles.headActions}>
         <button onClick={()=>void load()} disabled={loading}>{loading?'Refreshing…':'Refresh'}</button>
-        <span>{sourceCount} link ideas</span>
+        <span>{internalLinkBoosts.length} live · {sourceCount} candidates</span>
       </div>
     </div>
 
@@ -228,6 +230,6 @@ export function AdminInternalLinkBoost(){
       </a>)}</div>
     </article>)}</div>:<div className={styles.empty}><strong>No internal-link quick wins in this range</strong><span>No tool pages currently match the 8–30 position window with a missing semantic source-link opportunity.</span></div>}
 
-    <div className={styles.legend}><b>BOOST:</b><span>target priority based on impressions and proximity to TOP 10.</span><b>Semantic pair:</b><span>closely related tool missing a reciprocal Related Tools link.</span><b>Same cluster:</b><span>same-category contextual opportunity; add only where the copy is genuinely relevant.</span></div>
+    <div className={styles.legend}><b>BOOST:</b><span>target priority based on impressions and proximity to TOP 10.</span><b>Semantic pair:</b><span>closely related tool missing a contextual link.</span><b>Live:</b><span>centrally deployed links already rendered on public source pages.</span><b>Same cluster:</b><span>same-category contextual opportunity; add only where the copy is genuinely relevant.</span></div>
   </section>,host);
 }
