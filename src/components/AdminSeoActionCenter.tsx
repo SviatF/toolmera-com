@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { hasInternalLinkBoost } from '@/data/internalLinkBoosts';
 import { seoExperiments } from '@/data/seoExperiments';
 import { tools, toolUrl, type Tool } from '@/data/tools';
+import { buildOutcomeLearning, type OutcomeLearningRow, type SeoVerificationEvent } from '@/lib/seoOutcomeLearning';
 import { semanticRelatedTools } from '@/lib/toolRelations';
 import styles from './AdminSeoActionCenter.module.css';
 
@@ -18,6 +19,7 @@ type ActionType='Cannibalization'|'Decay audit'|'Internal links'|'CTR'|'Content 
 type Trend='New'|'Growing'|'Stable'|'Declining';
 type TaskStatus='Open'|'In progress'|'Done'|'Snoozed';
 type Verification='Pending'|'Winner'|'Neutral'|'Loser'|'Low data';
+type LearningStatus='loading'|'active'|'collecting'|'offline';
 
 type PageSignal={
   tool:Tool;
@@ -36,6 +38,14 @@ type PageSignal={
   experimentWinner:boolean;
 };
 
+type LearningSignal={
+  score:number;
+  decisive:number;
+  confidence:OutcomeLearningRow['confidence'];
+  recommendation:OutcomeLearningRow['recommendation'];
+  adjustment:number;
+};
+
 type ActionItem={
   id:string;
   priority:Priority;
@@ -48,6 +58,7 @@ type ActionItem={
   path:string;
   query:string;
   metrics:MetricRow;
+  learning?:LearningSignal;
 };
 
 type TaskSnapshot={
@@ -60,6 +71,15 @@ type TaskSnapshot={
   query:string;
 };
 
+type StoredVerification={
+  verdict:Exclude<Verification,'Pending'>;
+  verifiedAt:string;
+  current7?:MetricRow;
+  impressionChange?:number|null;
+  clickChange?:number|null;
+  positionGain?:number;
+};
+
 type TaskRecord={
   status:TaskStatus;
   owner:string;
@@ -68,8 +88,11 @@ type TaskRecord={
   snoozedUntil?:string;
   verifyAt?:string;
   baseline7?:MetricRow;
+  verification?:StoredVerification;
   snapshot:TaskSnapshot;
 };
+
+type SharedTaskState={history?:unknown[]};
 
 const empty:MetricRow={clicks:0,impressions:0,ctr:0,position:0};
 const taskStorageKey='toolmera-seo-task-state-v1';
@@ -171,6 +194,7 @@ function experimentVerdict(current:MetricRow,previous:MetricRow,finalDataDays:nu
 }
 
 function taskVerification(record:TaskRecord,signal:PageSignal|undefined):Verification|null{
+  if(record.verification?.verdict)return record.verification.verdict;
   if(record.status!=='Done'||!record.verifyAt)return null;
   if(daysUntil(record.verifyAt)>0)return 'Pending';
   if(!record.baseline7||!signal)return 'Low data';
@@ -227,10 +251,31 @@ function verificationTone(verdict:Verification){
   return styles.muted;
 }
 
+function isVerificationEvent(value:unknown):value is SeoVerificationEvent{
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  const event=value as Partial<SeoVerificationEvent>;
+  return event.kind==='verification'&&typeof event.id==='string'&&typeof event.at==='string'&&Boolean(event.snapshot&&typeof event.snapshot==='object');
+}
+
+function learningAdjustment(row:OutcomeLearningRow|undefined,priority:Priority){
+  if(!row||row.decisive<3||priority==='P0'||priority==='HOLD')return 0;
+  const strength=row.confidence==='Strong'?.8:.55;
+  return Math.round(clamp((row.score-50)*strength,-18,18));
+}
+
+function learningTone(signal:LearningSignal){
+  if(signal.score>=60)return styles.green;
+  if(signal.score<=40)return styles.red;
+  if(signal.decisive<3)return styles.muted;
+  return styles.amber;
+}
+
 export function AdminSeoActionCenter(){
   const [host,setHost]=useState<HTMLElement|null>(null);
   const [seven,setSeven]=useState<GscData|null>(null);
   const [twentyEight,setTwentyEight]=useState<GscData|null>(null);
+  const [outcomeHistory,setOutcomeHistory]=useState<SeoVerificationEvent[]>([]);
+  const [learningStatus,setLearningStatus]=useState<LearningStatus>('loading');
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   const [taskStates,setTaskStates]=useState<Record<string,TaskRecord>>({});
@@ -292,21 +337,40 @@ export function AdminSeoActionCenter(){
     if(!host)return;
     setLoading(true);
     setError('');
+    setLearningStatus('loading');
     try{
-      const [sevenResponse,twentyEightResponse]=await Promise.all([
+      const sharedPromise=fetch('/api/admin/seo-tasks',{cache:'no-store'})
+        .then(async response=>response.ok?await response.json() as SharedTaskState:null)
+        .catch(()=>null);
+      const [sevenResponse,twentyEightResponse,shared]=await Promise.all([
         fetch('/api/admin/gsc?range=7d',{cache:'no-store'}),
         fetch('/api/admin/gsc?range=28d',{cache:'no-store'}),
+        sharedPromise,
       ]);
       const [sevenPayload,twentyEightPayload]=await Promise.all([sevenResponse.json(),twentyEightResponse.json()]) as [GscData|{detail?:string},GscData|{detail?:string}];
       if(!sevenResponse.ok)throw new Error('detail' in sevenPayload&&sevenPayload.detail?sevenPayload.detail:'Could not load 7-day GSC action data.');
       if(!twentyEightResponse.ok)throw new Error('detail' in twentyEightPayload&&twentyEightPayload.detail?twentyEightPayload.detail:'Could not load 28-day GSC action data.');
       setSeven(sevenPayload as GscData);
       setTwentyEight(twentyEightPayload as GscData);
-    }catch(e){setError(e instanceof Error?e.message:'Could not load SEO action data.')}
-    finally{setLoading(false)}
+      if(shared){
+        const verified=(Array.isArray(shared.history)?shared.history:[]).filter(isVerificationEvent);
+        setOutcomeHistory(verified);
+        setLearningStatus(verified.length?'active':'collecting');
+      }else{
+        setOutcomeHistory([]);
+        setLearningStatus('offline');
+      }
+    }catch(e){
+      setError(e instanceof Error?e.message:'Could not load SEO action data.');
+      setLearningStatus('offline');
+    }finally{setLoading(false)}
   },[host]);
 
   useEffect(()=>{if(host)void load()},[host,load]);
+
+  const learningRows=useMemo(()=>buildOutcomeLearning(outcomeHistory),[outcomeHistory]);
+  const learningByType=useMemo(()=>new Map(learningRows.map(row=>[row.actionType,row])),[learningRows]);
+  const learnedTypes=useMemo(()=>learningRows.filter(row=>row.decisive>=3).length,[learningRows]);
 
   const signals=useMemo<PageSignal[]>(()=>{
     if(!seven||!twentyEight)return [];
@@ -391,11 +455,20 @@ export function AdminSeoActionCenter(){
   const actionItems=useMemo<ActionItem[]>(()=>{
     const actions:ActionItem[]=[];
     const push=(signal:PageSignal,priority:Priority,type:ActionType,title:string,detail:string,reason:string,suffix:string)=>{
+      const learned=learningByType.get(type);
+      const adjustment=learningAdjustment(learned,priority);
       actions.push({
         id:`${signal.tool.id}-${suffix}`,
         priority,type,title,detail,signal:reason,
-        score:priorityScore(priority,signal.opportunity),
+        score:priorityScore(priority,signal.opportunity)+adjustment,
         tool:signal.tool,path:signal.path,query:signal.topQuery,metrics:signal.metrics,
+        learning:learned?{
+          score:learned.score,
+          decisive:learned.decisive,
+          confidence:learned.confidence,
+          recommendation:learned.recommendation,
+          adjustment,
+        }:undefined,
       });
     };
 
@@ -444,7 +517,7 @@ export function AdminSeoActionCenter(){
       .sort((a,b)=>(b.score-a.score)||(b.metrics.impressions-a.metrics.impressions))
       .filter(item=>{if(seen.has(item.id))return false;seen.add(item.id);return true})
       .slice(0,30);
-  },[signals]);
+  },[signals,learningByType]);
 
   const updateTaskStatus=useCallback((item:ActionItem,status:TaskStatus)=>{
     const today=todayIso();
@@ -488,6 +561,7 @@ export function AdminSeoActionCenter(){
         snoozedUntil:existing?.snoozedUntil,
         verifyAt:existing?.verifyAt,
         baseline7:existing?.baseline7,
+        verification:existing?.verification,
         snapshot:existing?.snapshot||{
           toolId:item.tool.id,toolName:item.tool.name,path:item.path,priority:item.priority,type:item.type,title:item.title,query:item.query,
         },
@@ -507,7 +581,7 @@ export function AdminSeoActionCenter(){
     const currentIds=new Set(actionItems.map(item=>item.id));
     const current=Object.entries(taskStates).filter(([id])=>currentIds.has(id)).map(([,record])=>record);
     const allDone=Object.values(taskStates).filter(record=>record.status==='Done');
-    const verifyDue=allDone.filter(record=>record.verifyAt&&daysUntil(record.verifyAt)<=0).length;
+    const verifyDue=allDone.filter(record=>record.verifyAt&&daysUntil(record.verifyAt)<=0&&!record.verification).length;
     return {
       open:actionItems.length-current.filter(record=>record.status!=='Open').length,
       progress:current.filter(record=>record.status==='In progress').length,
@@ -523,6 +597,8 @@ export function AdminSeoActionCenter(){
     .sort((a,b)=>(b.record.completedAt||'').localeCompare(a.record.completedAt||''))
     .slice(0,10),[taskStates,signalByTool]);
 
+  const learningLabel=learningStatus==='offline'?'Learning offline':learningStatus==='loading'?'Learning…':learnedTypes?`Learning active · ${learnedTypes} types`:`Learning · ${outcomeHistory.length} verified`;
+
   if(!host)return null;
 
   return createPortal(<section className={styles.panel}>
@@ -530,7 +606,7 @@ export function AdminSeoActionCenter(){
       <div>
         <span className={styles.kicker}>SEO ACTION CENTER · SIGNAL → TASK → EXECUTION</span>
         <h2>Exactly what should we do next?</h2>
-        <p>Turns GSC opportunity, trend, experiments, CTR gaps, cannibalization and internal-link coverage into a prioritized execution queue. Task state is saved in this browser, and completed work is automatically re-checked after seven final-data days plus Search Console’s two-day reporting lag.</p>
+        <p>Combines GSC opportunity, trend, experiments, CTR gaps, cannibalization and internal-link coverage with Toolmera’s own verified SEO outcomes. Learned evidence re-ranks non-critical P1/P2 work only after at least three decisive samples; P0 incidents and observation locks are never overridden.</p>
       </div>
       <div className={styles.actions}>
         <label className={styles.ownerField}><span>Assignee</span><input value={defaultOwner} onChange={event=>setDefaultOwner(event.target.value)} placeholder="Name"/></label>
@@ -547,18 +623,23 @@ export function AdminSeoActionCenter(){
     </div>
 
     <div className={styles.stateBar}>
-      <span><b>{taskSummary.open}</b> Open</span><span><b>{taskSummary.progress}</b> In progress</span><span><b>{taskSummary.done}</b> Done</span><span><b>{taskSummary.snoozed}</b> Snoozed</span><span className={taskSummary.verifyDue?styles.verifyDue:''}><b>{taskSummary.verifyDue}</b> Verify due</span>
+      <span><b>{taskSummary.open}</b> Open</span><span><b>{taskSummary.progress}</b> In progress</span><span><b>{taskSummary.done}</b> Done</span><span><b>{taskSummary.snoozed}</b> Snoozed</span><span className={taskSummary.verifyDue?styles.verifyDue:''}><b>{taskSummary.verifyDue}</b> Verify due</span><span><b>{outcomeHistory.length}</b> {learningLabel}</span>
     </div>
 
     {error&&<div className={styles.error}>{error}</div>}
-    {loading&&!twentyEight?<div className={styles.empty}><strong>Building the execution queue…</strong><span>Combining 7-day and 28-day GSC signals with SEO experiments and internal-link coverage.</span></div>:
+    {loading&&!twentyEight?<div className={styles.empty}><strong>Building the execution queue…</strong><span>Combining 7-day and 28-day GSC signals, experiments, internal-link coverage and verified outcome learning.</span></div>:
     actionItems.length?<div className={styles.list}>{actionItems.map((item,index)=>{
       const task=taskStates[item.id];
       const status=task?.status||'Open';
       const verification=task?taskVerification(task,signalByTool.get(item.tool.id)):null;
+      const learningTitle=item.learning?`${item.type}: evidence ${item.learning.score}/100 · ${item.learning.decisive} decisive samples · ${item.learning.recommendation}${item.learning.adjustment?` · queue ${item.learning.adjustment>0?'+':''}${item.learning.adjustment}`:' · no queue adjustment yet'}`:'';
       return <article className={`${styles.card} ${status==='Done'?styles.cardDone:''}`} key={item.id}>
         <div className={styles.rank}>{String(index+1).padStart(2,'0')}</div>
-        <div className={styles.badges}><span className={`${styles.pill} ${priorityTone(item.priority)}`}>{item.priority}</span><span className={`${styles.pill} ${actionTone(item.type)}`}>{item.type}</span></div>
+        <div className={styles.badges}>
+          <span className={`${styles.pill} ${priorityTone(item.priority)}`}>{item.priority}</span>
+          <span className={`${styles.pill} ${actionTone(item.type)}`}>{item.type}</span>
+          {item.learning&&<span title={learningTitle} className={`${styles.pill} ${learningTone(item.learning)}`}>{item.learning.decisive<3?`Learn ${item.learning.decisive}`:`L ${item.learning.adjustment>=0?'+':''}${item.learning.adjustment}`}</span>}
+        </div>
         <a className={styles.page} href={item.path} target="_blank" rel="noreferrer"><strong>{item.tool.name}</strong><small>{item.path}</small></a>
         <div className={styles.task}><strong>{item.title}</strong><p>{item.detail}</p><small>{item.signal}</small></div>
         <div className={styles.metrics}><span><small>Impr.</small><b>{number(item.metrics.impressions)}</b></span><span><small>Position</small><b>{pos(item.metrics.position)}</b></span><span><small>CTR</small><b>{pct(item.metrics.ctr)}</b></span></div>
@@ -578,9 +659,9 @@ export function AdminSeoActionCenter(){
       <div className={styles.verificationList}>{verificationRows.map(row=>{
         const verification=row.verification||'Low data';
         const baseline=row.record.baseline7||empty;
-        const current=row.signal?.current||empty;
-        const positionGain=current.position&&baseline.position?baseline.position-current.position:0;
-        const impressionChange=relativeChange(current.impressions,baseline.impressions);
+        const current=row.record.verification?.current7||row.signal?.current||empty;
+        const positionGain=row.record.verification?.positionGain??(current.position&&baseline.position?baseline.position-current.position:0);
+        const impressionChange=row.record.verification?.impressionChange??relativeChange(current.impressions,baseline.impressions);
         return <div className={styles.verificationRow} key={row.id}>
           <span className={`${styles.pill} ${verificationTone(verification)}`}>{verification}</span>
           <div><strong>{row.record.snapshot.toolName}</strong><small>{row.record.snapshot.title}</small></div>
@@ -592,6 +673,6 @@ export function AdminSeoActionCenter(){
         </div>})}</div>
     </div>}
 
-    <div className={styles.legend}><b>P0:</b><span>conflict or clear deterioration.</span><b>P1:</b><span>best near-term ranking/CTR/internal-link upside.</span><b>P2:</b><span>careful expansion of a winner or near-win.</span><b>HOLD:</b><span>observation lock or insufficient repeat demand.</span><b>Done:</b><span>stores the 7-day baseline and schedules verification after nine calendar days.</span></div>
+    <div className={styles.legend}><b>P0:</b><span>conflict or clear deterioration; learning cannot demote it.</span><b>P1/P2:</b><span>verified action-type evidence can re-rank work by up to ±18 queue points after 3+ decisive samples.</span><b>HOLD:</b><span>observation lock or insufficient repeat demand; learning cannot override it.</span><b>Learn N:</b><span>evidence exists but sample size is still too small to change ordering.</span></div>
   </section>,host);
 }
