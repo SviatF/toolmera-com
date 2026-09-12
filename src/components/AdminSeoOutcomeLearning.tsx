@@ -7,7 +7,6 @@ import { buildOutcomeLearning, type SeoVerificationEvent } from '@/lib/seoOutcom
 import styles from './AdminSeoOutcomeLearning.module.css';
 
 type SharedState={history?:Array<SeoVerificationEvent|Record<string,unknown>>;revision:number;updatedAt:string};
-
 type VerificationEvent=SeoVerificationEvent;
 
 function isVerificationEvent(value:unknown):value is VerificationEvent{
@@ -113,7 +112,7 @@ export function AdminSeoOutcomeLearning(){
   },[history,rows]);
 
   const strongest=rows.find(row=>row.decisive>=3&&row.score>=60)||null;
-  const caution=rows.findLast?rows.findLast(row=>row.decisive>=3&&row.score<=40):[...rows].reverse().find(row=>row.decisive>=3&&row.score<=40)||null;
+  const caution=[...rows].reverse().find(row=>row.decisive>=3&&row.score<=40)||null;
 
   if(!host)return null;
 
