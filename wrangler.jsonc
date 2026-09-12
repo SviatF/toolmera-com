@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "toolmera-com",
-  "main": "src/workerWithTasks.ts",
+  "main": "src/workerWithDeployments.ts",
   "compatibility_date": "2026-09-05",
   "keep_vars": true,
   "secrets": {
@@ -19,6 +19,10 @@
       {
         "name": "SEO_TASKS",
         "class_name": "SeoTaskStore"
+      },
+      {
+        "name": "SEO_DEPLOYMENTS",
+        "class_name": "SeoDeploymentStore"
       }
     ]
   },
@@ -27,6 +31,12 @@
       "tag": "seo-task-store-v1",
       "new_sqlite_classes": [
         "SeoTaskStore"
+      ]
+    },
+    {
+      "tag": "seo-deployment-store-v1",
+      "new_sqlite_classes": [
+        "SeoDeploymentStore"
       ]
     }
   ],
