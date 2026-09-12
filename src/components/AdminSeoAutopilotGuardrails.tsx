@@ -179,14 +179,28 @@ export function AdminSeoAutopilotGuardrails(){
     {!error&&rows.length===0?<div className={styles.empty}><Bot size={18}/><strong>No live actions to gate yet</strong><span>Guardrails populate from the current SEO Action Center queue.</span></div>:
     <div className={styles.tableWrap}><div className={styles.table}>
       <div className={`${styles.row} ${styles.tableHead}`}><span>Gate</span><span>Page</span><span>Action</span><span>Priority</span><span>Historical evidence</span><span>Why</span></div>
-      {rows.map(row=><div className={styles.row} key={row.id}>
-        <div><span className={`${styles.pill} ${tone(row.decision)}`}>{icon(row.decision)}{row.decision}</span></div>
-        <a className={styles.page} href={row.path} target="_blank" rel="noreferrer"><strong>{row.tool}</strong><small>{row.path}</small></a>
-        <div className={styles.action}><strong>{row.type}</strong><small>{row.title}</small></div>
-        <span className={styles.priority}>{row.priority}</span>
-        <div className={styles.evidence}>{row.evidence?<><strong>{row.evidence.score}/100 · {row.evidence.confidence}</strong><small>{row.evidence.winners}W / {row.evidence.neutral}N / {row.evidence.losers}L · win {row.evidence.winRate===null?'—':`${Math.round(row.evidence.winRate*100)}%`}</small></>:<><strong>No verified pattern yet</strong><small>Human review remains default</small></>}</div>
-        <p className={styles.reason}>{row.reason}</p>
-      </div>)}
+      {rows.map(row=>{
+        const actionKey=`${row.path}|${row.type}`;
+        return <div
+          className={styles.row}
+          key={row.id}
+          data-guardrail-row="true"
+          data-action-key={actionKey}
+          data-gate={row.decision}
+          data-path={row.path}
+          data-type={row.type}
+          data-tool={row.tool}
+          data-title={row.title}
+          data-priority={row.priority}
+        >
+          <div><span className={`${styles.pill} ${tone(row.decision)}`}>{icon(row.decision)}{row.decision}</span></div>
+          <a className={styles.page} href={row.path} target="_blank" rel="noreferrer"><strong>{row.tool}</strong><small>{row.path}</small></a>
+          <div className={styles.action}><strong>{row.type}</strong><small>{row.title}</small></div>
+          <span className={styles.priority}>{row.priority}</span>
+          <div className={styles.evidence}>{row.evidence?<><strong>{row.evidence.score}/100 · {row.evidence.confidence}</strong><small>{row.evidence.winners}W / {row.evidence.neutral}N / {row.evidence.losers}L · win {row.evidence.winRate===null?'—':`${Math.round(row.evidence.winRate*100)}%`}</small></>:<><strong>No verified pattern yet</strong><small>Human review remains default</small></>}</div>
+          <p className={styles.reason}>{row.reason}</p>
+        </div>;
+      })}
     </div></div>}
 
     <div className={styles.legend}><b>AUTO-APPROVE:</b><span>only reversible low-risk patterns with repeat positive evidence.</span><b>HUMAN REVIEW:</b><span>default for content, CTR, P0 and ambiguous/risky cases.</span><b>BLOCK:</b><span>observation lock, insufficient-demand hold or repeat negative evidence.</span></div>
