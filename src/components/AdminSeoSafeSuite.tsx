@@ -139,16 +139,6 @@ function trendTone(trend:Trend){
   return styles.muted;
 }
 
-function observeQueriesView(setActive:(value:boolean)=>void){
-  const read=()=>setActive(document.querySelector('.adminTopbar h1')?.textContent?.trim()==='Queries');
-  read();
-  const heading=document.querySelector('.adminTopbar h1');
-  if(!heading)return()=>{};
-  const observer=new MutationObserver(read);
-  observer.observe(heading,{subtree:true,childList:true,characterData:true});
-  return()=>observer.disconnect();
-}
-
 function matchesFilter(row:PageSignal,filter:QuickFilter){
   if(filter==='3plus')return row.metrics.impressions>=3;
   if(filter==='top10')return row.metrics.position>0&&row.metrics.position<=10;
@@ -162,7 +152,6 @@ function matchesFilter(row:PageSignal,filter:QuickFilter){
 }
 
 export function AdminSeoSafeSuite(){
-  const [active,setActive]=useState(false);
   const [seven,setSeven]=useState<GscData|null>(null);
   const [twentyEight,setTwentyEight]=useState<GscData|null>(null);
   const [loading,setLoading]=useState(false);
@@ -170,8 +159,6 @@ export function AdminSeoSafeSuite(){
   const [loadedAt,setLoadedAt]=useState('');
   const [quickFilter,setQuickFilter]=useState<QuickFilter>('all');
   const [search,setSearch]=useState('');
-
-  useEffect(()=>observeQueriesView(setActive),[]);
 
   const load=useCallback(async(force=false)=>{
     setLoading(true);
@@ -188,7 +175,7 @@ export function AdminSeoSafeSuite(){
     finally{setLoading(false)}
   },[]);
 
-  useEffect(()=>{if(active&&!seven&&!twentyEight)void load(false)},[active,seven,twentyEight,load]);
+  useEffect(()=>{void load(false)},[load]);
 
   const cannibalRows=useMemo<CannibalRow[]>(()=>{
     const groups=new Map<string,QueryPageRow[]>();
@@ -348,8 +335,6 @@ export function AdminSeoSafeSuite(){
     {id:'cannibal',label:'Канібалізація',count:filterCounts.cannibal},
     {id:'locked',label:'Не чіпати',count:filterCounts.locked},
   ];
-
-  if(!active)return null;
 
   return <section className={styles.shell}>
     <div className={styles.head}>
