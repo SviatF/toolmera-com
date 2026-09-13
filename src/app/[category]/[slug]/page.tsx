@@ -23,6 +23,7 @@ import { removeDuplicateLinesBenefits, removeDuplicateLinesSeo } from '@/data/re
 import { speedConverterBenefits, speedConverterSeo } from '@/data/speedConverterSeo';
 import { websiteAnalyzerBenefits, websiteAnalyzerSeo } from '@/data/websiteAnalyzerSeo';
 import { httpStatusCheckerSeo } from '@/data/httpStatusCheckerSeo';
+import { applyCommandCenterIntentSeo } from '@/data/commandCenterIntentSeo';
 import { internalLinkBoostsFrom } from '@/data/internalLinkBoosts';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
@@ -30,22 +31,24 @@ import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 export function generateStaticParams(){return tools.filter(t=>!t.country).map(t=>({category:t.category,slug:t.slug}))}
 
 function seoForTool(toolId:string){
-  if(toolId==='website-traffic-checker')return websiteTrafficSeo;
-  if(toolId==='sitemap-checker')return websiteSitemapSeo;
-  if(toolId==='redirect-checker')return websiteRedirectSeo;
-  if(toolId==='unix-timestamp')return unixTimestampSeo;
-  if(toolId==='date-calculator')return dateCalculatorSeo;
-  if(toolId==='percentage')return percentageCalculatorSeo;
-  if(toolId==='volume')return volumeConverterSeo;
-  if(toolId==='compress-jpg')return compressJpgSeo;
-  if(toolId==='length')return lengthConverterSeo;
-  if(toolId==='meta-tag-checker')return metaTagCheckerSeo;
-  if(toolId==='compound')return compoundInterestSeo;
-  if(toolId==='remove-duplicate-lines')return removeDuplicateLinesSeo;
-  if(toolId==='speed')return speedConverterSeo;
-  if(toolId==='website-analyzer')return websiteAnalyzerSeo;
-  if(toolId==='http-status-checker')return httpStatusCheckerSeo;
-  return toolSeoContent[toolId];
+  let seo;
+  if(toolId==='website-traffic-checker')seo=websiteTrafficSeo;
+  else if(toolId==='sitemap-checker')seo=websiteSitemapSeo;
+  else if(toolId==='redirect-checker')seo=websiteRedirectSeo;
+  else if(toolId==='unix-timestamp')seo=unixTimestampSeo;
+  else if(toolId==='date-calculator')seo=dateCalculatorSeo;
+  else if(toolId==='percentage')seo=percentageCalculatorSeo;
+  else if(toolId==='volume')seo=volumeConverterSeo;
+  else if(toolId==='compress-jpg')seo=compressJpgSeo;
+  else if(toolId==='length')seo=lengthConverterSeo;
+  else if(toolId==='meta-tag-checker')seo=metaTagCheckerSeo;
+  else if(toolId==='compound')seo=compoundInterestSeo;
+  else if(toolId==='remove-duplicate-lines')seo=removeDuplicateLinesSeo;
+  else if(toolId==='speed')seo=speedConverterSeo;
+  else if(toolId==='website-analyzer')seo=websiteAnalyzerSeo;
+  else if(toolId==='http-status-checker')seo=httpStatusCheckerSeo;
+  else seo=toolSeoContent[toolId];
+  return applyCommandCenterIntentSeo(toolId,seo);
 }
 
 function benefitsForTool(toolId:string,fallback:string[]){
