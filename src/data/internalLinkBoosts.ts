@@ -15,6 +15,8 @@ export const internalLinkBoosts:InternalLinkBoost[]=[
   {from:'seo-checker',to:'redirect-checker',anchor:'check redirects and 301 chains',reason:'Give redirect intent a direct contextual path from the broader SEO audit.'},
   {from:'date-difference',to:'date-calculator',anchor:'add or subtract days, weeks and months',reason:'Connect date comparison intent with date arithmetic intent.'},
   {from:'time-zone',to:'date-calculator',anchor:'calculate a future or past date',reason:'Create a useful bridge from time conversion to date arithmetic.'},
+  {from:'unix-timestamp',to:'time-zone',anchor:'convert the date and time between time zones',reason:'Strengthen the Time Zone Converter quick win from the closely related Unix timestamp workflow.'},
+  {from:'time-duration',to:'time-zone',anchor:'convert a date and time between time zones',reason:'Connect elapsed-time intent with timezone conversion when users need to compare local times.'},
   {from:'age',to:'date-calculator',anchor:'add or subtract time from a date',reason:'Support adjacent date-calculation intent from the age calculator.'},
   {from:'resize-image',to:'compress-jpg',anchor:'make a JPG file smaller after resizing',reason:'Link the image-size workflow from dimensions to file-size compression.'},
   {from:'crop-image',to:'compress-jpg',anchor:'compress the JPG after cropping',reason:'Continue the image-editing workflow into JPEG optimization.'},
