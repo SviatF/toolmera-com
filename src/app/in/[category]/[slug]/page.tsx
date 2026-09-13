@@ -9,19 +9,22 @@ import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolUrl } from '@/data/tools';
 import { freeTitle } from '@/lib/seo';
 import { indiaToolSeoContent } from '@/data/indiaSeoContent';
+import { applyCommandCenterIntentSeo } from '@/data/commandCenterIntentSeo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
+
+function seoForIndiaTool(toolId:string){return applyCommandCenterIntentSeo(toolId,indiaToolSeoContent[toolId])}
 
 export function generateStaticParams(){return tools.filter(t=>t.country==='in').map(t=>({category:t.category,slug:t.slug}))}
 export async function generateMetadata({params}:{params:Promise<{category:string;slug:string}>}):Promise<Metadata>{
   const {category,slug}=await params;const tool=findTool(category,slug,'in');if(!tool)return{};
-  const seo=indiaToolSeoContent[tool.id];
+  const seo=seoForIndiaTool(tool.id);
   const title=freeTitle(seo?.title||tool.title);const description=seo?.description||tool.description;const url=`https://toolmera.com/in/${category}/${slug}/`;
   return{title,description,alternates:{canonical:url},openGraph:{title,description,url,siteName:'Toolmera',type:'website'},twitter:{card:'summary',title,description}}
 }
 
 export default async function IndiaTool({params}:{params:Promise<{category:string;slug:string}>}){
   const {category,slug}=await params;const tool=findTool(category,slug,'in');if(!tool)notFound();
-  const seo=indiaToolSeoContent[tool.id];
+  const seo=seoForIndiaTool(tool.id);
   const workflowIds=new Set(seo?.related?.map(item=>item.id)||[]);
   const related=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id)).slice(0,4);
   const howTo=howToForTool(tool);
