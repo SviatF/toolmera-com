@@ -22,6 +22,7 @@ import { compoundInterestBenefits, compoundInterestSeo } from '@/data/compoundIn
 import { removeDuplicateLinesBenefits, removeDuplicateLinesSeo } from '@/data/removeDuplicateLinesSeo';
 import { speedConverterBenefits, speedConverterSeo } from '@/data/speedConverterSeo';
 import { websiteAnalyzerBenefits, websiteAnalyzerSeo } from '@/data/websiteAnalyzerSeo';
+import { httpStatusCheckerSeo } from '@/data/httpStatusCheckerSeo';
 import { internalLinkBoostsFrom } from '@/data/internalLinkBoosts';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
@@ -43,6 +44,7 @@ function seoForTool(toolId:string){
   if(toolId==='remove-duplicate-lines')return removeDuplicateLinesSeo;
   if(toolId==='speed')return speedConverterSeo;
   if(toolId==='website-analyzer')return websiteAnalyzerSeo;
+  if(toolId==='http-status-checker')return httpStatusCheckerSeo;
   return toolSeoContent[toolId];
 }
 
