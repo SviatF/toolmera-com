@@ -393,6 +393,8 @@ export function AdminSeoSafeSuite(){
   },[seven,twentyEight,highCannibalByPath,latestExperimentByTool]);
 
   const markDone=useCallback(async(row:PageSignal)=>{
+    const confirmed=window.confirm(`Підтвердження:\n\nТи вже РЕАЛЬНО реалізував цю SEO-зміну на сайті?\n\n${row.nextMove}\n\nOK = так, зміна вже внесена і задеплоєна.\nCancel = ні, нічого не позначати виконаним.`);
+    if(!confirmed)return;
     setSavingTask(row.actionKey);
     const task:TaskRecord={
       status:'Done',owner:taskState.owner||'Sviat',baseline7:row.current,verifyAt:addDays(10),completedAt:new Date().toISOString(),
@@ -454,7 +456,7 @@ export function AdminSeoSafeSuite(){
       <div>
         <span>SEO КОМАНДНИЙ ЦЕНТР</span>
         <h2>Що робити прямо зараз</h2>
-        <p>Система дає конкретну SEO-задачу. Після реалізації натисни «Виконано» — сторінка зникне з активної черги й піде на 10 днів у спостереження.</p>
+        <p>Система дає конкретну SEO-задачу. Спочатку реально внеси зміну на сайт. Лише після деплою підтверджуй її виконання — тоді сторінка піде на 10 днів у спостереження.</p>
       </div>
       <button onClick={()=>void load(true)} disabled={loading}><RefreshCw size={14} className={loading?styles.spin:''}/> {loading?'Оновлюю…':'Оновити GSC'}</button>
     </div>
@@ -481,7 +483,7 @@ export function AdminSeoSafeSuite(){
           <div className={styles.commandQuery}>Запит: <b>{row.topQuery}</b> · {number(row.metrics.impressions)} показів · позиція {pos(row.metrics.position)} · CTR {pct(row.metrics.ctr)}</div>
           <p>{row.reason}</p>
           <div className={styles.commandAction}><CheckCircle2 size={16}/><span><b>ЗРОБИТИ:</b> {row.nextMove}</span></div>
-          <div className={styles.commandControls}><button onClick={()=>void markDone(row)} disabled={savingTask===row.actionKey}><CheckCircle2 size={14}/>{savingTask===row.actionKey?'Зберігаю…':'Виконано → спостерігати 10 днів'}</button><span>Після натискання ця рекомендація не буде повторюватись під час observation.</span></div>
+          <div className={styles.commandControls}><button onClick={()=>void markDone(row)} disabled={savingTask===row.actionKey}><CheckCircle2 size={14}/>{savingTask===row.actionKey?'Зберігаю…':'Я ВЖЕ РЕАЛІЗУВАВ ЦЕ → почати спостереження'}</button><span>Ця кнопка НЕ реалізує SEO-зміну. Натискай її тільки після того, як зміна реально внесена в код/контент і вже задеплоєна.</span></div>
         </div>
       </div>)}</div>:<div className={styles.empty}>Зараз немає сторінок, які треба терміново змінювати. Це нормально — чекаємо нових GSC-сигналів.</div>}
     </div>
