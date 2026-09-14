@@ -5,7 +5,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 const nav = [
   ['Image', '/image/'], ['PDF', '/pdf/'], ['Calculators', '/calculators/'],
-  ['Converters', '/converters/'], ['Generators', '/generators/'], ['Time', '/time/'],
+  ['Converters', '/converters/'], ['Currency', '/currency/'], ['Generators', '/generators/'], ['Time', '/time/'],
   ['Text', '/text/'], ['Developer', '/developer/'], ['Website', '/website-analysis/'],
 ];
 
