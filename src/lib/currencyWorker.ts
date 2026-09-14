@@ -26,6 +26,7 @@ type CurrencyState={
 const storageKey='toolmera-currency-rates-v1';
 const api='https://api.frankfurter.dev/v2/rates';
 const retentionDays=92;
+const minimumSeedHistoryPoints=20;
 
 function json(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:{
@@ -79,6 +80,11 @@ function historyMap(rows:RateRow[]){
   return out;
 }
 
+function baseNeedsHistory(previous:CurrencyState|undefined,base:string){
+  const pairs=currencyPairs.filter(pair=>pair.from===base);
+  return pairs.some(pair=>(previous?.pairs?.[pair.slug]?.history?.length||0)<minimumSeedHistoryPoints);
+}
+
 export async function refreshCurrencySnapshot(storage:DurableStorageLike,force=false){
   const previous=await storage.get<CurrencyState>(storageKey);
   const hour=hourBucket();
@@ -89,16 +95,18 @@ export async function refreshCurrencySnapshot(storage:DurableStorageLike,force=f
   const groups=groupedPairs();
   const currentRows=new Map<string,RateRow[]>();
   const historyRows=new Map<string,RateRow[]>();
-  const needHistory=!previous||Object.keys(previous.pairs||{}).length<currencyPairs.length;
   const historyFrom=dayOffset(91);
   const errors:string[]=[];
 
-  // Sequential by base keeps the hourly cron comfortably below the Worker subrequest cap.
+  // Current rates are fetched once per active base currency. Historical data is
+  // retried only for bases with an incomplete pair history, so one failed seed
+  // can never leave a trend permanently empty while normal hourly traffic stays cheap.
   for(const [base,quotesSet] of groups){
     const quotes=[...quotesSet];
     try{currentRows.set(base,await fetchRows(base,quotes))}
     catch(error){errors.push(`${base}: ${error instanceof Error?error.message:'current fetch failed'}`)}
-    if(needHistory){
+
+    if(baseNeedsHistory(previous,base)){
       try{historyRows.set(base,await fetchRows(base,quotes,historyFrom))}
       catch(error){errors.push(`${base} history: ${error instanceof Error?error.message:'history fetch failed'}`)}
     }
@@ -118,7 +126,8 @@ export async function refreshCurrencySnapshot(storage:DurableStorageLike,force=f
     }
 
     const providerDate=(current?.date||now).slice(0,10);
-    const seeded=needHistory?historyMap(historyRows.get(pair.from)||[]).get(pair.to)||[]:old?.history||[];
+    const backfill=historyRows.has(pair.from)?historyMap(historyRows.get(pair.from)||[]).get(pair.to)||[]:[];
+    const seeded=backfill.length?backfill:old?.history||[];
     const merged=new Map<string,HistoryPoint>((seeded||[]).map(point=>[point.date,point]));
     merged.set(providerDate,{date:providerDate,rate});
     const history=[...merged.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-retentionDays);
@@ -153,6 +162,6 @@ export async function currencySnapshotResponse(storage:DurableStorageLike,slug:s
   return json({
     ...pair,
     source:'Frankfurter official-source reference rates',
-    cadence:'hourly',
+    cadence:'hourly-check',
   });
 }
