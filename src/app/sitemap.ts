@@ -4,13 +4,13 @@ import { categories, tools, toolUrl } from '@/data/tools';
 export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPages = ['tools','about','contact','methodology'];
+  const staticPages = ['tools','about','contact','methodology','currency'];
 
   return [
     { url: 'https://toolmera.com/', priority: 1 },
     ...staticPages.map((page) => ({
       url: `https://toolmera.com/${page}/`,
-      priority: page === 'tools' ? 0.9 : 0.5,
+      priority: page === 'tools' || page === 'currency' ? 0.9 : 0.5,
     })),
     { url: 'https://toolmera.com/in/', priority: 0.7 },
     { url: 'https://toolmera.com/in/finance/', priority: 0.7 },
