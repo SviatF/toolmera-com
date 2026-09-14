@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
@@ -14,7 +16,10 @@ export const metadata:Metadata={
 };
 
 export default function AllToolsPage(){
-  const toolsSchema={"@context":"https://schema.org","@type":"ItemList",name:"Toolmera tools",itemListElement:tools.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com${tool.country?`/${tool.country}/${tool.category}/${tool.slug}/`:`/${tool.category}/${tool.slug}/`}`}))};
+  const toolsSchema={"@context":"https://schema.org","@type":"ItemList",name:"Toolmera tools",itemListElement:[
+    ...tools.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com${tool.country?`/${tool.country}/${tool.category}/${tool.slug}/`:`/${tool.category}/${tool.slug}/`}`})),
+    {"@type":"ListItem",position:tools.length+1,name:'Currency Converter',url:'https://toolmera.com/currency/'}
+  ]};
   return <><Header/><main className="subPage">
     <section className="shell allToolsHero">
       <span className="eyebrow neonText">TOOLMERA / ALL TOOLS</span>
@@ -27,6 +32,7 @@ export default function AllToolsPage(){
       const list=tools.filter(t=>!t.country&&t.category===cat.slug);
       return <section className="shell allToolsGroup" key={cat.slug}>
         <div className="sectionHead"><div><span className="sectionKicker">{cat.label.toUpperCase()}</span><h2>{cat.label}</h2><p>{cat.description}</p></div></div>
+        {cat.slug==='converters'&&<div className="workflowLinks"><div><Link href="/currency/">Currency Converter — live exchange rates <ArrowRight size={15}/></Link></div></div>}
         <div className="toolGrid">{list.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
       </section>
     })}
