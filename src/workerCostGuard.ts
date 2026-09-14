@@ -1,4 +1,5 @@
 import appWorker, { SeoDeploymentStore, SeoTaskStore } from './workerSelfSeo';
+import { currencySnapshotResponse, refreshCurrencySnapshot } from './lib/currencyWorker';
 
 export { SeoDeploymentStore, SeoTaskStore };
 
@@ -157,6 +158,14 @@ export class SeoDataStore{
       return await this.refreshSource(source);
     }
 
+    if(request.method==='GET'&&url.pathname==='/currency'){
+      return await currencySnapshotResponse(this.state.storage,url.searchParams.get('pair'));
+    }
+
+    if(request.method==='POST'&&url.pathname==='/currency-refresh'){
+      return await refreshCurrencySnapshot(this.state.storage,url.searchParams.get('force')==='1');
+    }
+
     return json({error:'Not found'},404);
   }
 }
@@ -205,6 +214,20 @@ async function dailyAnalyticsResponse(request:Request,env:Env,source:AnalyticsSo
   return snapshot||json({error:'Daily analytics snapshot is not ready.',source,range},503);
 }
 
+async function publicCurrencyResponse(env:Env,pair:string|null){
+  const stub=dataStub(env);
+  if(!stub)return json({error:'Currency data store is not configured.'},503);
+  const target=`https://seo-data-store/currency${pair?`?pair=${encodeURIComponent(pair)}`:''}`;
+  let response=await stub.fetch(new Request(target));
+  if(response.status!==404)return response;
+
+  // One-time bootstrap only. Subsequent updates are hourly cron-driven.
+  const seeded=await stub.fetch(new Request('https://seo-data-store/currency-refresh',{method:'POST'}));
+  if(!seeded.ok)return seeded;
+  response=await stub.fetch(new Request(target));
+  return response;
+}
+
 export default{
   async fetch(request:Request,env:Env,ctx?:ExecutionContextLike):Promise<Response>{
     void ctx;
@@ -212,6 +235,10 @@ export default{
 
     if(url.pathname.startsWith('/api/admin/')&&env.REQUIRE_ACCESS==='true'&&!request.headers.get('Cf-Access-Jwt-Assertion')){
       return appWorker.fetch(request,env as any);
+    }
+
+    if(request.method==='GET'&&url.pathname==='/api/currency/rates'){
+      return publicCurrencyResponse(env,url.searchParams.get('pair'));
     }
 
     const source=request.method==='GET'?sourceFromPath(url.pathname):null;
@@ -257,18 +284,34 @@ export default{
     }finally{inflight.delete(signature)}
   },
 
-  async scheduled(_controller:ScheduledControllerLike,env:Env,ctx:ExecutionContextLike){
-    const sources=(['gsc','ga4','cloudflare','bing'] as AnalyticsSource[]).filter(source=>sourceConfigured(source,env));
+  async scheduled(controller:ScheduledControllerLike,env:Env,ctx:ExecutionContextLike){
     const stub=dataStub(env);
     if(!stub)return;
-    // All providers refresh at the same 00:00 UTC cron. Each provider runs in its
-    // own Durable Object request so one source cannot create a giant subrequest burst.
-    ctx.waitUntil(Promise.all(sources.map(async source=>{
-      const response=await stub.fetch(new Request(`https://seo-data-store/refresh?source=${source}`,{method:'POST'}));
-      if(!response.ok){
-        const detail=await response.text();
-        throw new Error(`Daily ${source} snapshot failed: ${response.status} ${detail.slice(0,300)}`);
-      }
-    })).then(()=>undefined));
+    const scheduledAt=new Date(controller.scheduledTime||Date.now());
+    const isMidnight=scheduledAt.getUTCHours()===0;
+
+    // Currency rates refresh every hour. This is independent from Admin analytics.
+    const jobs:Promise<void>[]=[
+      stub.fetch(new Request('https://seo-data-store/currency-refresh',{method:'POST'})).then(async response=>{
+        if(!response.ok){
+          const detail=await response.text();
+          throw new Error(`Hourly currency snapshot failed: ${response.status} ${detail.slice(0,300)}`);
+        }
+      }),
+    ];
+
+    // GSC, GA4, Cloudflare Analytics and Bing remain once daily at 00:00 UTC only.
+    if(isMidnight){
+      const sources=(['gsc','ga4','cloudflare','bing'] as AnalyticsSource[]).filter(source=>sourceConfigured(source,env));
+      jobs.push(...sources.map(async source=>{
+        const response=await stub.fetch(new Request(`https://seo-data-store/refresh?source=${source}`,{method:'POST'}));
+        if(!response.ok){
+          const detail=await response.text();
+          throw new Error(`Daily ${source} snapshot failed: ${response.status} ${detail.slice(0,300)}`);
+        }
+      }));
+    }
+
+    ctx.waitUntil(Promise.all(jobs).then(()=>undefined));
   },
 };
