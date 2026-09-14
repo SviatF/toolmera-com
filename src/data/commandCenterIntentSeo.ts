@@ -29,6 +29,18 @@ const intentBoosts: Record<string, ToolSeoSection> = {
       'PNG is convenient for ordinary documents and web graphics, while SVG is better when the code needs to scale cleanly for design or print. Keep strong contrast and test the final code at the real display or print size before publishing it.'
     ]
   },
+  'gst-in': {
+    title: 'Inclusive GST calculator: find the base price and GST inside a tax-inclusive total',
+    paragraphs: [
+      'Use the inclusive GST calculator when the amount you already have includes GST and you need to separate it into the pre-tax base value and the GST component. Choose Remove GST, enter the GST-inclusive total and the applicable rate, and Toolmera reverses the tax without treating the full amount as the taxable base.',
+      'For an inclusive amount, the base value is Inclusive total ÷ (1 + rate/100). The GST portion can then be found as Inclusive total − base value, or directly as Inclusive total × rate ÷ (100 + rate). For example, ₹1,180 inclusive of 18% GST resolves to a ₹1,000 base amount and ₹180 GST.'
+    ],
+    facts: [
+      { label: 'Base amount', value: 'Inclusive total ÷ (1 + rate/100)' },
+      { label: 'GST included', value: 'Inclusive total × rate ÷ (100 + rate)' },
+      { label: '18% example', value: '₹1,180 → ₹1,000 + ₹180 GST' }
+    ]
+  },
   'technology-checker': {
     title: 'Detect website technologies from public HTML and response headers',
     paragraphs: [
