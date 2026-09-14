@@ -16,190 +16,193 @@ type DurableObjectNamespaceLike={
 type Env={
   REQUIRE_ACCESS?:string;
   SEO_DATA?:DurableObjectNamespaceLike;
+  GOOGLE_CLIENT_EMAIL?:string;
+  GOOGLE_PRIVATE_KEY?:string;
+  GSC_SITE_URL?:string;
+  GA4_PROPERTY_ID?:string;
+  CLOUDFLARE_ACCOUNT_ID?:string;
+  CLOUDFLARE_ZONE_ID?:string;
+  CLOUDFLARE_API_TOKEN?:string;
+  BING_API_KEY?:string;
   [key:string]:unknown;
 };
 type ExecutionContextLike={waitUntil(promise:Promise<unknown>):void};
 type ScheduledControllerLike={cron?:string;scheduledTime?:number};
 type Snapshot={body:string;status:number;headers:Headers};
-type GscEntry={range:string;body:string;status:number;storedAt:string};
-type GscSnapshotState={
-  version:1;
+type AnalyticsSource='gsc'|'ga4'|'cloudflare'|'bing';
+type SnapshotEntry={source:AnalyticsSource;range:string;body:string;status:number;storedAt:string};
+type AnalyticsSnapshotState={
+  version:2;
   day:string;
   updatedAt:string;
-  entries:Record<string,GscEntry>;
+  entries:Record<string,SnapshotEntry>;
 };
 
-const gscStorageKey='toolmera-gsc-daily-snapshot-v1';
-const gscStoreName='toolmera-global-seo-data';
-const gscRanges=['today','7d','28d','3m'] as const;
+const snapshotStorageKey='toolmera-analytics-daily-snapshot-v2';
+const dataStoreName='toolmera-global-seo-data';
+const rangedSources:Record<Exclude<AnalyticsSource,'cloudflare'>,readonly string[]>={
+  gsc:['today','7d','28d','3m'],
+  ga4:['today','7d','28d','3m'],
+  bing:['today','7d','28d','3m'],
+};
 
 function json(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex, nofollow'}});
 }
-
 function utcDay(){return new Date().toISOString().slice(0,10)}
+function snapshotKey(source:AnalyticsSource,range:string){return `${source}:${range}`}
+function rangesFor(source:AnalyticsSource){return source==='cloudflare'?['default']:rangedSources[source]}
+function sourceFromPath(pathname:string):AnalyticsSource|null{
+  if(pathname==='/api/admin/gsc')return 'gsc';
+  if(pathname==='/api/admin/ga4')return 'ga4';
+  if(pathname==='/api/admin/cloudflare')return 'cloudflare';
+  if(pathname==='/api/admin/bing')return 'bing';
+  return null;
+}
+function sourceConfigured(source:AnalyticsSource,env:Env){
+  if(source==='gsc')return Boolean(env.GOOGLE_CLIENT_EMAIL&&env.GOOGLE_PRIVATE_KEY&&env.GSC_SITE_URL);
+  if(source==='ga4')return Boolean(env.GOOGLE_CLIENT_EMAIL&&env.GOOGLE_PRIVATE_KEY&&env.GA4_PROPERTY_ID);
+  if(source==='cloudflare')return Boolean(env.CLOUDFLARE_ACCOUNT_ID&&env.CLOUDFLARE_ZONE_ID&&env.CLOUDFLARE_API_TOKEN);
+  return Boolean(env.BING_API_KEY);
+}
+function liveUrl(source:AnalyticsSource,range:string){
+  if(source==='cloudflare')return 'https://toolmera.com/api/admin/cloudflare';
+  return `https://toolmera.com/api/admin/${source}?range=${encodeURIComponent(range)}`;
+}
 
 export class SeoDataStore{
   private state:DurableObjectStateLike;
-  constructor(state:DurableObjectStateLike){this.state=state}
+  private env:Env;
+  constructor(state:DurableObjectStateLike,env:Env){this.state=state;this.env=env}
+
+  private async current(){
+    return await this.state.storage.get<AnalyticsSnapshotState>(snapshotStorageKey)||{version:2 as const,day:'',updatedAt:'',entries:{}};
+  }
+
+  private async refreshSource(source:AnalyticsSource){
+    if(!sourceConfigured(source,this.env))return json({ok:false,source,skipped:true,reason:'not-configured'},503);
+
+    const today=utcDay();
+    const current=await this.current();
+    const ranges=rangesFor(source);
+    const fresh=ranges.every(range=>current.entries[snapshotKey(source,range)]?.storedAt?.slice(0,10)===today);
+    if(fresh)return json({ok:true,source,day:today,refreshed:false,ranges});
+
+    const entries={...current.entries};
+    const storedAt=new Date().toISOString();
+    const errors:string[]=[];
+    let refreshed=0;
+
+    // This Durable Object is the only place that calls the live analytics handlers.
+    // Each source is refreshed in its own DO invocation, keeping subrequests bounded.
+    for(const range of ranges){
+      const key=snapshotKey(source,range);
+      if(entries[key]?.storedAt?.slice(0,10)===today)continue;
+      const request=new Request(liveUrl(source,range),{headers:{'x-toolmera-internal-snapshot':'1'}});
+      const internalEnv={...this.env,REQUIRE_ACCESS:'false'};
+      try{
+        const response=await appWorker.fetch(request,internalEnv as any);
+        const body=await response.text();
+        if(response.ok){
+          entries[key]={source,range,body,status:response.status,storedAt};
+          refreshed+=1;
+        }else{
+          errors.push(`${range}:${response.status}`);
+        }
+      }catch(error){
+        errors.push(`${range}:${error instanceof Error?error.message:'fetch failed'}`);
+      }
+    }
+
+    if(refreshed>0){
+      const next:AnalyticsSnapshotState={version:2,day:today,updatedAt:storedAt,entries};
+      await this.state.storage.put(snapshotStorageKey,next);
+    }
+
+    if(refreshed===0&&errors.length)return json({ok:false,source,day:today,errors},503);
+    return json({ok:true,source,day:today,refreshed:true,ranges:refreshed,errors});
+  }
 
   async fetch(request:Request):Promise<Response>{
     const url=new URL(request.url);
-    const current=await this.state.storage.get<GscSnapshotState>(gscStorageKey);
+    const current=await this.current();
 
     if(request.method==='GET'&&url.pathname==='/meta'){
-      return json(current?{version:current.version,day:current.day,updatedAt:current.updatedAt,ranges:Object.keys(current.entries)}:{version:1,day:'',updatedAt:'',ranges:[]});
+      const entries=Object.fromEntries(Object.entries(current.entries).map(([key,value])=>[key,value.storedAt]));
+      return json({version:current.version,day:current.day,updatedAt:current.updatedAt,entries});
     }
 
-    if(request.method==='GET'&&url.pathname==='/gsc'){
-      const range=url.searchParams.get('range')||'28d';
-      const entry=current?.entries?.[range];
-      if(!entry)return json({error:'GSC daily snapshot is not ready yet.',range},404);
+    if(request.method==='GET'&&url.pathname==='/snapshot'){
+      const source=url.searchParams.get('source') as AnalyticsSource|null;
+      if(!source||!['gsc','ga4','cloudflare','bing'].includes(source))return json({error:'Invalid analytics source.'},400);
+      const range=source==='cloudflare'?'default':(url.searchParams.get('range')||'28d');
+      const entry=current.entries[snapshotKey(source,range)];
+      if(!entry)return json({error:'Daily analytics snapshot is not ready yet.',source,range},404);
       return new Response(entry.body,{
         status:entry.status,
         headers:{
           'content-type':'application/json; charset=utf-8',
           'cache-control':'no-store',
           'x-robots-tag':'noindex, nofollow',
-          'x-toolmera-gsc-source':'daily-snapshot',
-          'x-toolmera-gsc-snapshot-at':entry.storedAt,
+          'x-toolmera-analytics-source':'daily-snapshot',
+          'x-toolmera-analytics-snapshot-at':entry.storedAt,
+          'x-toolmera-analytics-provider':entry.source,
         },
       });
     }
 
-    if(request.method==='PUT'&&url.pathname==='/gsc'){
-      let payload:{day?:unknown;storedAt?:unknown;entries?:unknown};
-      try{payload=await request.json() as {day?:unknown;storedAt?:unknown;entries?:unknown}}
-      catch{return json({error:'Invalid snapshot payload.'},400)}
-
-      const day=typeof payload.day==='string'?payload.day.slice(0,10):utcDay();
-      const storedAt=typeof payload.storedAt==='string'?payload.storedAt:new Date().toISOString();
-      const supplied=payload.entries&&typeof payload.entries==='object'&&!Array.isArray(payload.entries)?payload.entries as Record<string,unknown>:{};
-      const entries={...(current?.entries||{})};
-
-      for(const range of gscRanges){
-        const raw=supplied[range];
-        if(!raw||typeof raw!=='object'||Array.isArray(raw))continue;
-        const item=raw as Record<string,unknown>;
-        if(typeof item.body!=='string'||typeof item.status!=='number')continue;
-        entries[range]={range,body:item.body,status:item.status,storedAt};
-      }
-
-      const next:GscSnapshotState={version:1,day,updatedAt:storedAt,entries};
-      await this.state.storage.put(gscStorageKey,next);
-      return json({ok:true,day,updatedAt:storedAt,ranges:Object.keys(entries)});
+    if(request.method==='POST'&&url.pathname==='/refresh'){
+      const source=url.searchParams.get('source') as AnalyticsSource|null;
+      if(!source||!['gsc','ga4','cloudflare','bing'].includes(source))return json({error:'Invalid analytics source.'},400);
+      return await this.refreshSource(source);
     }
 
     return json({error:'Not found'},404);
   }
 }
 
-// GSC is intentionally NOT in this short-lived cache. It is served from the
-// persistent daily snapshot below, so opening/refreshing Admin never hits Google.
+const inflight=new Map<string,Promise<Snapshot>>();
 const adminCacheTtl:Record<string,number>={
   '/api/admin/status':300,
-  '/api/admin/ga4':300,
-  '/api/admin/cloudflare':60,
-  '/api/admin/bing':900,
 };
 
-// Coalesce identical cache misses inside an isolate so a burst of clients cannot
-// fan out into duplicate Google/Bing/Cloudflare upstream work before cache.put lands.
-const inflight=new Map<string,Promise<Snapshot>>();
-let gscRefreshInflight:Promise<void>|null=null;
-
-function cacheKeyFor(url:URL){
-  return new Request(`https://toolmera.com/__admin-api-cache${url.pathname}${url.search}`);
-}
-
+function cacheKeyFor(url:URL){return new Request(`https://toolmera.com/__admin-api-cache${url.pathname}${url.search}`)}
 function browserResponse(body:string,status:number,headers:Headers,cacheState:'HIT'|'MISS'|'COALESCED'){
   const next=new Headers(headers);
   next.set('cache-control','no-store');
   next.set('x-toolmera-admin-cache',cacheState);
   return new Response(body,{status,headers:next});
 }
-
-function seoDataStub(env:Env){
+function dataStub(env:Env){
   if(!env.SEO_DATA)return null;
-  const id=env.SEO_DATA.idFromName(gscStoreName);
-  return env.SEO_DATA.get(id);
+  return env.SEO_DATA.get(env.SEO_DATA.idFromName(dataStoreName));
 }
-
-async function readGscSnapshot(env:Env,range:string){
-  const stub=seoDataStub(env);
+async function readSnapshot(env:Env,source:AnalyticsSource,range:string){
+  const stub=dataStub(env);
   if(!stub)return null;
-  const response=await stub.fetch(new Request(`https://seo-data-store/gsc?range=${encodeURIComponent(range)}`));
+  const response=await stub.fetch(new Request(`https://seo-data-store/snapshot?source=${source}&range=${encodeURIComponent(range)}`));
   if(response.status===404)return null;
   return response;
 }
-
-async function snapshotMeta(env:Env){
-  const stub=seoDataStub(env);
-  if(!stub)return null;
-  const response=await stub.fetch(new Request('https://seo-data-store/meta'));
-  if(!response.ok)return null;
-  return await response.json() as {day?:string;updatedAt?:string;ranges?:string[]};
+async function refreshSource(env:Env,source:AnalyticsSource){
+  const stub=dataStub(env);
+  if(!stub)throw new Error('SEO_DATA Durable Object binding is not configured.');
+  return await stub.fetch(new Request(`https://seo-data-store/refresh?source=${source}`,{method:'POST'}));
 }
-
-async function refreshDailyGsc(env:Env,reason:'cron'|'bootstrap'){
-  if(!env.SEO_DATA)throw new Error('SEO_DATA Durable Object binding is not configured.');
-  if(gscRefreshInflight)return gscRefreshInflight;
-
-  const work=(async()=>{
-    const day=utcDay();
-    const meta=await snapshotMeta(env);
-    // Cron retries or duplicate scheduled events must not fetch Google twice in one UTC day.
-    if(reason==='cron'&&meta?.day===day&&gscRanges.every(range=>meta.ranges?.includes(range)))return;
-
-    const storedAt=new Date().toISOString();
-    const entries:Record<string,{body:string;status:number}>={};
-
-    // Run sequentially to avoid a subrequest burst. This is the ONLY place that
-    // calls the live GSC handler. Admin page views only read the stored snapshot.
-    for(const range of gscRanges){
-      const request=new Request(`https://toolmera.com/api/admin/gsc?range=${encodeURIComponent(range)}`,{
-        headers:{'x-toolmera-internal-snapshot':'1'},
-      });
-      const internalEnv={...env,REQUIRE_ACCESS:'false'};
-      const response=await appWorker.fetch(request,internalEnv as any);
-      const body=await response.text();
-      if(response.ok)entries[range]={body,status:response.status};
-    }
-
-    if(!Object.keys(entries).length)throw new Error('Daily GSC refresh returned no successful ranges.');
-    const stub=seoDataStub(env)!;
-    const save=await stub.fetch(new Request('https://seo-data-store/gsc',{
-      method:'PUT',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify({day,storedAt,entries}),
-    }));
-    if(!save.ok)throw new Error(`Could not persist daily GSC snapshot (${save.status}).`);
-  })();
-
-  gscRefreshInflight=work;
-  try{await work}
-  finally{gscRefreshInflight=null}
-}
-
-async function dailyGscResponse(request:Request,env:Env){
+async function dailyAnalyticsResponse(request:Request,env:Env,source:AnalyticsSource){
   const url=new URL(request.url);
-  const range=url.searchParams.get('range')||'28d';
-
-  let snapshot=await readGscSnapshot(env,range);
+  const range=source==='cloudflare'?'default':(url.searchParams.get('range')||'28d');
+  let snapshot=await readSnapshot(env,source,range);
   if(snapshot)return snapshot;
 
-  // One-time bootstrap after first deployment. It seeds all ranges once; after that
-  // only the midnight cron talks to Google. Never fall back to per-view live GSC.
-  try{await refreshDailyGsc(env,'bootstrap')}
+  // Bootstrap only when a source has never been snapshotted. After that, page views
+  // can never cause a live provider fetch because the daily entry already exists.
+  try{await refreshSource(env,source)}
   catch(error){
-    return json({
-      error:'Daily GSC snapshot is not ready.',
-      detail:error instanceof Error?error.message:'Snapshot bootstrap failed.',
-    },503);
+    return json({error:'Daily analytics snapshot is not ready.',detail:error instanceof Error?error.message:'Snapshot bootstrap failed.',source,range},503);
   }
-
-  snapshot=await readGscSnapshot(env,range);
-  return snapshot||json({error:'Daily GSC snapshot is not ready.',range},503);
+  snapshot=await readSnapshot(env,source,range);
+  return snapshot||json({error:'Daily analytics snapshot is not ready.',source,range},503);
 }
 
 export default{
@@ -207,14 +210,12 @@ export default{
     void ctx;
     const url=new URL(request.url);
 
-    // Keep Cloudflare Access authoritative before serving any stored admin data.
     if(url.pathname.startsWith('/api/admin/')&&env.REQUIRE_ACCESS==='true'&&!request.headers.get('Cf-Access-Jwt-Assertion')){
       return appWorker.fetch(request,env as any);
     }
 
-    if(request.method==='GET'&&url.pathname==='/api/admin/gsc'){
-      return dailyGscResponse(request,env);
-    }
+    const source=request.method==='GET'?sourceFromPath(url.pathname):null;
+    if(source)return dailyAnalyticsResponse(request,env,source);
 
     const ttl=request.method==='GET'?adminCacheTtl[url.pathname]:undefined;
     if(!ttl)return appWorker.fetch(request,env as any);
@@ -222,7 +223,6 @@ export default{
     const cache=(caches as unknown as {default:Cache}).default;
     const key=cacheKeyFor(url);
     const signature=key.url;
-
     try{
       const cached=await cache.match(key);
       if(cached){
@@ -241,14 +241,12 @@ export default{
       const response=await appWorker.fetch(request,env as any);
       const body=await response.text();
       const headers=new Headers(response.headers);
-
       if(response.ok){
         const cacheHeaders=new Headers(headers);
         cacheHeaders.set('cache-control',`public, max-age=${ttl}`);
         cacheHeaders.set('x-toolmera-admin-cache','STORED');
         try{await cache.put(key,new Response(body,{status:response.status,headers:cacheHeaders}))}catch{}
       }
-
       return {body,status:response.status,headers};
     })();
 
@@ -256,12 +254,21 @@ export default{
     try{
       const result=await work;
       return browserResponse(result.body,result.status,result.headers,'MISS');
-    }finally{
-      inflight.delete(signature);
-    }
+    }finally{inflight.delete(signature)}
   },
 
   async scheduled(_controller:ScheduledControllerLike,env:Env,ctx:ExecutionContextLike){
-    ctx.waitUntil(refreshDailyGsc(env,'cron'));
+    const sources=(['gsc','ga4','cloudflare','bing'] as AnalyticsSource[]).filter(source=>sourceConfigured(source,env));
+    const stub=dataStub(env);
+    if(!stub)return;
+    // All providers refresh at the same 00:00 UTC cron. Each provider runs in its
+    // own Durable Object request so one source cannot create a giant subrequest burst.
+    ctx.waitUntil(Promise.all(sources.map(async source=>{
+      const response=await stub.fetch(new Request(`https://seo-data-store/refresh?source=${source}`,{method:'POST'}));
+      if(!response.ok){
+        const detail=await response.text();
+        throw new Error(`Daily ${source} snapshot failed: ${response.status} ${detail.slice(0,300)}`);
+      }
+    })).then(()=>undefined));
   },
 };
