@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronRight, ArrowRight, ShieldCheck, Zap, Sparkles } from 'lucide-react';
+import { ChevronRight, ArrowRight, ArrowUpRight, ShieldCheck, Zap, Sparkles, CircleDollarSign } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
@@ -98,16 +98,30 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <div className="categoryMeta"><span>{list.length+(category==='converters'?1:0)} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
 
-    {popularLinks.length>0&&<section className="shell workflowLinks">
-      <span className="sectionKicker">POPULAR TOOLS</span>
-      <h2>Start with the highest-value workflows</h2>
-      <div>{popularLinks.map(({item,tool})=>tool&&<Link href={`/${category}/${tool.slug}/`} key={item.id}>{item.anchor}<ArrowRight size={15}/></Link>)}</div>
+    {popularLinks.length>0&&<section className="shell section categoryToolSection">
+      <div className="sectionHead"><div><span className="sectionKicker">POPULAR TOOLS</span><h2>Start with the highest-value workflows</h2><p>Popular conversion tools shown in the same card layout as the rest of the collection.</p></div></div>
+      <div className="toolGrid">{popularLinks.map(({tool})=>tool&&<ToolCard key={tool.id} tool={tool}/>)}</div>
     </section>}
 
-    {category==='converters'&&<section className="shell workflowLinks">
-      <span className="sectionKicker">LIVE CURRENCY</span>
-      <h2>Convert currencies with hourly-updated reference rates</h2>
-      <div><Link href="/currency/">Open Currency Converter <ArrowRight size={15}/></Link><Link href="/currency/usd-to-inr/">USD to INR <ArrowRight size={15}/></Link><Link href="/currency/eur-to-usd/">EUR to USD <ArrowRight size={15}/></Link></div>
+    {category==='converters'&&<section className="shell section categoryToolSection">
+      <div className="sectionHead"><div><span className="sectionKicker">LIVE CURRENCY</span><h2>Currency & exchange rates</h2><p>Use the full currency hub or jump directly into popular exchange-rate pairs.</p></div></div>
+      <div className="toolGrid">
+        <Link className="toolCard accent-blue" href="/currency/">
+          <div className="toolCardTop"><span className="toolIcon"><CircleDollarSign size={21}/></span><span className="toolBadge">Live rates</span></div>
+          <h3>Currency Converter</h3><p>Convert supported currencies with hourly-checked official reference rates.</p>
+          <span className="toolCardLink">Open tool <ArrowUpRight size={15}/></span>
+        </Link>
+        <Link className="toolCard accent-green" href="/currency/usd-to-inr/">
+          <div className="toolCardTop"><span className="toolIcon"><CircleDollarSign size={21}/></span></div>
+          <h3>USD to INR</h3><p>US Dollar to Indian Rupee exchange rate, quick amounts and trend history.</p>
+          <span className="toolCardLink">Open converter <ArrowUpRight size={15}/></span>
+        </Link>
+        <Link className="toolCard accent-violet" href="/currency/eur-to-usd/">
+          <div className="toolCardTop"><span className="toolIcon"><CircleDollarSign size={21}/></span></div>
+          <h3>EUR to USD</h3><p>Euro to US Dollar exchange rate with calculator and recent trend context.</p>
+          <span className="toolCardLink">Open converter <ArrowUpRight size={15}/></span>
+        </Link>
+      </div>
     </section>}
 
     {groupedCategoryTools[category]
