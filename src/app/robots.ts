@@ -5,6 +5,9 @@ export const dynamic = 'force-static';
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: { userAgent: '*', allow: '/', disallow: ['/admin/'] },
-    sitemap: 'https://toolmera.com/sitemap.xml',
+    sitemap: [
+      'https://toolmera.com/sitemap.xml',
+      'https://toolmera.com/sitemap-currency.xml',
+    ],
   };
 }
