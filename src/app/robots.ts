@@ -5,9 +5,8 @@ export const dynamic = 'force-static';
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: { userAgent: '*', allow: '/', disallow: ['/admin/'] },
-    sitemap: [
-      'https://toolmera.com/sitemap.xml',
-      'https://toolmera.com/sitemap-currency.xml',
-    ],
+    // Currency sitemap exists at /sitemap-currency.xml but is intentionally not
+    // advertised here until the 3–5 day rate/update validation window is complete.
+    sitemap: 'https://toolmera.com/sitemap.xml',
   };
 }
