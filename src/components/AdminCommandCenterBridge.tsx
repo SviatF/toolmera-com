@@ -150,7 +150,7 @@ export function AdminCommandCenterBridge(){
           <div className={styles.actions}>
             {recoveryMessage&&<span className={styles.recoveryMessage}>{recoveryMessage}</span>}
             <button type="button" className={styles.recover} onClick={()=>void restoreRecentDone(false)} disabled={recovering}><RotateCcw size={14}/>{recovering?'Відновлюю…':'Повернути недавні «Виконано»'}</button>
-            <span className={styles.safe}><ShieldCheck size={14}/> Safe mode · shared GSC data</span>
+            <span className={styles.safe}><ShieldCheck size={14}/> GSC snapshot · 1× на добу</span>
             <button type="button" className={styles.close} onClick={()=>setActive(false)}><X size={15}/> Закрити</button>
           </div>
         </header>
