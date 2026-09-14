@@ -74,14 +74,14 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
   const hub=categoryHubEnhancements[category];
   const popularLinks=(hub?.popular||[]).map(item=>({item,tool:list.find(tool=>tool.id===item.id)})).filter(row=>Boolean(row.tool));
   const categoryUrl=`https://toolmera.com/${category}/`;
+  const itemList=list.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com/${category}/${tool.slug}/`}));
+  if(category==='converters')itemList.push({"@type":"ListItem",position:itemList.length+1,name:'Currency Converter',url:'https://toolmera.com/currency/'});
   const categorySchemas:Record<string,unknown>[]=[
     {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
       {"@type":"ListItem",position:1,name:"Home",item:"https://toolmera.com/"},
       {"@type":"ListItem",position:2,name:cat.label,item:categoryUrl}
     ]},
-    {"@context":"https://schema.org","@type":"ItemList",name:`${cat.label} tools`,itemListElement:list.map((tool,index)=>({
-      "@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com/${category}/${tool.slug}/`
-    }))}
+    {"@context":"https://schema.org","@type":"ItemList",name:`${cat.label} tools`,itemListElement:itemList}
   ];
   if(hub?.faq?.length){
     categorySchemas.push({"@context":"https://schema.org","@type":"FAQPage",mainEntity:hub.faq.map(item=>({
@@ -95,13 +95,19 @@ export default async function CategoryPage({params}:{params:Promise<{category:st
       <span className="eyebrow neonText">TOOLMERA / {cat.label.toUpperCase()}</span>
       <h1>{category==='website-analysis'?'Free Website Analysis Tools':cat.label}</h1>
       <p>{seo?.intro||`${cat.description} Fast, focused and designed with privacy in mind.`}</p>
-      <div className="categoryMeta"><span>{list.length} tools</span><span>Free to use</span><span>No account required</span></div>
+      <div className="categoryMeta"><span>{list.length+(category==='converters'?1:0)} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
 
     {popularLinks.length>0&&<section className="shell workflowLinks">
       <span className="sectionKicker">POPULAR TOOLS</span>
       <h2>Start with the highest-value workflows</h2>
       <div>{popularLinks.map(({item,tool})=>tool&&<Link href={`/${category}/${tool.slug}/`} key={item.id}>{item.anchor}<ArrowRight size={15}/></Link>)}</div>
+    </section>}
+
+    {category==='converters'&&<section className="shell workflowLinks">
+      <span className="sectionKicker">LIVE CURRENCY</span>
+      <h2>Convert currencies with hourly-updated reference rates</h2>
+      <div><Link href="/currency/">Open Currency Converter <ArrowRight size={15}/></Link><Link href="/currency/usd-to-inr/">USD to INR <ArrowRight size={15}/></Link><Link href="/currency/eur-to-usd/">EUR to USD <ArrowRight size={15}/></Link></div>
     </section>}
 
     {groupedCategoryTools[category]
