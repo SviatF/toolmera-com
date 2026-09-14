@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3, Globe2, Activity, Cpu, Radio, ScanLine } from 'lucide-react';
+import { ArrowRight, LockKeyhole, Zap, UserRoundCheck, ImageIcon, FileText, Calculator, Repeat2, TextCursorInput, Code2, QrCode, Clock3, Globe2, Activity, Cpu, Radio, ScanLine, CircleDollarSign } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
@@ -31,13 +31,13 @@ export default function Home() {
     "@type":"WebSite",
     name:"Toolmera",
     url:"https://toolmera.com/",
-    description:"Free online tools for files, calculators, converters, generators, time, developer tasks and website analysis."
+    description:"Free online tools for files, calculators, converters, currency exchange rates, generators, time, developer tasks and website analysis."
   };
   const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
   const toolCount = tools.length;
-  const categoryCount = categories.length;
+  const categoryCount = categories.length + 1;
 
   return <><Header/><main>
     <section className="hero">
@@ -49,7 +49,7 @@ export default function Home() {
           <h1>Every tool. <span>One place.</span></h1>
           <p>Fast, private online tools for files, numbers and everyday tasks. No sign-up. No clutter. Just results.</p>
           <ToolSearch tools={tools}/>
-          <div className="popular"><b>Popular:</b><Link href="/generators/qr-code-generator/">QR Code Generator</Link><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/generators/password-generator/">Password Generator</Link></div>
+          <div className="popular"><b>Popular:</b><Link href="/currency/">Currency Converter</Link><Link href="/generators/qr-code-generator/">QR Code Generator</Link><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/generators/password-generator/">Password Generator</Link></div>
         </div>
         <div className="heroAside heroTelemetry" aria-label="Toolmera live product telemetry">
           <div className="telemetryTop"><span className="telemetryLiveDot"/><b>TOOLMERA SYSTEM</b><small>LIVE</small></div>
@@ -76,7 +76,9 @@ export default function Home() {
 
     <section className="section shell" id="categories">
       <div className="sectionHead"><div><span className="sectionKicker">EXPLORE</span><h2>Browse by category</h2><p>One clean toolbox for every kind of work.</p></div></div>
-      <div className="categoryGrid">{categories.map(cat=>{const Icon=categoryIcons[cat.slug];const count=tools.filter(t=>t.category===cat.slug&&!t.country).length;return <Link className={`categoryCard accent-${cat.accent}`} href={`/${cat.slug}/`} key={cat.slug}><span className="categoryIcon"><Icon size={26}/></span><div><h3>{cat.label}</h3><p>{cat.description}</p></div><span>{count}+ tools <ArrowRight size={15}/></span></Link>})}</div>
+      <div className="categoryGrid">
+        {categories.map(cat=>{const Icon=categoryIcons[cat.slug];const count=tools.filter(t=>t.category===cat.slug&&!t.country).length;const card=<Link className={`categoryCard accent-${cat.accent}`} href={`/${cat.slug}/`} key={cat.slug}><span className="categoryIcon"><Icon size={26}/></span><div><h3>{cat.label}</h3><p>{cat.description}</p></div><span>{count}+ tools <ArrowRight size={15}/></span></Link>;return cat.slug==='converters'?<span key={`${cat.slug}-with-currency`} style={{display:'contents'}}>{card}<Link className="categoryCard accent-green" href="/currency/"><span className="categoryIcon"><CircleDollarSign size={26}/></span><div><h3>Currency Converter</h3><p>Convert global currencies with hourly-checked reference rates and exchange-rate trends.</p></div><span>30+ active pairs <ArrowRight size={15}/></span></Link></span>:card})}
+      </div>
     </section>
 
     <section className="shell trustStrip">
