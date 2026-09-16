@@ -17,6 +17,8 @@ const TextChunk=dynamic(()=>import('@/components/tool-experiences/TextExperience
 const DeveloperChunk=dynamic(()=>import('@/components/tool-experiences/DeveloperExperience').then(mod=>mod.DeveloperExperience),{ssr:false,loading:LoadingTool});
 const ImageChunk=dynamic(()=>import('@/components/tool-experiences/ImageExperience').then(mod=>mod.ImageExperience),{ssr:false,loading:LoadingTool});
 const PdfChunk=dynamic(()=>import('@/components/tool-experiences/PdfExperience').then(mod=>mod.PdfExperience),{ssr:false,loading:LoadingTool});
+const GeneralCalculatorsChunk=dynamic(()=>import('@/components/tool-experiences/GeneralCalculatorsExperience').then(mod=>mod.GeneralCalculatorsExperience),{ssr:false,loading:LoadingTool});
+const IndiaCalculatorsChunk=dynamic(()=>import('@/components/tool-experiences/IndiaCalculatorsExperience').then(mod=>mod.IndiaCalculatorsExperience),{ssr:false,loading:LoadingTool});
 
 const converterKinds=new Set(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed','data-storage','color-converter','time-zone']);
 const generatorKinds=new Set(['uuid-generator','password-generator','random-number-generator']);
@@ -25,6 +27,8 @@ const textKinds=new Set(['word-counter','case-converter','character-counter','re
 const developerKinds=new Set(['json-formatter','base64','url-encoder','slug-generator','jwt-decoder','json-to-csv','xml-formatter']);
 const imageKinds=new Set(['image-convert','image-compress','image-compress-jpg','image-compress-png','image-resize','image-crop','heic-convert']);
 const pdfKinds=new Set(['pdf-to-image','pdf-rotate','pdf-remove-pages','pdf-merge','pdf-split','images-to-pdf']);
+const generalCalculatorKinds=new Set(['age','bmi','interest','loan','roi','discount','simple-interest','date-difference','average']);
+const indiaCalculatorKinds=new Set(['emi','sip','fd','gst','cagr']);
 
 const DeferredToolExperience=dynamic(()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),{ssr:false,loading:LoadingTool});
 
@@ -39,5 +43,7 @@ export function LazyToolExperience({tool}:{tool:Tool}){
   if(developerKinds.has(tool.kind))return <DeveloperChunk tool={tool}/>;
   if(imageKinds.has(tool.kind))return <ImageChunk tool={tool}/>;
   if(pdfKinds.has(tool.kind))return <PdfChunk tool={tool}/>;
+  if(generalCalculatorKinds.has(tool.kind))return <GeneralCalculatorsChunk tool={tool}/>;
+  if(indiaCalculatorKinds.has(tool.kind))return <IndiaCalculatorsChunk tool={tool}/>;
   return <DeferredToolExperience tool={tool}/>;
 }
