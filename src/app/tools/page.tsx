@@ -5,7 +5,8 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
 import { ToolCard } from '@/components/ToolCard';
-import { categories, tools } from '@/data/tools';
+import { categories, tools, toolUrl } from '@/data/tools';
+import { seoPriorityTargets } from '@/data/seoPriorityTargets';
 
 export const metadata:Metadata={
   title:'Free Online Tools — Browse All Tools',
@@ -20,12 +21,19 @@ export default function AllToolsPage(){
     ...tools.map((tool,index)=>({"@type":"ListItem",position:index+1,name:tool.name,url:`https://toolmera.com${tool.country?`/${tool.country}/${tool.category}/${tool.slug}/`:`/${tool.category}/${tool.slug}/`}`})),
     {"@type":"ListItem",position:tools.length+1,name:'Currency Converter',url:'https://toolmera.com/currency/'}
   ]};
+  const priorityLinks=seoPriorityTargets.map(target=>({target,tool:tools.find(tool=>tool.id===target.id&&!tool.country)})).filter(row=>Boolean(row.tool));
   return <><Header/><main className="subPage">
     <section className="shell allToolsHero">
       <span className="eyebrow neonText">TOOLMERA / ALL TOOLS</span>
       <h1>Find the right tool.</h1>
       <p>Search the full Toolmera library or browse by category.</p>
       <ToolSearch tools={tools}/>
+    </section>
+
+    <section className="shell workflowLinks" aria-label="Popular tools">
+      <span className="sectionKicker">POPULAR TOOLS</span>
+      <h2>Start with common search and website workflows</h2>
+      <div>{priorityLinks.map(({target,tool})=>tool?<Link href={toolUrl(tool)} key={target.id}>{target.anchor}<ArrowRight size={15}/></Link>:null)}</div>
     </section>
 
     {categories.map(cat=>{
@@ -41,5 +49,5 @@ export default function AllToolsPage(){
       <div className="sectionHead"><div><span className="sectionKicker">LOCAL UTILITIES</span><h2>India tools</h2><p>Finance and tax calculators localized for India.</p></div></div>
       <div className="toolGrid">{tools.filter(t=>t.country==='in').map(t=><ToolCard key={t.id} tool={t}/>)}</div>
     </section>
-  </main><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(toolsSchema)}}/><Footer/></>
+  </main><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(toolsSchema)}}/><Footer/></>;
 }
