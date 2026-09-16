@@ -1,10 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LazyToolExperience } from '@/components/LazyToolExperience';
 import type { Tool } from '@/data/tools';
-import { getLocalizedPilotByToolId, type PilotLocale } from '@/data/localizedToolPilot';
+import type { PilotLocale } from '@/data/localizedToolPilot';
 
 type Dict = Record<string,string>;
 
@@ -92,20 +92,29 @@ export function LocalizedUi({locale,children}:{locale:PilotLocale;children:React
 }
 
 export function LocalizedToolExperience({tool,locale}:{tool:Tool;locale:PilotLocale}){
-  const translatedTool=useMemo<Tool>(()=>{
-    const localized=getLocalizedPilotByToolId(locale,tool.id);
-    if(!localized)return tool;
-    return {
-      ...tool,
-      name:localized.name,
-      short:localized.intro,
-      title:localized.title,
-      description:localized.description,
-      intro:localized.intro,
-      benefits:localized.benefits,
-      faq:localized.faq,
-      categoryLabel:categoryLabels[locale][tool.category]||tool.categoryLabel,
-    };
+  const [translatedTool,setTranslatedTool]=useState<Tool|null>(null);
+
+  useEffect(()=>{
+    let active=true;
+    setTranslatedTool(null);
+    import('@/data/localizedToolPilot').then(({getLocalizedPilotByToolId})=>{
+      if(!active)return;
+      const localized=getLocalizedPilotByToolId(locale,tool.id);
+      setTranslatedTool(localized?{
+        ...tool,
+        name:localized.name,
+        short:localized.intro,
+        title:localized.title,
+        description:localized.description,
+        intro:localized.intro,
+        benefits:localized.benefits,
+        faq:localized.faq,
+        categoryLabel:categoryLabels[locale][tool.category]||tool.categoryLabel,
+      }:tool);
+    });
+    return()=>{active=false};
   },[locale,tool]);
+
+  if(!translatedTool)return <section className={`toolExperience accent-${tool.accent}`} aria-busy="true"><div className="experienceTop"><div><span className="eyebrow">TOOLMERA</span><div className="experienceTitle">Loading localized tool…</div></div></div></section>;
   return <LocalizedUi locale={locale}><LazyToolExperience tool={translatedTool}/></LocalizedUi>;
 }
