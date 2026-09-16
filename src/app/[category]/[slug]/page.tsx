@@ -25,6 +25,7 @@ import { websiteAnalyzerBenefits, websiteAnalyzerSeo } from '@/data/websiteAnaly
 import { httpStatusCheckerSeo } from '@/data/httpStatusCheckerSeo';
 import { applyCommandCenterIntentSeo } from '@/data/commandCenterIntentSeo';
 import { internalLinkBoostsFrom } from '@/data/internalLinkBoosts';
+import { getLocalizedPilotByToolId, localizedAlternates, localizedPath, pilotLocaleMeta, type PilotLocale } from '@/data/localizedToolPilot';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
@@ -82,11 +83,12 @@ export async function generateMetadata({params}:{params:Promise<{category:string
   const seo=seoForTool(tool.id);
   const title=freeTitle(seo?.title||tool.title);
   const description=seo?.description||tool.description;
-  const url=`https://toolmera.com/${category}/${slug}/`;
+  const path=`/${category}/${slug}/`;const url=`https://toolmera.com${path}`;
+  const hasLocalizedPilot=Boolean(getLocalizedPilotByToolId('de',tool.id));
   return{
     title,
     description,
-    alternates:{canonical:url},
+    alternates:{canonical:url,...(hasLocalizedPilot?{languages:localizedAlternates(tool.id,path)}:{})},
     openGraph:{title,description,url,siteName:'Toolmera',type:'website'},
     twitter:{card:'summary',title,description}
   }
@@ -111,9 +113,10 @@ export default async function ToolPage({params}:{params:Promise<{category:string
   const semantic=semanticRelatedTools(tool,tools,8).filter(item=>!workflowIds.has(item.id));
   const related=(semantic.length?semantic:semanticRelatedTools(tool,tools,4)).filter(item=>!workflowIds.has(item.id)).slice(0,4);
   const howTo=howToForTool(tool);
-  const url=`https://toolmera.com/${category}/${slug}/`;
+  const path=`/${category}/${slug}/`;const url=`https://toolmera.com${path}`;
   const description=seo?.description||tool.description;
   const faq=seo?.faq||tool.faq;
+  const hasLocalizedPilot=Boolean(getLocalizedPilotByToolId('de',tool.id));
   const schemas:Record<string,unknown>[]=[
     {"@context":"https://schema.org","@type":"WebApplication",name:tool.name,applicationCategory:"UtilitiesApplication",operatingSystem:"Any",url,description,offers:{"@type":"Offer",price:"0",priceCurrency:"USD"}},
     {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
@@ -135,6 +138,11 @@ export default async function ToolPage({params}:{params:Promise<{category:string
       <h1>{h1ForTool(tool)}</h1>
       <p>{seo?.intro||tool.intro}</p>
     </section>
+
+    {hasLocalizedPilot&&<section className="shell workflowLinks" aria-label="Language versions">
+      <span className="sectionKicker">LANGUAGE VERSIONS</span>
+      <div><Link href={path}>English<ArrowRight size={14}/></Link>{(['de','hi','ru'] as PilotLocale[]).map(locale=>{const localized=localizedPath(locale,tool.id);return localized?<Link href={localized} key={locale}>{pilotLocaleMeta[locale].nativeLabel}<ArrowRight size={14}/></Link>:null})}</div>
+    </section>}
 
     <div className="shell"><ToolExperience tool={tool}/></div>
 
