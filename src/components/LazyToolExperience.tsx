@@ -15,12 +15,16 @@ const GeneratorsChunk=dynamic(()=>import('@/components/tool-experiences/Generato
 const TimeChunk=dynamic(()=>import('@/components/tool-experiences/TimeExperience').then(mod=>mod.TimeExperience),{ssr:false,loading:LoadingTool});
 const TextChunk=dynamic(()=>import('@/components/tool-experiences/TextExperience').then(mod=>mod.TextExperience),{ssr:false,loading:LoadingTool});
 const DeveloperChunk=dynamic(()=>import('@/components/tool-experiences/DeveloperExperience').then(mod=>mod.DeveloperExperience),{ssr:false,loading:LoadingTool});
+const ImageChunk=dynamic(()=>import('@/components/tool-experiences/ImageExperience').then(mod=>mod.ImageExperience),{ssr:false,loading:LoadingTool});
+const PdfChunk=dynamic(()=>import('@/components/tool-experiences/PdfExperience').then(mod=>mod.PdfExperience),{ssr:false,loading:LoadingTool});
 
 const converterKinds=new Set(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed','data-storage','color-converter','time-zone']);
 const generatorKinds=new Set(['uuid-generator','password-generator','random-number-generator']);
 const timeKinds=new Set(['unix-timestamp','date-calculator','time-duration']);
 const textKinds=new Set(['word-counter','case-converter','character-counter','remove-duplicate-lines','sort-lines','text-diff']);
 const developerKinds=new Set(['json-formatter','base64','url-encoder','slug-generator','jwt-decoder','json-to-csv','xml-formatter']);
+const imageKinds=new Set(['image-convert','image-compress','image-compress-jpg','image-compress-png','image-resize','image-crop','heic-convert']);
+const pdfKinds=new Set(['pdf-to-image','pdf-rotate','pdf-remove-pages','pdf-merge','pdf-split','images-to-pdf']);
 
 const DeferredToolExperience=dynamic(()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),{ssr:false,loading:LoadingTool});
 
@@ -33,5 +37,7 @@ export function LazyToolExperience({tool}:{tool:Tool}){
   if(timeKinds.has(tool.kind))return <TimeChunk tool={tool}/>;
   if(textKinds.has(tool.kind))return <TextChunk tool={tool}/>;
   if(developerKinds.has(tool.kind))return <DeveloperChunk tool={tool}/>;
+  if(imageKinds.has(tool.kind))return <ImageChunk tool={tool}/>;
+  if(pdfKinds.has(tool.kind))return <PdfChunk tool={tool}/>;
   return <DeferredToolExperience tool={tool}/>;
 }
