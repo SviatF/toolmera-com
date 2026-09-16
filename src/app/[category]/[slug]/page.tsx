@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChevronRight, ShieldCheck, Zap, UserRoundCheck, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { ToolExperience } from '@/components/ToolExperience';
+import { LazyToolExperience } from '@/components/LazyToolExperience';
 import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolUrl } from '@/data/tools';
 import { toolSeoContent } from '@/data/seoContent';
@@ -144,7 +144,7 @@ export default async function ToolPage({params}:{params:Promise<{category:string
       <div><Link href={path}>English<ArrowRight size={14}/></Link>{(['de','hi','ru'] as PilotLocale[]).map(locale=>{const localized=localizedPath(locale,tool.id);return localized?<Link href={localized} key={locale}>{pilotLocaleMeta[locale].nativeLabel}<ArrowRight size={14}/></Link>:null})}</div>
     </section>}
 
-    <div className="shell"><ToolExperience tool={tool}/></div>
+    <div className="shell"><LazyToolExperience tool={tool}/></div>
 
     <section className="shell toolTrustRow">
       <div><ShieldCheck/><span><strong>{tool.kind==='website-analysis'?'Public-data only':'Privacy-minded'}</strong><small>{tool.kind==='website-analysis'?'Live public HTTP/HTTPS checks':'Browser-first whenever possible'}</small></span></div>
