@@ -6,6 +6,7 @@ import { Footer } from '@/components/Footer';
 import { ToolSearch } from '@/components/ToolSearch';
 import { ToolCard } from '@/components/ToolCard';
 import { categories, tools, toolUrl } from '@/data/tools';
+import { seoPriorityTargets } from '@/data/seoPriorityTargets';
 
 export const metadata: Metadata = {
   alternates: { canonical: 'https://toolmera.com/' },
@@ -34,6 +35,7 @@ export default function Home() {
     description:"Free online tools for files, calculators, converters, currency exchange rates, generators, time, developer tasks and website analysis."
   };
   const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
+  const priorityLinks=seoPriorityTargets.map(target=>({target,tool:tools.find(tool=>tool.id===target.id&&!tool.country)})).filter(row=>Boolean(row.tool));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
   const toolCount = tools.length;
@@ -72,6 +74,12 @@ export default function Home() {
     <section className="section shell featuredSection">
       <div className="sectionHead"><div><span className="sectionKicker">START HERE</span><h2>Featured tools</h2><p>The fastest routes to common tasks.</p></div><Link href="/tools/">See all tools <ArrowRight size={17}/></Link></div>
       <div className="toolGrid featuredGrid">{featured.map(t=><ToolCard key={t.id} tool={t}/>)}</div>
+    </section>
+
+    <section className="shell workflowLinks" aria-label="Popular search and website tools">
+      <span className="sectionKicker">POPULAR WORKFLOWS</span>
+      <h2>Website, SEO and everyday tools</h2>
+      <div>{priorityLinks.map(({target,tool})=>tool?<Link href={toolUrl(tool)} key={target.id}>{target.anchor}<ArrowRight size={15}/></Link>:null)}</div>
     </section>
 
     <section className="section shell" id="categories">
