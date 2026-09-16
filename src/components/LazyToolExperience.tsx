@@ -14,11 +14,13 @@ const ConvertersChunk=dynamic(()=>import('@/components/tool-experiences/Converte
 const GeneratorsChunk=dynamic(()=>import('@/components/tool-experiences/GeneratorsExperience').then(mod=>mod.GeneratorsExperience),{ssr:false,loading:LoadingTool});
 const TimeChunk=dynamic(()=>import('@/components/tool-experiences/TimeExperience').then(mod=>mod.TimeExperience),{ssr:false,loading:LoadingTool});
 const TextChunk=dynamic(()=>import('@/components/tool-experiences/TextExperience').then(mod=>mod.TextExperience),{ssr:false,loading:LoadingTool});
+const DeveloperChunk=dynamic(()=>import('@/components/tool-experiences/DeveloperExperience').then(mod=>mod.DeveloperExperience),{ssr:false,loading:LoadingTool});
 
 const converterKinds=new Set(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed','data-storage','color-converter','time-zone']);
 const generatorKinds=new Set(['uuid-generator','password-generator','random-number-generator']);
 const timeKinds=new Set(['unix-timestamp','date-calculator','time-duration']);
 const textKinds=new Set(['word-counter','case-converter','character-counter','remove-duplicate-lines','sort-lines','text-diff']);
+const developerKinds=new Set(['json-formatter','base64','url-encoder','slug-generator','jwt-decoder','json-to-csv','xml-formatter']);
 
 const DeferredToolExperience=dynamic(()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),{ssr:false,loading:LoadingTool});
 
@@ -30,5 +32,6 @@ export function LazyToolExperience({tool}:{tool:Tool}){
   if(generatorKinds.has(tool.kind))return <GeneratorsChunk tool={tool}/>;
   if(timeKinds.has(tool.kind))return <TimeChunk tool={tool}/>;
   if(textKinds.has(tool.kind))return <TextChunk tool={tool}/>;
+  if(developerKinds.has(tool.kind))return <DeveloperChunk tool={tool}/>;
   return <DeferredToolExperience tool={tool}/>;
 }
