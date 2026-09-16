@@ -22,17 +22,22 @@ const QrCodeChunk=dynamic(
   {ssr:false,loading:LoadingTool}
 );
 
+const ConvertersChunk=dynamic(
+  ()=>import('@/components/tool-experiences/ConvertersExperience').then(mod=>mod.ConvertersExperience),
+  {ssr:false,loading:LoadingTool}
+);
+
+const converterKinds=new Set(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed','data-storage','color-converter','time-zone']);
+
 const DeferredToolExperience=dynamic(
   ()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),
   {ssr:false,loading:LoadingTool}
 );
 
-// High-opportunity tools get real isolated chunks so those pages no longer need the
-// monolithic ToolExperience bundle. The remaining tools stay on the deferred fallback
-// until their domain chunk is extracted in later passes.
 export function LazyToolExperience({tool}:{tool:Tool}){
   if(tool.kind==='website-analysis')return <WebsiteAnalysisChunk tool={tool}/>;
   if(tool.kind==='percentage')return <PercentageChunk tool={tool}/>;
   if(tool.kind==='qr-generator')return <QrCodeChunk tool={tool}/>;
+  if(converterKinds.has(tool.kind))return <ConvertersChunk tool={tool}/>;
   return <DeferredToolExperience tool={tool}/>;
 }
