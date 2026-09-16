@@ -13,10 +13,12 @@ const QrCodeChunk=dynamic(()=>import('@/components/tool-experiences/QrCodeExperi
 const ConvertersChunk=dynamic(()=>import('@/components/tool-experiences/ConvertersExperience').then(mod=>mod.ConvertersExperience),{ssr:false,loading:LoadingTool});
 const GeneratorsChunk=dynamic(()=>import('@/components/tool-experiences/GeneratorsExperience').then(mod=>mod.GeneratorsExperience),{ssr:false,loading:LoadingTool});
 const TimeChunk=dynamic(()=>import('@/components/tool-experiences/TimeExperience').then(mod=>mod.TimeExperience),{ssr:false,loading:LoadingTool});
+const TextChunk=dynamic(()=>import('@/components/tool-experiences/TextExperience').then(mod=>mod.TextExperience),{ssr:false,loading:LoadingTool});
 
 const converterKinds=new Set(['unit-length','unit-temperature','unit-weight','unit-volume','unit-area','unit-speed','data-storage','color-converter','time-zone']);
 const generatorKinds=new Set(['uuid-generator','password-generator','random-number-generator']);
 const timeKinds=new Set(['unix-timestamp','date-calculator','time-duration']);
+const textKinds=new Set(['word-counter','case-converter','character-counter','remove-duplicate-lines','sort-lines','text-diff']);
 
 const DeferredToolExperience=dynamic(()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),{ssr:false,loading:LoadingTool});
 
@@ -27,5 +29,6 @@ export function LazyToolExperience({tool}:{tool:Tool}){
   if(converterKinds.has(tool.kind))return <ConvertersChunk tool={tool}/>;
   if(generatorKinds.has(tool.kind))return <GeneratorsChunk tool={tool}/>;
   if(timeKinds.has(tool.kind))return <TimeChunk tool={tool}/>;
+  if(textKinds.has(tool.kind))return <TextChunk tool={tool}/>;
   return <DeferredToolExperience tool={tool}/>;
 }
