@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CurrencyHubConverter } from '@/components/CurrencyConverter';
 import { currencyPairs } from '@/data/currencyPairs';
+import { localizedAlternates, localizedPath, pilotLocaleMeta, type PilotLocale } from '@/data/localizedToolPilot';
 
 export const metadata:Metadata={
   title:'Currency Converter — Exchange Rates Today',
   description:'Convert currencies with the latest official-source reference rates. Compare common amounts, inverse rates and demand-gated currency-pair trends.',
-  alternates:{canonical:'https://toolmera.com/currency/'},
+  alternates:{canonical:'https://toolmera.com/currency/',languages:localizedAlternates('currency','/currency/')},
   openGraph:{title:'Currency Converter — Exchange Rates Today',description:'Convert currencies with the latest official-source reference rates and pair-specific trend data.',url:'https://toolmera.com/currency/',siteName:'Toolmera',type:'website'},
   twitter:{card:'summary',title:'Currency Converter — Exchange Rates Today',description:'Currency converter with official-source reference rates and pair-specific trend data.'},
 };
@@ -38,6 +39,7 @@ export default function CurrencyHubPage(){
       <p>Convert supported global currencies with the latest stored reference rates. Dedicated pair pages cover the strongest search intents with common amounts, inverse rates and 7/30/90-day trend context.</p>
       <div className="categoryMeta"><span>{currencyPairs.length} active pair pages</span><span>Snapshots checked hourly</span><span>No account required</span></div>
     </section>
+    <section className="shell workflowLinks" aria-label="Language versions"><span className="sectionKicker">LANGUAGE VERSIONS</span><div><Link href="/currency/">English<ArrowRight size={14}/></Link>{(['de','hi','ru'] as PilotLocale[]).map(locale=>{const path=localizedPath(locale,'currency');return path?<Link href={path} key={locale}>{pilotLocaleMeta[locale].nativeLabel}<ArrowRight size={14}/></Link>:null})}</div></section>
     <section className="shell section"><CurrencyHubConverter/></section>
     <section className="shell categoryGuide">
       <article className="seoArticle"><h2>Convert currencies without hunting for a separate calculator</h2><p>Choose a source currency, target currency and amount on the main converter. Toolmera derives supported cross-rates from the same stored reference-rate graph used by the dedicated pair pages, so the calculator can cover more combinations than the SEO URL set.</p></article>
