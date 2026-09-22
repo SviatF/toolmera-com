@@ -41,6 +41,66 @@ const intentBoosts: Record<string, ToolSeoSection> = {
       { label: '18% example', value: '₹1,180 → ₹1,000 + ₹180 GST' }
     ]
   },
+  'rotate-pdf': {
+    title: 'Rotate PDF online and save the page rotation permanently',
+    paragraphs: [
+      'Use Rotate PDF when pages are sideways or upside down and the correction needs to remain in the downloaded file. Upload the PDF, choose all pages, odd pages, even pages or a custom page selection, then rotate by 90 degrees clockwise, 90 degrees counter-clockwise or 180 degrees.',
+      'Toolmera creates a new PDF with the selected page rotations saved into the document. The original file is not modified, and the browser-side workflow is designed for fixing page orientation rather than only rotating the on-screen preview.'
+    ],
+    facts: [
+      { label: 'Page selection', value: 'All, odd, even or custom pages' },
+      { label: 'Rotation', value: '90° clockwise, 90° counter-clockwise or 180°' },
+      { label: 'Output', value: 'New PDF with rotation saved' }
+    ]
+  },
+  'length': {
+    title: 'Converter of length measurement units: metric and Imperial',
+    paragraphs: [
+      'If you need a converter of length measurement units, this page converts one-dimensional distance and size values between millimeters, centimeters, meters, kilometers, inches, feet, yards and miles. Enter a value once, choose the source and target units, and the converted measurement is calculated immediately.',
+      'Use it for metric-to-Imperial and Imperial-to-metric work such as meters to feet, centimeters to inches, kilometers to miles and the reverse conversions. Area and volume are separate measurement types, so square or cubic units should use the dedicated Area or Volume Converter instead.'
+    ],
+    facts: [
+      { label: 'Metric', value: 'mm, cm, m, km' },
+      { label: 'Imperial / US', value: 'in, ft, yd, mi' },
+      { label: 'Measurement type', value: 'Length / distance' }
+    ]
+  },
+  'website-traffic-checker': {
+    title: 'Domain traffic ranking: compare relative website popularity',
+    paragraphs: [
+      'Use the domain traffic ranking view to compare a website’s relative popularity in the available public ranking dataset. A lower numerical rank represents a stronger position in that dataset, while a higher number represents a weaker relative position. The current rank is shown together with recent history so one observation is not treated as the whole story.',
+      'This is a ranking and popularity signal, not a claim about an exact number of monthly visitors. Compare the same metrics across competitor domains, watch whether rank improves or declines over time, and use first-party analytics when an exact traffic count is required.'
+    ],
+    facts: [
+      { label: 'Ranking direction', value: 'Lower numerical rank is stronger' },
+      { label: 'Trend', value: 'Up to 30 days of available rank history' },
+      { label: 'Exact visitors', value: 'Not inferred from public rank' }
+    ]
+  },
+  'date-calculator': {
+    title: 'Date calculator to add days, weeks, months or years',
+    paragraphs: [
+      'Use this date calculator to add time to a starting date when you need a future deadline, renewal date or schedule date. Choose Add, then enter any combination of years, months, weeks and days. The result includes the calculated calendar date and its weekday.',
+      'For example, you can add 45 days to a date, add 6 weeks, or add 2 months and 10 days in one calculation. Calendar months are handled as calendar units rather than being replaced with a fixed 30-day assumption, which matters around shorter months and end-of-month dates.'
+    ],
+    facts: [
+      { label: 'Add units', value: 'Years, months, weeks and days' },
+      { label: 'Combined input', value: 'Multiple date units in one calculation' },
+      { label: 'Result', value: 'New calendar date and weekday' }
+    ]
+  },
+  'unix-timestamp': {
+    title: 'Convert Linux time to a readable date and time',
+    paragraphs: [
+      'If you need to convert Linux time, the value usually follows the Unix epoch convention: elapsed seconds since 1970-01-01 00:00:00 UTC. Paste the timestamp into Toolmera to convert it to a readable UTC date and your local date-time representation.',
+      'Linux and Unix workflows can also expose millisecond timestamps, especially in JavaScript, APIs and application logs. Check whether the source value is in seconds or milliseconds before interpreting it, and use the reverse converter when you need to turn a date back into Unix epoch time.'
+    ],
+    facts: [
+      { label: 'Linux / Unix epoch', value: '1970-01-01 00:00:00 UTC' },
+      { label: 'Supported precision', value: 'Seconds and milliseconds' },
+      { label: 'Output', value: 'UTC and local readable date-time' }
+    ]
+  },
   'technology-checker': {
     title: 'Detect website technologies from public HTML and response headers',
     paragraphs: [
