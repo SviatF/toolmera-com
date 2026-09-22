@@ -101,6 +101,69 @@ const intentBoosts: Record<string, ToolSeoSection> = {
       { label: 'Output', value: 'UTC and local readable date-time' }
     ]
   },
+  'compress-jpg': {
+    title: 'Decrease the size of a JPG while keeping JPEG output',
+    paragraphs: [
+      'To decrease the size of a JPG, upload the JPEG image and lower the compression quality until the output reaches a useful balance between file size and visible detail. Toolmera re-encodes the image as JPG, so this workflow reduces storage size without changing the result to WebP or PNG.',
+      'Compare the original and compressed byte size after each run instead of relying on a fixed reduction promise. If a photo is much larger in pixel dimensions than the final use requires, resize it first and then compress the resized JPG for a stronger overall reduction.'
+    ],
+    facts: [
+      { label: 'Input', value: 'JPG / JPEG' },
+      { label: 'Output', value: 'JPG' },
+      { label: 'Size control', value: 'Adjustable JPEG quality' },
+      { label: 'Verification', value: 'Original vs compressed file size' }
+    ]
+  },
+  'speed': {
+    title: 'Convert to MPH from km/h, m/s, ft/s or knots',
+    paragraphs: [
+      'Use the speed converter when you need to convert to MPH from another supported speed unit. Enter the source value, choose kilometers per hour, meters per second, feet per second or knots, and select miles per hour as the target to get the MPH result immediately.',
+      'The same value can also be compared across all supported speed units, which is useful for road speeds, engineering data, marine or aviation values and technical sources that report velocity in a different unit.'
+    ],
+    facts: [
+      { label: 'Target', value: 'Miles per hour (MPH)' },
+      { label: 'Sources', value: 'km/h, m/s, ft/s and knots' },
+      { label: 'Direction', value: 'Two-way speed conversion' }
+    ]
+  },
+  'random-number': {
+    title: 'Decimal random number generator with custom precision',
+    paragraphs: [
+      'Use the decimal random number generator when you need random values with fractional digits instead of whole integers. Set the minimum and maximum range, choose decimal output, select the required precision and generate one value or a list inside that range.',
+      'Decimal precision controls how many digits appear after the decimal point. This makes the generator useful for test data, simulations, examples and other workflows where a bounded random decimal value is more useful than an integer.'
+    ],
+    facts: [
+      { label: 'Output modes', value: 'Integer or decimal' },
+      { label: 'Range', value: 'Custom minimum and maximum' },
+      { label: 'Decimal control', value: 'Custom precision' },
+      { label: 'Quantity', value: 'Single value or list' }
+    ]
+  },
+  'time-duration': {
+    title: 'Time duration calculator: exact elapsed difference between two dates or times',
+    paragraphs: [
+      'A time duration calculator measures the exact elapsed interval between a start and end date-time. Toolmera breaks the interval into whole days plus remaining hours, minutes and seconds, and also shows total elapsed hours, minutes and seconds for workflows that need one continuous duration.',
+      'Calendar years and months are not fixed-duration units, so this tool does not label an elapsed interval as an exact number of years or months. If you need a calendar-style difference in years, months and days, use the Date Difference Calculator; use this page when the goal is exact clock-time duration.'
+    ],
+    facts: [
+      { label: 'Elapsed breakdown', value: 'Days, hours, minutes and seconds' },
+      { label: 'Totals', value: 'Total hours, minutes and seconds' },
+      { label: 'Calendar years/months', value: 'Use Date Difference Calculator' }
+    ]
+  },
+  'website-analyzer': {
+    title: 'Analyse my website: run a live SEO and technical page check',
+    paragraphs: [
+      'If you want to analyse your website, enter a public HTTP or HTTPS URL and Toolmera inspects the live page response for on-page SEO and technical signals. The analysis covers the title, meta description, H1 structure, canonical URL, robots directives, image ALT coverage, internal and external links, schema, redirects and the final URL.',
+      'The broader report also checks public robots.txt and sitemap context, security headers and detectable technology fingerprints when those signals are available. This is a live public-page analysis rather than a full multi-page crawl, private analytics report or Search Console index-coverage check.'
+    ],
+    facts: [
+      { label: 'SEO', value: 'Title, metadata, headings, canonical and robots' },
+      { label: 'Crawl context', value: 'robots.txt and XML sitemap' },
+      { label: 'Technical', value: 'Redirects, headers and public technologies' },
+      { label: 'Scope', value: 'Submitted public page plus crawl-control signals' }
+    ]
+  },
   'technology-checker': {
     title: 'Detect website technologies from public HTML and response headers',
     paragraphs: [
