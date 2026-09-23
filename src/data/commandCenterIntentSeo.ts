@@ -164,6 +164,66 @@ const intentBoosts: Record<string, ToolSeoSection> = {
       { label: 'Scope', value: 'Submitted public page plus crawl-control signals' }
     ]
   },
+  'redirect-checker': {
+    title: '301 redirect checker: trace permanent redirects to the final URL',
+    paragraphs: [
+      'Use this 301 redirect checker to verify that an old or alternate URL returns the intended permanent redirect and reaches the correct final destination. Toolmera follows the live HTTP chain and shows each hop, its status code and any Location target returned by the server.',
+      'A clean migration usually sends an old URL directly to the most relevant final URL. If the checker shows several intermediate 301, 302, 307 or 308 responses, review the chain and update redirect rules or internal links where practical instead of assuming the browser-visible destination tells the whole story.'
+    ],
+    facts: [
+      { label: 'Permanent redirects', value: '301 and 308' },
+      { label: 'Temporary redirects', value: '302, 303 and 307' },
+      { label: 'Output', value: 'Every hop plus final URL and status' }
+    ]
+  },
+  'meta-tag-checker': {
+    title: 'Check metadata of a website from the live HTML response',
+    paragraphs: [
+      'To check metadata of a website, submit the public page URL and Toolmera reads the metadata returned in the live HTML. The report includes the page title, meta description, canonical URL, robots directives, viewport and language signals together with supported Open Graph and Twitter fields.',
+      'This is useful after a CMS edit, migration or deployment because the metadata configured in an editor may differ from the values actually served to crawlers. Re-run the live check after changes to confirm the deployed page contains the intended metadata.'
+    ],
+    facts: [
+      { label: 'Search metadata', value: 'Title, description, canonical and robots' },
+      { label: 'Page context', value: 'Viewport, language and charset' },
+      { label: 'Social metadata', value: 'Open Graph and Twitter fields' }
+    ]
+  },
+  'sitemap-checker': {
+    title: 'Check sitemap.xml availability, type and submitted entries',
+    paragraphs: [
+      'Use the sitemap checker to check a live sitemap.xml URL or sitemap index before relying on it for search-engine discovery. Toolmera verifies whether the resource is reachable, identifies a URL set versus a sitemap index, counts URLs or child sitemaps and reports lastmod coverage when those tags are present.',
+      'The preview helps confirm that the sitemap contains the URLs you expect rather than an old domain, staging paths or unrelated entries. A reachable sitemap can help discovery, but it does not guarantee that every listed page will be crawled or indexed.'
+    ],
+    facts: [
+      { label: 'Availability', value: 'Live HTTP response' },
+      { label: 'Types', value: 'URL set or sitemap index' },
+      { label: 'Checks', value: 'Entry counts, lastmod coverage and sample URLs' }
+    ]
+  },
+  'car-emi-in': {
+    title: 'Car loan EMI calculator with down payment: finance only the remaining amount',
+    paragraphs: [
+      'Use this car loan EMI calculator with down payment when you know the vehicle or on-road price and the amount you plan to pay upfront. Toolmera subtracts the down payment from the vehicle price to calculate the financed principal, then uses that principal together with the annual interest rate and tenure to estimate the monthly EMI.',
+      'For example, a ₹12,00,000 vehicle price with a ₹2,00,000 down payment produces a ₹10,00,000 financed principal before lender-specific fees or other financed charges. Increase the down payment to compare how a smaller principal changes monthly EMI, total interest and total repayment.'
+    ],
+    facts: [
+      { label: 'Financed principal', value: 'Vehicle price − down payment' },
+      { label: 'Inputs', value: 'Price, down payment, annual rate and tenure' },
+      { label: 'Outputs', value: 'EMI, interest, repayment and financed amount' }
+    ]
+  },
+  'ssl-checker': {
+    title: 'Check HTTPS availability, HTTP-to-HTTPS redirect and HSTS',
+    paragraphs: [
+      'Use the SSL Checker to check HTTPS on a public website and verify the transport-security signals visible from the live response. Toolmera reports whether the HTTPS version is reachable through a secure connection, whether an HTTP request redirects to HTTPS when that check is available, and whether the final HTTPS response sends an HSTS header.',
+      'These checks answer practical deployment questions such as whether visitors can reach the site securely and whether HTTP traffic is upgraded to HTTPS. They do not replace certificate-chain forensics, vulnerability scanning or a full TLS configuration audit.'
+    ],
+    facts: [
+      { label: 'HTTPS', value: 'Secure connection check' },
+      { label: 'Redirect', value: 'HTTP → HTTPS when verifiable' },
+      { label: 'HSTS', value: 'Final response header check' }
+    ]
+  },
   'technology-checker': {
     title: 'Detect website technologies from public HTML and response headers',
     paragraphs: [
