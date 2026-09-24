@@ -25,7 +25,7 @@ import { websiteAnalyzerBenefits, websiteAnalyzerSeo } from '@/data/websiteAnaly
 import { httpStatusCheckerSeo } from '@/data/httpStatusCheckerSeo';
 import { applyCommandCenterIntentSeo } from '@/data/commandCenterIntentSeo';
 import { internalLinkBoostsFrom } from '@/data/internalLinkBoosts';
-import { getLocalizedPilotByToolId, localizedAlternates, localizedPath, pilotLocaleMeta, type PilotLocale } from '@/data/localizedToolPilot';
+import { getLocalizedPilotByToolId, localizedAlternates, localizedPath, pilotLocaleMeta, type PilotLocale } from '@/data/localizedToolRegistry';
 import { freeTitle } from '@/lib/seo';
 import { howToForTool, semanticRelatedTools } from '@/lib/toolRelations';
 
