@@ -1,4 +1,4 @@
-import { LocalizedPilotHub, localizedHubMetadata } from '@/components/LocalizedPilotPage';
+import { LocalizedScaleHub, localizedScaleHubMetadata } from '@/components/LocalizedScalePage';
 
-export const metadata=localizedHubMetadata('hi');
-export default function HindiHub(){return <LocalizedPilotHub locale="hi"/>}
+export const metadata=localizedScaleHubMetadata('hi');
+export default function HindiHub(){return <LocalizedScaleHub locale="hi"/>}
