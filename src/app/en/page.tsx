@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { ArrowRight, ChevronRight, Globe2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { localizedPilotTools } from '@/data/localizedToolPilot';
+import { localizedPilotTools } from '@/data/localizedToolRegistry';
 import { tools, toolUrl } from '@/data/tools';
 
-const pilotIds=localizedPilotTools.de.map(item=>item.toolId);
+const localizedIds=localizedPilotTools.de.map(item=>item.toolId);
 
 const languages={
   en:'https://toolmera.com/en/',
@@ -17,11 +17,11 @@ const languages={
 };
 
 export const metadata:Metadata={
-  title:'15 Free Online Tools — English',
-  description:'Use 15 selected Toolmera calculators, converters, image, PDF and website tools in English, with matching German, Hindi and Russian versions.',
+  title:'Free Online Tools — English | Toolmera',
+  description:'Browse Toolmera calculators, converters, image, PDF, text, developer, time and website tools in English with matching German, Hindi and Russian versions.',
   alternates:{canonical:'https://toolmera.com/en/',languages},
-  openGraph:{title:'15 Free Online Tools — English',description:'Selected Toolmera tools with matching multilingual versions.',url:'https://toolmera.com/en/',siteName:'Toolmera',type:'website',locale:'en_US'},
-  twitter:{card:'summary',title:'15 Free Online Tools — English',description:'Selected Toolmera tools with German, Hindi and Russian versions.'},
+  openGraph:{title:'Free Online Tools — English | Toolmera',description:'Toolmera tools with matching German, Hindi and Russian versions.',url:'https://toolmera.com/en/',siteName:'Toolmera',type:'website',locale:'en_US'},
+  twitter:{card:'summary',title:'Free Online Tools — English | Toolmera',description:'Toolmera tools with German, Hindi and Russian versions.'},
 };
 
 function englishItem(toolId:string){
@@ -31,21 +31,21 @@ function englishItem(toolId:string){
 }
 
 export default function EnglishLocalizedHub(){
-  const items=pilotIds.map(englishItem).filter((item):item is NonNullable<typeof item>=>Boolean(item));
+  const items=localizedIds.map(englishItem).filter((item):item is NonNullable<typeof item>=>Boolean(item));
   const schemas=[
-    {"@context":"https://schema.org","@type":"CollectionPage",name:'15 Free Online Tools — English',url:'https://toolmera.com/en/',description:'Selected English Toolmera tools with matching German, Hindi and Russian versions.',inLanguage:'en'},
+    {"@context":"https://schema.org","@type":"CollectionPage",name:'Free Online Tools — English',url:'https://toolmera.com/en/',description:'English Toolmera tools with matching German, Hindi and Russian versions.',inLanguage:'en'},
     {"@context":"https://schema.org","@type":"ItemList",numberOfItems:items.length,itemListElement:items.map((item,index)=>({"@type":"ListItem",position:index+1,name:item.name,url:`https://toolmera.com${item.href}`}))},
   ];
   return <><Header/><main className="subPage" lang="en">
     <section className="shell categoryHero compactHero">
       <div className="breadcrumbs"><Link href="/">Home</Link><ChevronRight/><span>English</span></div>
       <span className="eyebrow neonText">TOOLMERA / ENGLISH</span>
-      <h1>15 free online tools in English</h1>
-      <p>A focused set of Toolmera calculators, converters, image, PDF and website tools with matching German, Hindi and Russian versions.</p>
+      <h1>Free online tools in English</h1>
+      <p>Browse the current global Toolmera tool set with matching German, Hindi and Russian versions for the same workflows.</p>
       <div className="categoryMeta"><span>{items.length} tools</span><span>Free to use</span><span>No account required</span></div>
     </section>
     <section className="shell section">
-      <div className="sectionHead"><div><span className="sectionKicker">TOOLS</span><h2>Choose a tool</h2><p>Each English page links directly to the same tool in the other available languages.</p></div></div>
+      <div className="sectionHead"><div><span className="sectionKicker">TOOLS</span><h2>Choose a tool</h2><p>Each English tool page links directly to the same tool in German, Hindi and Russian.</p></div></div>
       <div className="categoryGrid">{items.map(item=><Link className="categoryCard accent-blue" href={item.href} key={item.href}><span className="categoryIcon"><Globe2 size={24}/></span><div><h3>{item.name}</h3><p>{item.description}</p></div><span>Open tool <ArrowRight size={14}/></span></Link>)}</div>
     </section>
     <section className="shell workflowLinks"><span className="sectionKicker">LANGUAGE VERSIONS</span><div><Link href="/de/">Deutsch<ArrowRight size={14}/></Link><Link href="/hi/">हिन्दी<ArrowRight size={14}/></Link><Link href="/ru/">Русский<ArrowRight size={14}/></Link></div></section>
