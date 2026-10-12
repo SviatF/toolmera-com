@@ -15,6 +15,7 @@ export const categoryHubEnhancements:Record<string,CategoryHubEnhancement>={
       {id:'sitemap-checker',anchor:'validate an XML sitemap and inspect submitted URLs'},
       {id:'redirect-checker',anchor:'trace website redirects and 301 chains'},
       {id:'website-analyzer',anchor:'run a broader web page SEO and technical audit'},
+      {id:'seo-checker',anchor:'run a focused on-page and technical SEO check'},
       {id:'meta-tag-checker',anchor:'check title tags, meta descriptions and canonical tags'},
     ],
     faq:[

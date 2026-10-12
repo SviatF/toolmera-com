@@ -4,7 +4,7 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CurrencyHubConverter } from '@/components/CurrencyConverter';
-import { currencyPairs } from '@/data/currencyPairs';
+import { currencyPairs, inrCurrencyPairs } from '@/data/currencyPairs';
 import { localizedAlternates, localizedPath, pilotLocaleMeta, type PilotLocale } from '@/data/localizedToolPilot';
 
 export const metadata:Metadata={
@@ -22,6 +22,7 @@ const faq=[
 ];
 
 export default function CurrencyHubPage(){
+  const inrCluster=inrCurrencyPairs(8);
   const schemas=[
     {"@context":"https://schema.org","@type":"WebPage",name:'Currency Converter — Exchange Rates Today',url:'https://toolmera.com/currency/',description:'Toolmera currency converter hub with official-source reference rates and demand-gated pair pages.'},
     {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
@@ -41,6 +42,11 @@ export default function CurrencyHubPage(){
     </section>
     <section className="shell workflowLinks" aria-label="Language versions"><span className="sectionKicker">LANGUAGE VERSIONS</span><div><Link href="/currency/">English<ArrowRight size={14}/></Link>{(['de','hi','ru'] as PilotLocale[]).map(locale=>{const path=localizedPath(locale,'currency');return path?<Link href={path} key={locale}>{pilotLocaleMeta[locale].nativeLabel}<ArrowRight size={14}/></Link>:null})}</div></section>
     <section className="shell section"><CurrencyHubConverter/></section>
+    <section className="shell workflowLinks" aria-label="Popular INR exchange rates">
+      <span className="sectionKicker">POPULAR INR EXCHANGE RATES</span>
+      <h2>Major currencies to Indian rupees</h2>
+      <div>{inrCluster.map(pair=><Link href={`/currency/${pair.slug}/`} key={pair.slug}>{pair.from} to INR<ArrowRight size={14}/></Link>)}</div>
+    </section>
     <section className="shell categoryGuide">
       <article className="seoArticle"><h2>Convert currencies without hunting for a separate calculator</h2><p>Choose a source currency, target currency and amount on the main converter. Toolmera derives supported cross-rates from the same stored reference-rate graph used by the dedicated pair pages, so the calculator can cover more combinations than the SEO URL set.</p></article>
       <article className="seoArticle"><h2>Pair pages add trend context to the current rate</h2><p>Dedicated pages exist only for demand-gated currency pairs. They add common amount conversions, the inverse rate, recent highs and lows, the average rate and 7-day, 30-day and 90-day movement without creating thousands of thin pair URLs.</p></article>

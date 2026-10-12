@@ -34,7 +34,7 @@ export default function Home() {
     url:"https://toolmera.com/",
     description:"Free online tools for files, calculators, converters, currency exchange rates, generators, time, developer tasks and website analysis."
   };
-  const featured = tools.filter(t => ['qr-code','png-webp','merge-pdf','loan','password','json'].includes(t.id));
+  const featured = tools.filter(t => ['website-traffic-checker','website-analyzer','qr-code','png-webp','merge-pdf','percentage'].includes(t.id));
   const priorityLinks=seoPriorityTargets.map(target=>({target,tool:tools.find(tool=>tool.id===target.id&&!tool.country)})).filter(row=>Boolean(row.tool));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);

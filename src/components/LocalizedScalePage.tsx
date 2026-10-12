@@ -37,8 +37,21 @@ function LocalizedFooter({locale}:{locale:PilotLocale}){
   const c=copy[locale];return <footer className="footer"><div className="shell footerGrid footerGridExpanded"><div className="footerBrand"><Brand/><p>{c.footerTagline}</p><span>{c.free} · {c.noSignup}</span></div><div className="footerColumn"><strong>{c.tools}</strong><Link href={`/${locale}/`}>{c.tools}</Link><Link href={localeHref(locale,'currency')}>{c.nav.currency}</Link><Link href={localeHref(locale,'percentage')}>{c.nav.calculator}</Link><Link href={localeHref(locale,'compress-jpg')}>{c.nav.images}</Link><Link href={localeHref(locale,'merge-pdf')}>{c.nav.pdf}</Link><Link href={localeHref(locale,'website-analyzer')}>{c.nav.website}</Link></div><div className="footerColumn"><strong>{c.company}</strong><Link href="/about/">{c.aboutLink}</Link><Link href="/methodology/">{c.methodology}</Link><Link href="/privacy/">{c.privacy}</Link><Link href="/terms/">{c.terms}</Link></div><div className="footerMeta"><span>© {new Date().getFullYear()} Toolmera</span><Link href="/en/">English</Link>{(['de','hi','ru'] as PilotLocale[]).filter(code=>code!==locale).map(code=><Link href={`/${code}/`} key={code}>{pilotLocaleMeta[code].nativeLabel}</Link>)}</div></div></footer>;
 }
 
+const localizedPriorityRelated:Record<string,string[]>={
+  'website-traffic-checker':['website-analyzer','seo-checker','meta-tag-checker','redirect-checker'],
+  'website-analyzer':['website-traffic-checker','seo-checker','meta-tag-checker','redirect-checker'],
+  'seo-checker':['website-analyzer','website-traffic-checker','meta-tag-checker','sitemap-checker'],
+  'meta-tag-checker':['website-analyzer','website-traffic-checker','seo-checker','redirect-checker'],
+  'redirect-checker':['website-analyzer','website-traffic-checker','http-status-checker','seo-checker'],
+  'sitemap-checker':['website-analyzer','website-traffic-checker','robots-checker','seo-checker'],
+};
+
 function relatedFor(locale:PilotLocale,toolId:string){
-  const list=localizedPilotTools[locale];const currentIndex=list.findIndex(item=>item.toolId===toolId);const currentTool=tools.find(t=>t.id===toolId);const circular=currentIndex<0?list:[...list.slice(currentIndex+1),...list.slice(0,currentIndex)];const same=currentTool?circular.filter(item=>tools.find(t=>t.id===item.toolId)?.category===currentTool.category):[];const picks=[...same.slice(0,3),...circular.filter(item=>!same.includes(item))];return [...new Map(picks.map(item=>[item.toolId,item])).values()].slice(0,6);
+  const list=localizedPilotTools[locale];const currentIndex=list.findIndex(item=>item.toolId===toolId);const currentTool=tools.find(t=>t.id===toolId);const circular=currentIndex<0?list:[...list.slice(currentIndex+1),...list.slice(0,currentIndex)];
+  const priority=(localizedPriorityRelated[toolId]||[]).map(id=>list.find(item=>item.toolId===id)).filter((item):item is LocalizedPilotTool=>Boolean(item));
+  const same=currentTool?circular.filter(item=>tools.find(t=>t.id===item.toolId)?.category===currentTool.category):[];
+  const picks=[...priority,...same,...circular];
+  return [...new Map(picks.filter(item=>item.toolId!==toolId).map(item=>[item.toolId,item])).values()].slice(0,6);
 }
 
 function seoSections(locale:PilotLocale,item:LocalizedPilotTool){

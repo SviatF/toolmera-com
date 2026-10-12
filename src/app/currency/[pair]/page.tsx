@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CurrencyPairConverter } from '@/components/CurrencyConverter';
-import { currencies, currencyPairDescription, currencyPairMap, currencyPairs, currencyPairSeo, currencyPairTitle, relatedCurrencyPairs } from '@/data/currencyPairs';
+import { currencies, currencyPairDescription, currencyPairMap, currencyPairs, currencyPairSeo, currencyPairTitle, inrCurrencyPairs, relatedCurrencyPairs } from '@/data/currencyPairs';
 
 export function generateStaticParams(){return currencyPairs.map(item=>({pair:item.slug}))}
 
@@ -21,7 +21,7 @@ export async function generateMetadata({params}:{params:Promise<{pair:string}>})
 
 export default async function CurrencyPairPage({params}:{params:Promise<{pair:string}>}){
   const {pair:slug}=await params;const pair=currencyPairMap.get(slug);if(!pair)notFound();
-  const from=currencies[pair.from];const to=currencies[pair.to];const url=`https://toolmera.com/currency/${pair.slug}/`;const related=relatedCurrencyPairs(pair.slug,5);const seo=currencyPairSeo(pair);
+  const from=currencies[pair.from];const to=currencies[pair.to];const url=`https://toolmera.com/currency/${pair.slug}/`;const related=relatedCurrencyPairs(pair.slug,5);const seo=currencyPairSeo(pair);const inrCluster=pair.to==='INR'?inrCurrencyPairs(8):[];
   const schemas=[
     {"@context":"https://schema.org","@type":"WebPage",name:`${pair.from} to ${pair.to} Exchange Rate & Converter`,url,description:currencyPairDescription(pair),isPartOf:{"@type":"WebSite",name:'Toolmera',url:'https://toolmera.com/'}},
     {"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[
@@ -50,5 +50,10 @@ export default async function CurrencyPairPage({params}:{params:Promise<{pair:st
         <p>A {pair.from}/{pair.to} rate shows how many {to.name.toLowerCase()} units one {from.name.toLowerCase()} buys. The inverse rate on this page shows the same relationship in the opposite direction, so you can compare both sides without opening another calculator.</p>
       </article>
     </section>
+    {inrCluster.length>1&&<section className="shell workflowLinks" aria-label="Popular INR exchange rates">
+      <span className="sectionKicker">POPULAR INR EXCHANGE RATES</span>
+      <h2>Convert major currencies to Indian rupees</h2>
+      <div>{inrCluster.filter(item=>item.slug!==pair.slug).map(item=><Link href={`/currency/${item.slug}/`} key={item.slug}>{item.from} to INR<ArrowRight size={14}/></Link>)}</div>
+    </section>}
   </main>{schemas.map((schema,index)=><script key={index} type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/>)}<Footer/></>;
 }

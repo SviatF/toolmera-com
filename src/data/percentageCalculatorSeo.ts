@@ -47,6 +47,18 @@ export const percentageCalculatorSeo: ToolSeoContent = {
       ]
     },
     {
+      title: 'Percentage of a total calculator: find a part as a share of the whole',
+      paragraphs: [
+        'Use the percentage-of-a-total calculation when you know a part and the overall total and want the part expressed as a percentage. Divide the part by the total and multiply by 100. For example, 18 completed tasks out of 24 total tasks equals 75%.',
+        'This is the same core relationship used for completion rates, budget shares, survey responses, test scores and conversion rates. Keep the total as the denominator; reversing the two values answers a different percentage question.'
+      ],
+      facts: [
+        { label: 'Formula', value: 'part ÷ total × 100' },
+        { label: 'Example', value: '18 ÷ 24 × 100 = 75%' },
+        { label: 'Common uses', value: 'Shares, rates, scores and completion' }
+      ]
+    },
+    {
       title: 'Percentage change vs percentage difference',
       paragraphs: [
         'Percentage change compares a new value with an original starting value, so direction matters. Percentage difference is used when neither value is naturally the starting point and measures the gap relative to the average of the two values.',
@@ -70,6 +82,10 @@ export const percentageCalculatorSeo: ToolSeoContent = {
     {
       q: 'How do I find what percent one number is of another?',
       a: 'Divide the first number by the second number and multiply by 100. For example, 25 is 20% of 125.'
+    },
+    {
+      q: 'How do I calculate a percentage of a total?',
+      a: 'Divide the part by the total and multiply by 100. For example, 18 out of 24 is 75%.'
     },
     {
       q: 'What is the difference between percentage change and percentage difference?',

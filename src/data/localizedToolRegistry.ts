@@ -95,6 +95,19 @@ function benefits(locale:PilotLocale,tool:Tool){
 
 function generatedEntry(locale:PilotLocale, tool:Tool):LocalizedPilotTool{
   const name=localizedName(locale,tool);const label=localeLabels[locale][tool.category]||tool.categoryLabel;const p=purpose(locale,tool,name);
+  if(locale==='de'&&tool.id==='website-traffic-checker')return{
+    toolId:tool.id,slug:tool.slug,name:'Website-Traffic-Checker',
+    title:'Website Traffic Checker — Traffic-Ranking und Popularität prüfen',
+    description:'Prüfe das öffentliche Traffic-Ranking einer Domain, vergleiche relative Website-Popularität und beobachte den verfügbaren Rank-Verlauf — ohne erfundene Besucherzahlen.',
+    intro:'Prüfe das öffentliche Domain-Traffic-Ranking und vergleiche die relative Website-Popularität anhand verfügbarer Rankingsignale und des jüngsten Verlaufs.',
+    benefits:['Öffentliches Domain-Ranking','Rank-Verlauf vergleichen','Keine erfundenen Besucherzahlen','Für Wettbewerbsvergleiche'],
+    faq:[
+      {q:'Zeigt der Website Traffic Checker echte Besucherzahlen?',a:'Nein. Exakte Besucherzahlen benötigen First-Party-Analytics. Toolmera zeigt öffentliche Ranking- und Popularitätssignale und erfindet keine monatlichen Visits.'},
+      {q:'Was bedeutet ein niedrigerer Traffic-Rank?',a:'Ein niedrigerer Zahlenwert steht innerhalb des verfügbaren Ranking-Datensatzes für eine stärkere relative Position.'},
+      {q:'Kann ich Wettbewerber vergleichen?',a:'Ja. Prüfe öffentlich erreichbare Domains nacheinander und vergleiche dieselben Ranking- und Verlaufssignale.'}
+    ],
+    englishUrl:toolUrl(tool)
+  };
   if(locale==='de')return{toolId:tool.id,slug:tool.slug,name,title:`${name} kostenlos — ${label} online`,description:`${p} Kostenlos, ohne Anmeldung und für den konkreten ${label}-Workflow optimiert.`,intro:p,benefits:benefits(locale,tool),faq:[{q:`Ist ${name} kostenlos?`,a:`Ja. ${name} kann ohne Konto kostenlos genutzt werden.`},{q:`Wofür kann ich ${name} verwenden?`,a:p}],englishUrl:toolUrl(tool)};
   if(locale==='hi')return{toolId:tool.id,slug:tool.slug,name,title:`${name} — मुफ्त ${label} ऑनलाइन`,description:`${p} Toolmera पर इसे बिना account मुफ्त इस्तेमाल करें।`,intro:p,benefits:benefits(locale,tool),faq:[{q:`क्या ${name} मुफ्त है?`,a:`हाँ। ${name} को बिना account मुफ्त इस्तेमाल किया जा सकता है।`},{q:`${name} किस काम के लिए है?`,a:p}],englishUrl:toolUrl(tool)};
   return{toolId:tool.id,slug:tool.slug,name,title:`${name} — бесплатный ${label} онлайн`,description:`${p} Бесплатно, без аккаунта и с фокусом на конкретную задачу.`,intro:p,benefits:benefits(locale,tool),faq:[{q:`${name} бесплатный?`,a:`Да. ${name} можно использовать бесплатно без аккаунта.`},{q:`Для чего нужен ${name}?`,a:p}],englishUrl:toolUrl(tool)};

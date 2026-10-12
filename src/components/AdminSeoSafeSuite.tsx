@@ -14,6 +14,7 @@ type PageRow=Metric&{page:string};
 type QueryPageRow=Metric&{query:string;page:string};
 type GscData={connected:true;range:string;pages?:PageRow[];queryPages?:QueryPageRow[];fetchedAt:string};
 type Trend='New'|'Growing'|'Stable'|'Declining';
+type OpportunityTier='QUICK WIN'|'GROWTH'|'DISCOVERY';
 type Decision='DO NOW'|'SCALE'|'FIX'|'ANALYZE'|'WAIT'|'DO NOT TOUCH';
 type ActionKind='internal-links'|'snippet'|'content-depth'|'intent-analysis'|'cannibalization'|'decay-audit'|'cluster'|'wait';
 type QuickFilter='all'|'3plus'|'top10'|'top20'|'quick'|'growing'|'declining'|'cannibal'|'locked'|'observing';
@@ -35,6 +36,7 @@ type PageSignal={
   previous:Metric;
   trend:Trend;
   opportunity:number;
+  tier:OpportunityTier;
   topQuery:string;
   highCannibal:number;
   deployedLinks:number;
@@ -122,20 +124,26 @@ function expectedCtr(position:number){
   return .003;
 }
 
+function opportunityTier(row:Metric):OpportunityTier{
+  if(row.position>0&&row.position<=20)return 'QUICK WIN';
+  if(row.position>20&&row.position<=50)return 'GROWTH';
+  return 'DISCOVERY';
+}
+
 function opportunityScore(row:Metric){
   if(row.impressions<=0)return 0;
-  const demand=clamp(Math.log1p(row.impressions)/Math.log(51),0,1);
-  let proximity=.18;
-  if(!row.position)proximity=.08;
-  else if(row.position<=3)proximity=.45;
-  else if(row.position<=10)proximity=.76;
-  else if(row.position<=20)proximity=1;
-  else if(row.position<=30)proximity=.88;
-  else if(row.position<=50)proximity=.58;
-  else if(row.position<=75)proximity=.32;
+  const demand=clamp(Math.log1p(row.impressions)/Math.log(501),0,1);
+  let proximity=.12;
+  if(!row.position)proximity=.06;
+  else if(row.position<=3)proximity=.62;
+  else if(row.position<=10)proximity=1;
+  else if(row.position<=20)proximity=.94;
+  else if(row.position<=30)proximity=.74;
+  else if(row.position<=50)proximity=.50;
+  else if(row.position<=75)proximity=.25;
   const expected=expectedCtr(row.position);
   const ctrHeadroom=expected?clamp((expected-row.ctr)/expected,0,1):.5;
-  return Math.round(clamp(demand*proximity*(.72+.28*ctrHeadroom),0,1)*100);
+  return Math.round(clamp(demand*proximity*(.70+.30*ctrHeadroom),0,1)*100);
 }
 
 function utcDay(value:string|Date){
@@ -327,6 +335,7 @@ export function AdminSeoSafeSuite(){
       const previous=weeklyBaseline(current,metrics.impressions?metrics:current);
       const trend=trendFor(current,previous);
       const opportunity=opportunityScore(metrics);
+      const tier=opportunityTier(metrics);
       const topQuery=[...(queriesByPath.get(path)||[])].sort((a,b)=>(b.impressions-a.impressions)||(a.position-b.position))[0]?.query||tool.name;
       const latest=latestExperimentByTool.get(tool.id);
       let experiment:ExperimentState|null=null;
@@ -384,11 +393,13 @@ export function AdminSeoSafeSuite(){
         nextMove=`Спочатку перевір intent запиту «${topQuery}». Не міняй Title навмання. Якщо сторінка відповідає intent — додай одну точну секцію під цей запит.`;
       }
 
-      return {tool,path,metrics,current,previous,trend,opportunity,topQuery,highCannibal,deployedLinks,linkIdeas,experiment,decision,actionKind,actionKey:`command:${tool.id}`,reason,nextMove};
+      return {tool,path,metrics,current,previous,trend,opportunity,tier,topQuery,highCannibal,deployedLinks,linkIdeas,experiment,decision,actionKind,actionKey:`command:${tool.id}`,reason,nextMove};
     }).filter(row=>row.metrics.impressions>0||row.experiment!==null)
       .sort((a,b)=>{
-        const weight:Record<Decision,number>={'FIX':6,'DO NOW':5,'SCALE':4,'ANALYZE':3,'DO NOT TOUCH':2,'WAIT':1};
-        return (weight[b.decision]-weight[a.decision])||(b.opportunity-a.opportunity)||(b.metrics.impressions-a.metrics.impressions);
+        const decisionWeight:Record<Decision,number>={'FIX':6,'DO NOW':5,'SCALE':4,'ANALYZE':3,'DO NOT TOUCH':2,'WAIT':1};
+        const tierWeight:Record<OpportunityTier,number>={'QUICK WIN':3,'GROWTH':2,'DISCOVERY':1};
+        const fixDelta=(b.decision==='FIX'?1:0)-(a.decision==='FIX'?1:0);
+        return fixDelta||(tierWeight[b.tier]-tierWeight[a.tier])||(decisionWeight[b.decision]-decisionWeight[a.decision])||(b.opportunity-a.opportunity)||(b.metrics.impressions-a.metrics.impressions);
       });
   },[seven,twentyEight,highCannibalByPath,latestExperimentByTool]);
 
@@ -480,7 +491,7 @@ export function AdminSeoSafeSuite(){
         <div className={styles.commandIndex}>#{index+1}</div>
         <div className={styles.commandBody}>
           <div className={styles.commandTop}><b className={`${styles.badge} ${toneFor(row.decision)}`}>{decisionLabel[row.decision]}</b><strong>{row.path}</strong></div>
-          <div className={styles.commandQuery}>Запит: <b>{row.topQuery}</b> · {number(row.metrics.impressions)} показів · позиція {pos(row.metrics.position)} · CTR {pct(row.metrics.ctr)}</div>
+          <div className={styles.commandQuery}>{row.tier} · Запит: <b>{row.topQuery}</b> · {number(row.metrics.impressions)} показів · позиція {pos(row.metrics.position)} · CTR {pct(row.metrics.ctr)}</div>
           <p>{row.reason}</p>
           <div className={styles.commandAction}><CheckCircle2 size={16}/><span><b>ЗРОБИТИ:</b> {row.nextMove}</span></div>
           <div className={styles.commandControls}><button onClick={()=>void markDone(row)} disabled={savingTask===row.actionKey}><CheckCircle2 size={14}/>{savingTask===row.actionKey?'Зберігаю…':'Я ВЖЕ РЕАЛІЗУВАВ ЦЕ → почати спостереження'}</button><span>Ця кнопка НЕ реалізує SEO-зміну. Натискай її тільки після того, як зміна реально внесена в код/контент і вже задеплоєна.</span></div>

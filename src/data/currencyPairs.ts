@@ -287,3 +287,14 @@ export function currencyPairTitle(pair:CurrencyPair){
 export function currencyPairDescription(pair:CurrencyPair){
   return currencyPairSeo(pair).meta;
 }
+
+
+export function inrCurrencyPairs(limit=8){
+  return currencyPairs
+    .filter(pair=>pair.to==='INR')
+    .sort((a,b)=>{
+      const weight=(pair:CurrencyPair)=>pair.priority==='P0'?3:pair.priority==='P1'?2:1;
+      return weight(b)-weight(a)||a.slug.localeCompare(b.slug);
+    })
+    .slice(0,limit);
+}
