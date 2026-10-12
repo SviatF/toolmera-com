@@ -22,12 +22,13 @@ export default function AllToolsPage(){
     {"@type":"ListItem",position:tools.length+1,name:'Currency Converter',url:'https://toolmera.com/currency/'}
   ]};
   const priorityLinks=seoPriorityTargets.map(target=>({target,tool:tools.find(tool=>tool.id===target.id&&!tool.country)})).filter(row=>Boolean(row.tool));
+  const searchTools=tools.map(t=>({id:t.id,name:t.name,short:t.short,slug:t.slug,categoryLabel:t.categoryLabel,url:toolUrl(t)}));
   return <><Header/><main className="subPage">
     <section className="shell allToolsHero">
       <span className="eyebrow neonText">TOOLMERA / ALL TOOLS</span>
       <h1>Find the right tool.</h1>
       <p>Search the full Toolmera library or browse by category.</p>
-      <ToolSearch tools={tools}/>
+      <ToolSearch tools={searchTools}/>
     </section>
 
     <section className="shell workflowLinks" aria-label="Popular tools">
