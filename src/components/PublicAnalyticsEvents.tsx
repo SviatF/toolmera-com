@@ -1,6 +1,5 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { pushAnalyticsEvent } from '@/lib/analytics';
 
@@ -9,10 +8,8 @@ function cleanLabel(value: string) {
 }
 
 export function PublicAnalyticsEvents() {
-  const pathname = usePathname();
-
   useEffect(() => {
-    if (pathname === '/admin' || pathname?.startsWith('/admin/')) return;
+    if (window.location.pathname === '/admin/' || window.location.pathname.startsWith('/admin/')) return;
 
     function onClick(event: MouseEvent) {
       const target = event.target as HTMLElement | null;
@@ -68,7 +65,7 @@ export function PublicAnalyticsEvents() {
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('change', onChange, true);
     };
-  }, [pathname]);
+  }, []);
 
   return null;
 }
