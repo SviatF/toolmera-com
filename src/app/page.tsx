@@ -35,6 +35,7 @@ export default function Home() {
     description:"Free online tools for files, calculators, converters, currency exchange rates, generators, time, developer tasks and website analysis."
   };
   const featured = tools.filter(t => ['website-traffic-checker','website-analyzer','qr-code','png-webp','merge-pdf','percentage'].includes(t.id));
+  const searchTools = tools.map(t=>({id:t.id,name:t.name,short:t.short,slug:t.slug,categoryLabel:t.categoryLabel,url:toolUrl(t)}));
   const priorityLinks=seoPriorityTargets.map(target=>({target,tool:tools.find(tool=>tool.id===target.id&&!tool.country)})).filter(row=>Boolean(row.tool));
   const indiaFinance = tools.filter(t => t.country === 'in' && t.category === 'finance').slice(0, 4);
   const indiaTax = tools.filter(t => t.country === 'in' && t.category === 'tax').slice(0, 3);
@@ -50,7 +51,7 @@ export default function Home() {
           <span className="eyebrow neonText">SIMPLE TOOLS. REAL PRODUCTIVITY.</span>
           <h1>Every tool. <span>One place.</span></h1>
           <p>Fast, private online tools for files, numbers and everyday tasks. No sign-up. No clutter. Just results.</p>
-          <ToolSearch tools={tools}/>
+          <ToolSearch tools={searchTools}/>
           <div className="popular"><b>Popular:</b><Link href="/currency/">Currency Converter</Link><Link href="/generators/qr-code-generator/">QR Code Generator</Link><Link href="/image/png-to-webp/">PNG to WebP</Link><Link href="/pdf/merge-pdf/">Merge PDF</Link><Link href="/generators/password-generator/">Password Generator</Link></div>
         </div>
         <div className="heroAside heroTelemetry" aria-label="Toolmera live product telemetry">

@@ -12,7 +12,6 @@
 .heroAside{margin-right:84px}
 .heroAside span{position:relative;z-index:2}
 .featuredSection{padding-top:78px}
-.toolCard,.categoryCard{will-change:transform}
 .toolCardLink svg,.categoryCard>span:last-child svg,.inlineArrowLink svg,.localClusterHead a svg,.localToolLinks a svg{transition:transform .2s ease}
 .toolCard:hover .toolCardLink svg,.categoryCard:hover>span:last-child svg,.inlineArrowLink:hover svg,.localClusterHead a:hover svg,.localToolLinks a:hover svg{transform:translateX(3px)}
 .categoryCard{transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
@@ -525,6 +524,10 @@ html[data-theme="dark"]{color-scheme:dark}
 .themeToggleTrack{position:relative;width:30px;height:18px;border-radius:999px;background:rgba(255,255,255,.065);border:1px solid var(--line);display:block}
 .themeToggleThumb{position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;display:grid;place-items:center;color:#ffd36c;transition:transform .22s ease,color .22s ease}
 html[data-theme="dark"] .themeToggleThumb{transform:translateX(12px);color:#8cb8ff}
+.themeToggleSun,.themeToggleMoon{display:grid;place-items:center;position:absolute;inset:0}
+.themeToggleMoon{display:none}
+html[data-theme="dark"] .themeToggleSun{display:none}
+html[data-theme="dark"] .themeToggleMoon{display:grid}
 html[data-theme="light"] .themeToggle{background:#fff;box-shadow:0 3px 12px rgba(15,23,42,.05)}
 html[data-theme="light"] .themeToggleTrack{background:#eef3f9}
 

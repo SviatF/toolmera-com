@@ -21,6 +21,15 @@ const themeInit = `
   } catch (e) {
     document.documentElement.dataset.theme = 'light';
   }
+  document.addEventListener('click', function(event){
+    var target = event.target;
+    var button = target && target.closest ? target.closest('[data-theme-toggle]') : null;
+    if (!button) return;
+    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('toolmera-theme', next); } catch (e) {}
+    button.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  });
 })();
 `;
 
