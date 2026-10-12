@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChevronRight, ShieldCheck, Zap, BarChart3, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { ToolExperience } from '@/components/ToolExperience';
+import { LazyToolExperience } from '@/components/LazyToolExperience';
 import { ToolCard } from '@/components/ToolCard';
 import { findTool, tools, toolUrl } from '@/data/tools';
 import { freeTitle } from '@/lib/seo';
@@ -51,7 +51,7 @@ export default async function IndiaTool({params}:{params:Promise<{category:strin
       <span className="eyebrow neonText">INDIA / FAST & FREE</span><h1>{tool.name}</h1><p>{seo?.intro||tool.intro}</p>
     </section>
 
-    <div className="shell"><ToolExperience tool={tool}/></div>
+    <div className="shell"><LazyToolExperience tool={tool}/></div>
 
     <section className="shell toolTrustRow">
       <div><BarChart3/><span><strong>Instant estimate</strong><small>Change inputs and compare scenarios</small></span></div>
