@@ -34,6 +34,7 @@ type PageSignal={
   tool:Tool;
   path:string;
   metrics:Metric;
+  intentCovered:boolean;
   current:Metric;
   previous:Metric;
   trend:Trend;
@@ -114,6 +115,25 @@ function trendFor(current:Metric,previous:Metric):Trend{
   if(previous.impressions>=2&&((impressions!==null&&impressions<=-.4)||(positionGain<=-8&&current.impressions<=previous.impressions*1.2)))return 'Declining';
   if(current.impressions>=2&&((impressions!==null&&impressions>=.45)||positionGain>=5||(current.clicks>previous.clicks&&current.clicks>=1)))return 'Growing';
   return 'Stable';
+}
+
+function intentTokens(value:string){
+  const generic=new Set(['free','online','tool','tools','calculator','calculators','converter','convert','conversion','the','a','an','to','of','for','and']);
+  return String(value||'')
+    .toLowerCase()
+    .replace(/^\s*\d+[.)\-:]?\s*/,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim()
+    .split(/\s+/)
+    .filter(token=>token&&!generic.has(token));
+}
+
+function queryIntentCovered(query:string,tool:Tool){
+  const queryTokens=intentTokens(query);
+  if(!queryTokens.length)return false;
+  const pageTokens=new Set(intentTokens([tool.name,tool.slug,tool.title].join(' ')));
+  const matched=queryTokens.filter(token=>pageTokens.has(token)).length;
+  return matched===queryTokens.length&&matched>=1;
 }
 
 function expectedCtr(position:number){
@@ -349,6 +369,7 @@ export function AdminSeoSafeSuite(){
       const opportunity=opportunityScore(metrics);
       const tier=opportunityTier(metrics);
       const topQuery=[...(queriesByPath.get(path)||[])].sort((a,b)=>(b.impressions-a.impressions)||(a.position-b.position))[0]?.query||tool.name;
+      const intentCovered=queryIntentCovered(topQuery,tool);
       const latest=latestExperimentByTool.get(tool.id);
       let experiment:ExperimentState|null=null;
       if(latest){
@@ -403,6 +424,16 @@ export function AdminSeoSafeSuite(){
         decision='ANALYZE';actionKind='decay-audit';
         reason=`Є достатня вибірка для перевірки падіння: ${number(metrics.impressions)} показів за 28 днів, а останні 7 днів слабші за baseline.`;
         nextMove='Перевір intent, індексацію, canonical та останні SEO-зміни. Не переписуй сторінку повністю і не міняй URL.';
+      }else if(metrics.position>50&&metrics.impressions>=20&&intentCovered){
+        if(deployedLinks<2&&linkIdeas>0){
+          decision='DO NOW';actionKind='internal-links';
+          reason=`Запит «${topQuery}» уже точно відповідає сторінці. Проблема не в intent: Google тестує URL на позиції ${pos(metrics.position)}, але внутрішня підтримка ще слабка.`;
+          nextMove=`Не переписуй Title/H1/контент. Додай ${Math.min(3,linkIdeas)} релевантні контекстні внутрішні посилання на цю сторінку.`;
+        }else{
+          decision='WAIT';actionKind='wait';
+          reason=`Запит «${topQuery}» уже точно покритий назвою/URL сторінки, а внутрішні сигнали вже є. Глибока позиція зараз не є причиною додавати ще один SEO-текст.`;
+          nextMove='Не переписуй сторінку. Дай Google більше часу і переглянь позицію після наступного GSC-вікна.';
+        }
       }else if(metrics.position>50&&metrics.impressions>=20){
         decision='ANALYZE';actionKind='intent-analysis';
         reason=`${number(metrics.impressions)} показів при позиції ${pos(metrics.position)} означають, що Google тестує URL, але relevance ще слабка.`;
@@ -413,7 +444,7 @@ export function AdminSeoSafeSuite(){
         nextMove='Нічого не змінюй через шум на малих даних. Дочекайся більшої вибірки або повторного сигналу.';
       }
 
-      return {tool,path,metrics,current,previous,trend,opportunity,tier,topQuery,highCannibal,deployedLinks,linkIdeas,experiment,decision,actionKind,actionKey:`command:${tool.id}`,reason,nextMove};
+      return {tool,path,metrics,intentCovered,current,previous,trend,opportunity,tier,topQuery,highCannibal,deployedLinks,linkIdeas,experiment,decision,actionKind,actionKey:`command:${tool.id}`,reason,nextMove};
     }).filter(row=>row.metrics.impressions>0||row.experiment!==null)
       .sort((a,b)=>{
         const decisionWeight:Record<Decision,number>={'DO NOW':6,'SCALE':5,'FIX':4,'ANALYZE':3,'DO NOT TOUCH':2,'WAIT':1};
