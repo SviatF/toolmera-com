@@ -69,6 +69,7 @@ export const internalLinkBoosts:InternalLinkBoost[]=[
   {from:'discount',to:'percentage',anchor:'calculate percentage change and percent of a number',reason:'Strengthen the percentage calculator from a closely related shopping calculation.'},
   {from:'roi',to:'percentage',anchor:'calculate a percentage increase or decrease',reason:'Connect return calculations with the underlying percentage workflow.'},
   {from:'average',to:'percentage',anchor:'calculate percentages from the same dataset',reason:'Create a useful bridge from summary statistics into percentage calculations.'},
+  {from:'percentage',to:'loan',anchor:'estimate a fixed-rate loan payment from an interest rate',reason:'Complete the Loan Calculator inbound cluster: percentage-rate intent naturally leads into monthly payment and total-interest calculations.'},
   {from:'url-encoder',to:'qr-code',anchor:'turn the finished URL into a QR code',reason:'Connect URL preparation with a common QR-code publishing workflow.'},
   {from:'slug-generator',to:'qr-code',anchor:'create a QR code for the finished page URL',reason:'Connect URL publishing workflows with the QR generator.'},
 ];

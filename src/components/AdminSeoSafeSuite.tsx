@@ -3,7 +3,9 @@
 import { AlertTriangle, CheckCircle2, Link2, RefreshCw, Search, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { hasInternalLinkBoost, internalLinkBoosts } from '@/data/internalLinkBoosts';
+import { compoundInterestSeo } from '@/data/compoundInterestSeo';
 import { seoExperiments } from '@/data/seoExperiments';
+import { toolSeoContent } from '@/data/seoContent';
 import { tools, toolUrl, type Tool } from '@/data/tools';
 import { fetchAdminGsc } from '@/lib/adminApiClient';
 import { semanticRelatedTools } from '@/lib/toolRelations';
@@ -133,6 +135,7 @@ function opportunityTier(row:Metric):OpportunityTier{
 function opportunityScore(row:Metric){
   if(row.impressions<=0)return 0;
   const demand=clamp(Math.log1p(row.impressions)/Math.log(501),0,1);
+  const sampleConfidence=row.impressions>=50?1:row.impressions>=20?.85:row.impressions>=10?.68:row.impressions>=5?.45:.28;
   let proximity=.12;
   if(!row.position)proximity=.06;
   else if(row.position<=3)proximity=.62;
@@ -143,7 +146,16 @@ function opportunityScore(row:Metric){
   else if(row.position<=75)proximity=.25;
   const expected=expectedCtr(row.position);
   const ctrHeadroom=expected?clamp((expected-row.ctr)/expected,0,1):.5;
-  return Math.round(clamp(demand*proximity*(.70+.30*ctrHeadroom),0,1)*100);
+  return Math.round(clamp(demand*proximity*(.70+.30*ctrHeadroom)*(.72+.28*sampleConfidence),0,1)*100);
+}
+
+function deployedInboundLinkCount(targetId:string){
+  const sources=new Set(internalLinkBoosts.filter(link=>link.to===targetId).map(link=>link.from));
+  for(const source of tools){
+    const related=source.id==='compound'?compoundInterestSeo.related:(toolSeoContent[source.id]?.related||[]);
+    if(related.some(item=>item.id===targetId))sources.add(source.id);
+  }
+  return sources.size;
 }
 
 function utcDay(value:string|Date){
@@ -350,7 +362,7 @@ export function AdminSeoSafeSuite(){
         if(semanticRelatedTools(source,tools,4).some(item=>item.id===tool.id))return false;
         return targetRelated.has(source.id)||source.category===tool.category;
       }).length;
-      const deployedLinks=internalLinkBoosts.filter(link=>link.to===tool.id).length;
+      const deployedLinks=deployedInboundLinkCount(tool.id);
       const highCannibal=highCannibalByPath.get(path)||0;
 
       let decision:Decision='WAIT';
@@ -366,18 +378,22 @@ export function AdminSeoSafeSuite(){
         decision='FIX';actionKind='cannibalization';
         reason=`Google показує кілька наших URL за однаковим запитом (${highCannibal} ризикових перетинів).`;
         nextMove='Вибери одну головну сторінку під цей intent і підсиль внутрішні сигнали саме на неї.';
-      }else if(metrics.position>0&&metrics.position<=10&&metrics.impressions>=3){
+      }else if(metrics.position>0&&metrics.position<=10&&metrics.impressions>=10){
         decision='SCALE';
         reason=trend==='Growing'||trend==='New'?'Google вже дає позитивний ріст на першій сторінці.':'Сторінка вже має повторну TOP10-видимість.';
         if(deployedLinks<2&&linkIdeas>0){actionKind='internal-links';nextMove=`Додай ${Math.min(3,linkIdeas)} релевантні внутрішні посилання на цю сторінку. Title/H1 не чіпай.`}
         else{actionKind='cluster';nextMove='Не переписуй ядро сторінки. Розширюй суміжний кластер або FAQ під близькі запити.'}
-      }else if(metrics.position>=8&&metrics.position<=20&&metrics.impressions>=3){
+      }else if(metrics.position>=8&&metrics.position<=20&&metrics.impressions>=10){
         decision='DO NOW';
         reason=`Позиція ${pos(metrics.position)} і ${number(metrics.impressions)} показів — реальний шанс зайти вище в TOP10.`;
         const ctrGap=metrics.ctr<expectedCtr(metrics.position)*.6;
         if(deployedLinks<2&&linkIdeas>0){actionKind='internal-links';nextMove=`Перший крок: додай ${Math.min(3,linkIdeas)} контекстні внутрішні посилання під запит «${topQuery}».`}
         else if(ctrGap){actionKind='snippet';nextMove=`Покращ Title і description під запит «${topQuery}». URL та H1 не чіпай.`}
         else{actionKind='content-depth';nextMove=`Додай одну корисну секцію або FAQ точно під запит «${topQuery}».`}
+      }else if(metrics.position>0&&metrics.position<=20&&metrics.impressions>=3){
+        decision='WAIT';actionKind='wait';
+        reason=`Позиція ${pos(metrics.position)} виглядає перспективно, але ${number(metrics.impressions)} показів — ще замала вибірка для SEO-зміни.`;
+        nextMove='Не змінюй сторінку через малу вибірку. Дочекайся щонайменше 10 показів у 28-денному вікні або повторного сигналу.';
       }else if(metrics.position>20&&metrics.position<=50&&metrics.impressions>=10){
         decision='DO NOW';
         reason=`Google вже тестує сторінку: ${number(metrics.impressions)} показів на позиції ${pos(metrics.position)}. Тут потрібна сильніша relevance, а не повний редизайн.`;
@@ -404,7 +420,7 @@ export function AdminSeoSafeSuite(){
         const tierWeight:Record<OpportunityTier,number>={'QUICK WIN':3,'GROWTH':2,'DISCOVERY':1};
         const criticalA=a.highCannibal>0?1:0;
         const criticalB=b.highCannibal>0?1:0;
-        return (criticalB-criticalA)||(tierWeight[b.tier]-tierWeight[a.tier])||(decisionWeight[b.decision]-decisionWeight[a.decision])||(b.opportunity-a.opportunity)||(b.metrics.impressions-a.metrics.impressions);
+        return (criticalB-criticalA)||(b.opportunity-a.opportunity)||(decisionWeight[b.decision]-decisionWeight[a.decision])||(tierWeight[b.tier]-tierWeight[a.tier])||(b.metrics.impressions-a.metrics.impressions);
       });
   },[seven,twentyEight,highCannibalByPath,latestExperimentByTool]);
 
@@ -450,7 +466,7 @@ export function AdminSeoSafeSuite(){
     return signals.filter(row=>matchesFilter(row,quickFilter,taskState.tasks[row.actionKey])).filter(row=>!needle||row.path.toLowerCase().includes(needle)||row.topQuery.toLowerCase().includes(needle)||row.tool.name.toLowerCase().includes(needle));
   },[signals,quickFilter,search,taskState]);
 
-  const topActions=signals.filter(row=>!isDone(row)&&(row.decision==='FIX'||row.decision==='DO NOW'||row.decision==='SCALE'||row.decision==='ANALYZE')).slice(0,5);
+  const topActions=signals.filter(row=>!isDone(row)&&(row.decision==='FIX'||row.decision==='DO NOW'||row.decision==='SCALE'||row.decision==='ANALYZE')&&(row.highCannibal>0||row.metrics.impressions>=10)).slice(0,5);
   const observationRows=signals.filter(row=>isDone(row)).sort((a,b)=>new Date(taskState.tasks[a.actionKey]?.verifyAt||0).getTime()-new Date(taskState.tasks[b.actionKey]?.verifyAt||0).getTime()).slice(0,20);
   const experimentRows=signals.filter(row=>row.experiment).sort((a,b)=>(a.experiment?.daysLeft||0)-(b.experiment?.daysLeft||0)).slice(0,10);
 
