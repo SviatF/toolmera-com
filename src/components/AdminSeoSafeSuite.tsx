@@ -174,6 +174,7 @@ function deployedInboundLinkCount(targetId:string){
   for(const source of tools){
     const related=source.id==='compound'?compoundInterestSeo.related:(toolSeoContent[source.id]?.related||[]);
     if(related.some(item=>item.id===targetId))sources.add(source.id);
+    if(semanticRelatedTools(source,tools,4).some(item=>item.id===targetId))sources.add(source.id);
   }
   return sources.size;
 }
