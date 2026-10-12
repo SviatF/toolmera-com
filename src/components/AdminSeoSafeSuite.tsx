@@ -366,10 +366,6 @@ export function AdminSeoSafeSuite(){
         decision='FIX';actionKind='cannibalization';
         reason=`Google показує кілька наших URL за однаковим запитом (${highCannibal} ризикових перетинів).`;
         nextMove='Вибери одну головну сторінку під цей intent і підсиль внутрішні сигнали саме на неї.';
-      }else if(trend==='Declining'&&previous.impressions>=2){
-        decision='FIX';actionKind='decay-audit';
-        reason='За останні 7 днів видимість падає проти попереднього тижневого baseline.';
-        nextMove='Перевір індексацію, canonical, intent і останні SEO-зміни. Не переписуй сторінку повністю.';
       }else if(metrics.position>0&&metrics.position<=10&&metrics.impressions>=3){
         decision='SCALE';
         reason=trend==='Growing'||trend==='New'?'Google вже дає позитивний ріст на першій сторінці.':'Сторінка вже має повторну TOP10-видимість.';
@@ -387,19 +383,28 @@ export function AdminSeoSafeSuite(){
         reason=`Google вже тестує сторінку: ${number(metrics.impressions)} показів на позиції ${pos(metrics.position)}. Тут потрібна сильніша relevance, а не повний редизайн.`;
         actionKind='content-depth';
         nextMove=`Посиль одну секцію сторінки точно під запит «${topQuery}» і дай прямішу відповідь на intent. Після цього — 10 днів без нових SEO-змін.`;
+      }else if(trend==='Declining'&&metrics.impressions>=30&&previous.impressions>=5){
+        decision='ANALYZE';actionKind='decay-audit';
+        reason=`Є достатня вибірка для перевірки падіння: ${number(metrics.impressions)} показів за 28 днів, а останні 7 днів слабші за baseline.`;
+        nextMove='Перевір intent, індексацію, canonical та останні SEO-зміни. Не переписуй сторінку повністю і не міняй URL.';
       }else if(metrics.position>50&&metrics.impressions>=20){
         decision='ANALYZE';actionKind='intent-analysis';
         reason=`${number(metrics.impressions)} показів при позиції ${pos(metrics.position)} означають, що Google тестує URL, але relevance ще слабка.`;
         nextMove=`Спочатку перевір intent запиту «${topQuery}». Не міняй Title навмання. Якщо сторінка відповідає intent — додай одну точну секцію під цей запит.`;
+      }else if(trend==='Declining'){
+        decision='WAIT';actionKind='wait';
+        reason=`Падіння є, але вибірка замала для безпечної SEO-зміни: ${number(metrics.impressions)} показів за 28 днів.`;
+        nextMove='Нічого не змінюй через шум на малих даних. Дочекайся більшої вибірки або повторного сигналу.';
       }
 
       return {tool,path,metrics,current,previous,trend,opportunity,tier,topQuery,highCannibal,deployedLinks,linkIdeas,experiment,decision,actionKind,actionKey:`command:${tool.id}`,reason,nextMove};
     }).filter(row=>row.metrics.impressions>0||row.experiment!==null)
       .sort((a,b)=>{
-        const decisionWeight:Record<Decision,number>={'FIX':6,'DO NOW':5,'SCALE':4,'ANALYZE':3,'DO NOT TOUCH':2,'WAIT':1};
+        const decisionWeight:Record<Decision,number>={'DO NOW':6,'SCALE':5,'FIX':4,'ANALYZE':3,'DO NOT TOUCH':2,'WAIT':1};
         const tierWeight:Record<OpportunityTier,number>={'QUICK WIN':3,'GROWTH':2,'DISCOVERY':1};
-        const fixDelta=(b.decision==='FIX'?1:0)-(a.decision==='FIX'?1:0);
-        return fixDelta||(tierWeight[b.tier]-tierWeight[a.tier])||(decisionWeight[b.decision]-decisionWeight[a.decision])||(b.opportunity-a.opportunity)||(b.metrics.impressions-a.metrics.impressions);
+        const criticalA=a.highCannibal>0?1:0;
+        const criticalB=b.highCannibal>0?1:0;
+        return (criticalB-criticalA)||(tierWeight[b.tier]-tierWeight[a.tier])||(decisionWeight[b.decision]-decisionWeight[a.decision])||(b.opportunity-a.opportunity)||(b.metrics.impressions-a.metrics.impressions);
       });
   },[seven,twentyEight,highCannibalByPath,latestExperimentByTool]);
 
