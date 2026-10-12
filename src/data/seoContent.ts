@@ -437,7 +437,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
   },
   'age': {
     title: 'Age Calculator — Years, Months & Days',
-    description: 'Calculate calendar age between a date of birth and any comparison date, with total days, weeks, hours and a next-birthday countdown.',
+    description: 'Calculate calendar age between a date of birth and any comparison date, including total completed months, days, weeks, hours and a next-birthday countdown.',
     intro: 'Enter a date of birth and an as-of date to get a calendar age in years, months and days, plus total time and the next birthday.',
     sections: [
       {
@@ -455,6 +455,17 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
         ]
       },
       {
+        title: 'Age in months calculator: see total completed months',
+        paragraphs: [
+          'If you need age in months rather than only years, months and days, Toolmera also shows the total number of completed calendar months between the date of birth and the comparison date.',
+          'Total months are calculated from the completed calendar age: full years are converted to 12 months each, then the remaining completed months are added. Any leftover days remain separate instead of being approximated as a fraction of a 30-day month.'
+        ],
+        facts: [
+          { label: 'Total months', value: 'Completed years × 12 + completed months' },
+          { label: 'Leftover days', value: 'Shown separately, not approximated as a month fraction' }
+        ]
+      },
+      {
         title: 'Calculate age today — or on another date',
         paragraphs: [
           'The comparison date defaults to today, but you can change it to a past or future date. That makes the calculator useful for questions such as “How old was I on this date?” or “How old will I be when this event happens?”',
@@ -466,6 +477,7 @@ export const toolSeoContent: Record<string, ToolSeoContent> = {
       { q: 'Can I calculate age on a date other than today?', a: 'Yes. Change the “Age as of” field to any valid date on or after the date of birth.' },
       { q: 'How does Toolmera handle February 29 birthdays?', a: 'In non-leap years, Toolmera treats February 28 as the anniversary for the calendar-age and next-birthday calculation.' },
       { q: 'What is the difference between calendar age and total days?', a: 'Calendar age is expressed in years, months and days using real calendar boundaries. Total days is the elapsed number of whole calendar days between the two dates.' },
+      { q: 'Can I calculate age in total months?', a: 'Yes. Toolmera shows total completed calendar months in addition to the years-months-days breakdown.' },
       { q: 'Does the calculator include hours and weeks?', a: 'Yes. Toolmera also shows total weeks and total hours derived from the elapsed calendar-day count.' }
     ],
     related: []

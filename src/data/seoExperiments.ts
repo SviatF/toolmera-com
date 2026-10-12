@@ -10,6 +10,7 @@ export type SeoExperiment={
 // Keep the original experiment immutable; if the same page changes again,
 // add a new entry so the observation window restarts instead of overwriting history.
 export const seoExperiments:SeoExperiment[]=[
+  {id:'age-total-months-v1',toolId:'age',changedAt:'2026-10-12',change:'Added a real Total months result plus exact age-in-months guidance; hold further SEO edits during observation.'},
   {id:'percentage-total-intent-v2',toolId:'percentage',changedAt:'2026-10-12',change:'Added percentage-of-a-total exact-intent section and FAQ; hold further edits while Google re-evaluates the page.'},
   {id:'loan-internal-links-v1',toolId:'loan',changedAt:'2026-10-12',change:'Completed a three-source contextual inbound link cluster for Loan Calculator without changing Title, H1 or URL.'},
   {id:'dedupe-preserve-order-v2',toolId:'remove-duplicate-lines',changedAt:'2026-10-12',change:'Added exact-intent guidance for removing duplicate lines while preserving first occurrence and input order.'},

@@ -996,7 +996,8 @@ function AgeCalculator(){
     let next=anniversaryFor(start,end.y);
     if(dateSerial(next)<dateSerial(end))next=anniversaryFor(start,end.y+1);
     const birthdayDays=dateSerial(next)-dateSerial(end);
-    return {age,totalDays,totalWeeks:Math.floor(totalDays/7),totalHours:totalDays*24,birthdayDays};
+    const totalMonths=age.years*12+age.months;
+    return {age,totalMonths,totalDays,totalWeeks:Math.floor(totalDays/7),totalHours:totalDays*24,birthdayDays};
   },[dob,asOf]);
 
   return <div className="toolUi">
@@ -1012,6 +1013,7 @@ function AgeCalculator(){
         <MetricCard label="Total days" value={money(result.totalDays)}/>
       </div>
       <div className="metricGrid compactMetrics">
+        <MetricCard label="Total months" value={money(result.totalMonths)}/>
         <MetricCard label="Total weeks" value={money(result.totalWeeks)}/>
         <MetricCard label="Total hours" value={money(result.totalHours)}/>
         <MetricCard label="Next birthday" value={result.birthdayDays===0?'Today':`${money(result.birthdayDays)} days`}/>
