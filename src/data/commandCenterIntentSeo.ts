@@ -1,6 +1,30 @@
 import type { ToolSeoContent, ToolSeoSection } from '@/data/seoContent';
 
 const intentBoosts: Record<string, ToolSeoSection> = {
+  'remove-duplicate-lines': {
+    title: 'Remove duplicate lines while keeping the first occurrence and original order',
+    paragraphs: [
+      'When you remove duplicate lines from a list, the safest default is often to keep the first occurrence and leave the surviving values in their original order. That preserves the sequence of the source while removing only repeated lines instead of silently rearranging the data.',
+      'Use case and whitespace controls only when they match the data you are cleaning. For example, case-insensitive matching can treat Example and example as duplicates, while trimming can catch lines that differ only because of accidental spaces.'
+    ],
+    facts: [
+      { label: 'Default behavior', value: 'Keep the first surviving occurrence' },
+      { label: 'Order', value: 'Preserve input order unless sorting is selected' },
+      { label: 'Optional matching', value: 'Ignore case and trim whitespace' }
+    ]
+  },
+  'cagr': {
+    title: 'Annual compound growth rate calculator: convert total growth into a yearly rate',
+    paragraphs: [
+      'An annual compound growth rate calculator answers a specific question: what constant compounded yearly rate would turn a beginning value into an ending value over a chosen number of years? That annualized rate is CAGR — compound annual growth rate.',
+      'Enter the beginning value, ending value and duration in years. Toolmera applies the CAGR formula and returns one smoothed annual rate. It does not imply that the value actually grew by the same percentage every year, and it does not account for intermediate deposits or withdrawals.'
+    ],
+    facts: [
+      { label: 'Metric', value: 'Compound annual growth rate (CAGR)' },
+      { label: 'Inputs', value: 'Beginning value, ending value and years' },
+      { label: 'Interpretation', value: 'Smoothed annual compounded rate' }
+    ]
+  },
   'home-emi-in': {
     title: 'Home loan calculator: estimate EMI and total borrowing cost',
     paragraphs: [

@@ -10,6 +10,10 @@ export type SeoExperiment={
 // Keep the original experiment immutable; if the same page changes again,
 // add a new entry so the observation window restarts instead of overwriting history.
 export const seoExperiments:SeoExperiment[]=[
+  {id:'percentage-total-intent-v2',toolId:'percentage',changedAt:'2026-10-12',change:'Added percentage-of-a-total exact-intent section and FAQ; hold further edits while Google re-evaluates the page.'},
+  {id:'loan-internal-links-v1',toolId:'loan',changedAt:'2026-10-12',change:'Completed a three-source contextual inbound link cluster for Loan Calculator without changing Title, H1 or URL.'},
+  {id:'dedupe-preserve-order-v2',toolId:'remove-duplicate-lines',changedAt:'2026-10-12',change:'Added exact-intent guidance for removing duplicate lines while preserving first occurrence and input order.'},
+  {id:'cagr-annual-compound-v1',toolId:'cagr',changedAt:'2026-10-12',change:'Added exact-intent content for annual compound growth rate calculator queries.'},
   {id:'traffic-seo-v1',toolId:'website-traffic-checker',changedAt:'2026-09-11',change:'Expanded traffic/popularity intent, metadata and supporting SEO copy.',commit:'edf5ace3'},
   {id:'sitemap-seo-v1',toolId:'sitemap-checker',changedAt:'2026-09-11',change:'Expanded XML sitemap validation intent, FAQ and supporting content.',commit:'be22354e'},
   {id:'redirect-seo-v1',toolId:'redirect-checker',changedAt:'2026-09-11',change:'Expanded redirect checker intent around 301 chains, hops and final URL.',commit:'a525c2cc'},
