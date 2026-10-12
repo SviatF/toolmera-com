@@ -23,11 +23,7 @@ export function GoogleTagManager() {
     }
 
     function schedule() {
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(load, { timeout: 1800 });
-      } else {
-        timeout = window.setTimeout(load, 800);
-      }
+      timeout = window.setTimeout(load, 800);
     }
 
     if (document.readyState === 'complete') schedule();
