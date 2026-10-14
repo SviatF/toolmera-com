@@ -427,7 +427,7 @@ export const categories = [
   { slug: 'time', label: 'Time & Date', description: 'Convert timestamps and work with time values.', accent: 'pink' as Accent },
   { slug: 'text', label: 'Text Tools', description: 'Count, transform and clean text.', accent: 'violet' as Accent },
   { slug: 'developer', label: 'Developer Tools', description: 'Format, encode and inspect developer data.', accent: 'pink' as Accent },
-  { slug: 'website-analysis', label: 'Website Analysis', description: 'Check traffic popularity, SEO, crawlability, redirects, security and website technology.', accent: 'green' as Accent },
+  { slug: 'website-analysis', label: 'Website Analysis', description: 'Check SEO, broken links, structured data, DNS, crawlability, redirects, security and website technology.', accent: 'green' as Accent },
 ];
 
 export function toolUrl(tool: Tool) {
