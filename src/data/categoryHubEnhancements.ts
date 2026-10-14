@@ -11,12 +11,12 @@ export type CategoryHubEnhancement={
 export const categoryHubEnhancements:Record<string,CategoryHubEnhancement>={
   'website-analysis':{
     popular:[
-      {id:'website-traffic-checker',anchor:'check website traffic and popularity signals'},
-      {id:'sitemap-checker',anchor:'validate an XML sitemap and inspect submitted URLs'},
-      {id:'redirect-checker',anchor:'trace website redirects and 301 chains'},
+      {id:'broken-link-checker',anchor:'find broken 404/410 links on a public page'},
+      {id:'schema-checker',anchor:'inspect JSON-LD and declared schema types'},
+      {id:'dns-lookup',anchor:'look up public DNS records and TTL values'},
       {id:'website-analyzer',anchor:'run a broader web page SEO and technical audit'},
-      {id:'seo-checker',anchor:'run a focused on-page and technical SEO check'},
-      {id:'meta-tag-checker',anchor:'check title tags, meta descriptions and canonical tags'},
+      {id:'website-traffic-checker',anchor:'check website traffic and popularity signals'},
+      {id:'redirect-checker',anchor:'trace website redirects and 301 chains'},
     ],
     faq:[
       {q:'Which free website analysis tool should I start with?',a:'Use Website Analyzer for a broad first pass. If you already know the problem, use a specialist checker such as Sitemap Checker, Redirect Checker, Meta Tag Checker or HTTP Status Checker so the report stays focused.'},
@@ -28,8 +28,10 @@ export const categoryHubEnhancements:Record<string,CategoryHubEnhancement>={
   calculators:{
     popular:[
       {id:'percentage',anchor:'calculate percentage gain, increase, decrease and change'},
-      {id:'compound',anchor:'model compound interest and long-term growth'},
+      {id:'tip',anchor:'calculate a tip and split the final bill per person'},
+      {id:'fraction',anchor:'add, subtract, multiply and divide fractions exactly'},
       {id:'loan',anchor:'calculate loan payments and amortization'},
+      {id:'compound',anchor:'model compound interest and long-term growth'},
       {id:'average',anchor:'calculate mean, median, mode and range'},
     ],
     faq:[
