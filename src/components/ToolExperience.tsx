@@ -2799,7 +2799,7 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
     }finally{setLoading(false)}
   };
 
-  const page=result?.page,meta=result?.meta,robots=result?.robots,sitemap=result?.sitemap,security=result?.security,ssl=result?.ssl;
+  const page=result?.page,meta=result?.meta,robots=result?.robots,sitemap=result?.sitemap,security=result?.security,ssl=result?.ssl,brokenLinks=result?.brokenLinks,structuredData=result?.structuredData,dns=result?.dns;
   const securityRows=security?[
     ['HSTS',security.headers.hsts],
     ['Content-Security-Policy',security.headers.csp],
@@ -2936,48 +2936,48 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
         <section className="websiteReportPanel"><span className="sectionKicker">TECH STACK</span><h3>Detected public technologies</h3>{result.technologies?.length?<div className="technologyTags">{result.technologies.map(t=><span key={t}>{t}</span>)}</div>:<p className="websiteMuted">No supported CMS, framework, analytics, CDN or integration fingerprints were detected. That does not prove the site uses no technologies; some stacks deliberately hide public fingerprints.</p>}</section>
       </div>}
 
-      {mode==='broken-links'&&result.brokenLinks&&<div className="websiteReport">
+      {mode==='broken-links'&&brokenLinks&&<div className="websiteReport">
         <div className="metricGrid websiteMetrics">
-          <MetricCard label="Links found" value={result.brokenLinks.totalFound}/>
-          <MetricCard label="Links checked" value={result.brokenLinks.checked}/>
-          <MetricCard label="Broken 404/410" value={result.brokenLinks.broken}/>
-          <MetricCard label="Redirected" value={result.brokenLinks.redirected}/>
+          <MetricCard label="Links found" value={brokenLinks.totalFound}/>
+          <MetricCard label="Links checked" value={brokenLinks.checked}/>
+          <MetricCard label="Broken 404/410" value={brokenLinks.broken}/>
+          <MetricCard label="Redirected" value={brokenLinks.redirected}/>
         </div>
         <section className="websiteReportPanel"><span className="sectionKicker">BROKEN LINK REPORT</span><h3>Checked destinations</h3>
-          <div className="redirectChain">{result.brokenLinks.links.map((link,i)=><div key={link.url+'-'+i}><b>{link.status||'ERR'}</b><span><strong>{link.kind}</strong><small>{link.url}</small><em>{link.internal?'Internal':'External'}{link.finalUrl&&link.finalUrl!==link.url?' · → '+link.finalUrl:''}</em></span></div>)}</div>
-          {result.brokenLinks.skipped>0&&<p className="websiteMuted">{result.brokenLinks.skipped} additional unique links were not requested in this bounded scan.</p>}
-          {result.brokenLinks.errors>0&&<p className="websiteMuted">HTTP/access errors are shown separately from true 404/410 broken links because a remote site can block automated requests.</p>}
+          <div className="redirectChain">{brokenLinks.links.map((link,i)=><div key={link.url+'-'+i}><b>{link.status||'ERR'}</b><span><strong>{link.kind}</strong><small>{link.url}</small><em>{link.internal?'Internal':'External'}{link.finalUrl&&link.finalUrl!==link.url?' · → '+link.finalUrl:''}</em></span></div>)}</div>
+          {brokenLinks.skipped>0&&<p className="websiteMuted">{brokenLinks.skipped} additional unique links were not requested in this bounded scan.</p>}
+          {brokenLinks.errors>0&&<p className="websiteMuted">HTTP/access errors are shown separately from true 404/410 broken links because a remote site can block automated requests.</p>}
         </section>
       </div>}
 
-      {mode==='schema'&&result.structuredData&&<div className="websiteReport">
+      {mode==='schema'&&structuredData&&<div className="websiteReport">
         <div className="metricGrid websiteMetrics">
-          <MetricCard label="JSON-LD blocks" value={result.structuredData.scripts}/>
-          <MetricCard label="Valid JSON-LD" value={result.structuredData.valid}/>
-          <MetricCard label="Invalid JSON-LD" value={result.structuredData.invalid}/>
-          <MetricCard label="Schema types" value={result.structuredData.types.length}/>
+          <MetricCard label="JSON-LD blocks" value={structuredData.scripts}/>
+          <MetricCard label="Valid JSON-LD" value={structuredData.valid}/>
+          <MetricCard label="Invalid JSON-LD" value={structuredData.invalid}/>
+          <MetricCard label="Schema types" value={structuredData.types.length}/>
         </div>
         <section className="websiteReportPanel"><span className="sectionKicker">STRUCTURED DATA</span><h3>JSON-LD blocks in the server HTML</h3>
-          <div className="websiteSignalList">{result.structuredData.items.map(item=><WebsiteSignal key={item.index} label={'Block '+item.index} value={item.valid?(item.types.join(', ')||'Valid JSON · no @type found'):'Invalid JSON · '+item.error} ok={item.valid}/>)}</div>
-          {result.structuredData.types.length>0&&<div className="technologyTags">{result.structuredData.types.map(type=><span key={type}>{type}</span>)}</div>}
-          {!result.structuredData.scripts&&<p className="websiteMuted">No application/ld+json blocks were found in the returned HTML. Client-only markup added after JavaScript execution is outside this checker’s current scope.</p>}
+          <div className="websiteSignalList">{structuredData.items.map(item=><WebsiteSignal key={item.index} label={'Block '+item.index} value={item.valid?(item.types.join(', ')||'Valid JSON · no @type found'):'Invalid JSON · '+item.error} ok={item.valid}/>)}</div>
+          {structuredData.types.length>0&&<div className="technologyTags">{structuredData.types.map(type=><span key={type}>{type}</span>)}</div>}
+          {!structuredData.scripts&&<p className="websiteMuted">No application/ld+json blocks were found in the returned HTML. Client-only markup added after JavaScript execution is outside this checker’s current scope.</p>}
         </section>
       </div>}
 
-      {mode==='dns'&&result.dns&&<div className="websiteReport">
+      {mode==='dns'&&dns&&<div className="websiteReport">
         <div className="metricGrid websiteMetrics">
-          <MetricCard label="DNS records" value={result.dns.records.length}/>
-          <MetricCard label="IPv4 (A)" value={result.dns.counts.A||0}/>
-          <MetricCard label="IPv6 (AAAA)" value={result.dns.counts.AAAA||0}/>
-          <MetricCard label="Mail (MX)" value={result.dns.counts.MX||0}/>
+          <MetricCard label="DNS records" value={dns.records.length}/>
+          <MetricCard label="IPv4 (A)" value={dns.counts.A||0}/>
+          <MetricCard label="IPv6 (AAAA)" value={dns.counts.AAAA||0}/>
+          <MetricCard label="Mail (MX)" value={dns.counts.MX||0}/>
         </div>
         <div className="websiteReportGrid">
           {['A','AAAA','CNAME','MX','TXT','NS'].map(type=><section className="websiteReportPanel" key={type}><span className="sectionKicker">{type}</span><h3>{type} records</h3>
-            <div className="websiteSignalList">{result.dns.records.filter(record=>record.type===type).map((record,i)=><WebsiteSignal key={record.name+'-'+type+'-'+i} label={record.name} value={record.data+' · TTL '+record.ttl+'s'}/>)}</div>
-            {!result.dns.records.some(record=>record.type===type)&&<p className="websiteMuted">No records returned.</p>}
+            <div className="websiteSignalList">{dns.records.filter(record=>record.type===type).map((record,i)=><WebsiteSignal key={record.name+'-'+type+'-'+i} label={record.name} value={record.data+' · TTL '+record.ttl+'s'}/>)}</div>
+            {!dns.records.some(record=>record.type===type)&&<p className="websiteMuted">No records returned.</p>}
           </section>)}
         </div>
-        <div className="toolNote"><ShieldCheck size={15}/><span>Resolver: {result.dns.resolver}. DNS caches can differ, so use another resolver too when propagation timing matters.</span></div>
+        <div className="toolNote"><ShieldCheck size={15}/><span>Resolver: {dns.resolver}. DNS caches can differ, so use another resolver too when propagation timing matters.</span></div>
       </div>}
     </>}
   </div>;
