@@ -7,6 +7,11 @@ const dictionary: Record<string,string> = {
   'JSON-LD blocks':'JSON-LD blocks','Valid JSON-LD':'Valid JSON-LD','Invalid JSON-LD':'Invalid JSON-LD','Schema types':'Schema types','STRUCTURED DATA':'STRUCTURED DATA','JSON-LD blocks in the server HTML':'server HTML में JSON-LD blocks',
   'DNS records':'DNS records','IPv4 (A)':'IPv4 (A)','IPv6 (AAAA)':'IPv6 (AAAA)','Mail (MX)':'Mail (MX)','DNS RECORDS':'DNS RECORDS','No records returned.':'कोई record नहीं मिला।',
   'Use the same currency for the bill and result. Percentage presets are shortcuts, not tipping-etiquette advice.':'बिल और result को एक ही currency में समझें। Percentage presets केवल calculation shortcuts हैं, etiquette advice नहीं।',
-  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Decimal दिखाने से पहले result को integer fraction arithmetic से exact simplify किया जाता है।'
+  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Decimal दिखाने से पहले result को integer fraction arithmetic से exact simplify किया जाता है।',
+  'Live public URL analysis':'लाइव public URL analysis',
+  'Toolmera checks a bounded set of unique public HTTP/HTTPS links from the submitted page. 404/410 are reported separately from access errors such as 403, 429 or timeouts.':'Toolmera submitted page से सीमित संख्या में unique public HTTP/HTTPS links check करता है। 404/410 को 403, 429 या timeout जैसे access errors से अलग दिखाया जाता है।',
+  'This checker reads JSON-LD from the server-returned HTML. It checks parse validity and declared types, not Google rich-result eligibility.':'यह checker server से मिले HTML का JSON-LD पढ़ता है। यह parse validity और declared types check करता है, Google Rich Results eligibility नहीं।',
+  'DNS results come from a public DNS-over-HTTPS resolver. One resolver view does not prove global DNS propagation.':'DNS results public DNS-over-HTTPS resolver से आते हैं। एक resolver का result global DNS propagation साबित नहीं करता।',
+  'working':'काम कर रहा है','redirected':'रीडायरेक्टेड','broken':'ब्रोकन','error':'एरर','Block':'ब्लॉक','Valid JSON · no @type found':'Valid JSON · कोई @type नहीं मिला','Invalid JSON':'Invalid JSON'
 };
 export default dictionary;
