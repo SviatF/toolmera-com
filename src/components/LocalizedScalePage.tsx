@@ -44,6 +44,11 @@ const localizedPriorityRelated:Record<string,string[]>={
   'meta-tag-checker':['website-analyzer','website-traffic-checker','seo-checker','redirect-checker'],
   'redirect-checker':['website-analyzer','website-traffic-checker','http-status-checker','seo-checker'],
   'sitemap-checker':['website-analyzer','website-traffic-checker','robots-checker','seo-checker'],
+  'broken-link-checker':['redirect-checker','http-status-checker','website-analyzer','sitemap-checker'],
+  'schema-checker':['meta-tag-checker','seo-checker','website-analyzer','technology-checker'],
+  'dns-lookup':['ssl-checker','http-status-checker','website-analyzer','security-headers-checker'],
+  'tip':['percentage','discount','average','loan'],
+  'fraction':['percentage','average','simple-interest','compound'],
 };
 
 function relatedFor(locale:PilotLocale,toolId:string){
@@ -55,6 +60,7 @@ function relatedFor(locale:PilotLocale,toolId:string){
 }
 
 function seoSections(locale:PilotLocale,item:LocalizedPilotTool){
+  if(item.sections?.length)return item.sections.map((section,index)=>({k:index===0?copy[locale].guide:copy[locale].example,title:section.title,body:section.body}));
   const benefits=item.benefits.join(' · ');const firstAnswer=item.faq[0]?.a||item.description;
   if(locale==='de')return[{k:copy.de.guide,title:`${item.name}: so funktioniert der Workflow`,body:`${item.intro} Die Seite ist auf genau diese Aufgabe ausgerichtet und vermeidet unnötige Zwischenschritte.`},{k:copy.de.example,title:`Was du mit ${item.name} direkt erledigen kannst`,body:`Wichtige Funktionen: ${benefits}. ${firstAnswer}`}];
   if(locale==='hi')return[{k:copy.hi.guide,title:`${item.name} का सही workflow`,body:`${item.intro} यह page इसी task पर focused है और अनावश्यक steps से बचता है।`},{k:copy.hi.example,title:`${item.name} में क्या कर सकते हैं`,body:`मुख्य सुविधाएँ: ${benefits}। ${firstAnswer}`}];
