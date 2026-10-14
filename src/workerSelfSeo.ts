@@ -4,7 +4,7 @@ export { SeoDeploymentStore, SeoTaskStore };
 
 type AssetBinding={fetch(request:Request):Promise<Response>};
 type Env={ASSETS:AssetBinding;[key:string]:unknown};
-type WebsiteAnalysisMode='full'|'traffic'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology';
+type WebsiteAnalysisMode='full'|'traffic'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology'|'broken-links'|'schema'|'dns';
 
 type AssetPage={
   requestedUrl:string;
@@ -118,6 +118,119 @@ function analyzeHtml(page:AssetPage){
   };
 }
 
+
+type SelfCheckedLink={url:string;text:string;internal:boolean};
+
+function selfPageLinks(page:AssetPage){
+  const links:SelfCheckedLink[]=[];
+  const seen=new Set<string>();
+  const sourceHost=new URL(page.finalUrl).hostname.replace(/^www\./,'').toLowerCase();
+  const re=/<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let match:RegExpExecArray|null;
+  while((match=re.exec(page.text))&&links.length<250){
+    const tag='<a '+(match[1]||'')+'>';
+    const href=attr(tag,'href');
+    if(!href||href.startsWith('#')||/^(mailto:|tel:|javascript:|data:)/i.test(href))continue;
+    try{
+      const target=new URL(href,page.finalUrl);
+      if(target.protocol!=='http:'&&target.protocol!=='https:')continue;
+      target.hash='';
+      const normalized=target.toString();
+      if(seen.has(normalized))continue;
+      seen.add(normalized);
+      links.push({
+        url:normalized,
+        text:strip(match[2]||'').slice(0,120),
+        internal:target.hostname.replace(/^www\./,'').toLowerCase()===sourceHost
+      });
+    }catch{}
+  }
+  return links;
+}
+
+async function checkSelfPageLink(link:SelfCheckedLink,env:Env){
+  const target=new URL(link.url);
+  if(isToolmeraHost(target.hostname)){
+    const assetTarget=new URL(target.toString());
+    assetTarget.protocol='https:';
+    assetTarget.hostname='toolmera.com';
+    assetTarget.port='';
+    try{
+      const response=await env.ASSETS.fetch(new Request(assetTarget.toString(),{method:'GET'}));
+      try{if(response.body)await response.body.cancel()}catch{}
+      const status=response.status;
+      return{...link,finalUrl:assetTarget.toString(),status,statusText:response.statusText||'',kind:(status===404||status===410?'broken':status>=400?'error':'working') as 'broken'|'error'|'working'|'redirected'};
+    }catch(error){
+      return{...link,finalUrl:'',status:0,statusText:error instanceof Error?error.message:'Request failed',kind:'error' as const};
+    }
+  }
+
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  try{
+    const response=await fetch(link.url,{
+      method:'GET',
+      redirect:'manual',
+      signal:controller.signal,
+      headers:{accept:'text/html,application/xhtml+xml,*/*;q=0.5','user-agent':'ToolmeraLinkChecker/1.0 (+https://toolmera.com/website-analysis/broken-link-checker/)'}
+    });
+    try{if(response.body)await response.body.cancel()}catch{}
+    const status=response.status;
+    const location=response.headers.get('location');
+    let redirectTarget='';
+    if(status>=300&&status<400&&location){
+      try{redirectTarget=new URL(location,link.url).toString()}catch{}
+    }
+    return{...link,finalUrl:redirectTarget||response.url||link.url,status,statusText:response.statusText||'',kind:(status===404||status===410?'broken':status>=300&&status<400?'redirected':status>=400?'error':'working') as 'broken'|'error'|'working'|'redirected'};
+  }catch(error){
+    return{...link,finalUrl:'',status:0,statusText:error instanceof Error?error.message:'Request failed',kind:'error' as const};
+  }finally{clearTimeout(timer)}
+}
+
+async function selfBrokenLinkReport(page:AssetPage,env:Env){
+  const all=selfPageLinks(page);
+  const sample=all.slice(0,20);
+  const checked:Awaited<ReturnType<typeof checkSelfPageLink>>[]=[];
+  for(let i=0;i<sample.length;i+=5){
+    checked.push(...await Promise.all(sample.slice(i,i+5).map(link=>checkSelfPageLink(link,env))));
+  }
+  return{
+    sourceUrl:page.finalUrl,totalFound:all.length,checked:checked.length,
+    working:checked.filter(row=>row.kind==='working').length,
+    redirected:checked.filter(row=>row.kind==='redirected').length,
+    broken:checked.filter(row=>row.kind==='broken').length,
+    errors:checked.filter(row=>row.kind==='error').length,
+    skipped:Math.max(0,all.length-checked.length),links:checked
+  };
+}
+
+function collectSelfJsonLdTypes(value:unknown,types:Set<string>){
+  if(Array.isArray(value)){for(const item of value)collectSelfJsonLdTypes(item,types);return}
+  if(!value||typeof value!=='object')return;
+  const object=value as Record<string,unknown>;
+  const own=object['@type'];
+  if(typeof own==='string'&&own.trim())types.add(own.trim());
+  if(Array.isArray(own))for(const item of own)if(typeof item==='string'&&item.trim())types.add(item.trim());
+  for(const child of Object.values(object))collectSelfJsonLdTypes(child,types);
+}
+
+function selfStructuredDataReport(html:string){
+  const scripts=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].slice(0,30);
+  const allTypes=new Set<string>();
+  const items=scripts.map((script,index)=>{
+    try{
+      const parsed=JSON.parse((script[1]||'').trim());
+      const types=new Set<string>();collectSelfJsonLdTypes(parsed,types);
+      for(const type of types)allTypes.add(type);
+      const keys=parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?Object.keys(parsed as Record<string,unknown>).slice(0,20):[];
+      return{index:index+1,valid:true,types:[...types].slice(0,30),keys,error:''};
+    }catch(error){
+      return{index:index+1,valid:false,types:[] as string[],keys:[] as string[],error:(error instanceof Error?error.message:String(error)).slice(0,220)};
+    }
+  });
+  return{scripts:items.length,valid:items.filter(x=>x.valid).length,invalid:items.filter(x=>!x.valid).length,types:[...allTypes].slice(0,50),items};
+}
+
 function robotsSummary(text:string,url:string,status:number){
   const sitemaps=[...text.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(m=>m[1]).slice(0,20);
   return{url,status,available:status>=200&&status<300,blocksAll:/User-agent:\s*\*[\s\S]{0,800}?Disallow:\s*\/\s*(?:#.*)?$/im.test(text),sitemaps,userAgents:(text.match(/^\s*User-agent:/gim)||[]).length,disallows:(text.match(/^\s*Disallow:/gim)||[]).length,allows:(text.match(/^\s*Allow:/gim)||[]).length,preview:text.slice(0,10000)};
@@ -170,6 +283,7 @@ async function assetText(env:Env,path:string){
 async function selfAnalysis(request:Request,env:Env,body:{url?:string;mode?:WebsiteAnalysisMode}){
   const mode:WebsiteAnalysisMode=body.mode||'full';
   const input=normalizeInput(body.url||'');
+  if(mode==='dns')return appWorker.fetch(request,env as any);
   const page=await fetchAsset(env,input);
 
   if(mode==='traffic'){
@@ -178,6 +292,16 @@ async function selfAnalysis(request:Request,env:Env,body:{url?:string;mode?:Webs
     const payload=await upstream.json() as Record<string,unknown>;
     payload.page={requestedUrl:page.requestedUrl,finalUrl:page.finalUrl,status:page.status,statusText:page.statusText,elapsedMs:page.elapsedMs,redirects:page.redirects,headers:{server:page.headers['server']||'Cloudflare',contentType:page.headers['content-type']||'',cacheControl:page.headers['cache-control']||'',contentEncoding:page.headers['content-encoding']||'',xRobotsTag:page.headers['x-robots-tag']||'',location:page.headers['location']||''},htmlBytes:new TextEncoder().encode(page.text).byteLength};
     return json(payload);
+  }
+
+  if(mode==='broken-links'){
+    const brokenLinks=await selfBrokenLinkReport(page,env);
+    return json({mode,inputUrl:input.toString(),page:{requestedUrl:page.requestedUrl,finalUrl:page.finalUrl,status:page.status,statusText:page.statusText,elapsedMs:page.elapsedMs,redirects:page.redirects,headers:{server:page.headers['server']||'Cloudflare',contentType:page.headers['content-type']||'',cacheControl:page.headers['cache-control']||'',contentEncoding:page.headers['content-encoding']||'',xRobotsTag:page.headers['x-robots-tag']||'',location:page.headers['location']||''},htmlBytes:new TextEncoder().encode(page.text).byteLength},brokenLinks,fetchedAt:new Date().toISOString()});
+  }
+
+  if(mode==='schema'){
+    const structuredData=selfStructuredDataReport(page.text);
+    return json({mode,inputUrl:input.toString(),page:{requestedUrl:page.requestedUrl,finalUrl:page.finalUrl,status:page.status,statusText:page.statusText,elapsedMs:page.elapsedMs,redirects:page.redirects,headers:{server:page.headers['server']||'Cloudflare',contentType:page.headers['content-type']||'',cacheControl:page.headers['cache-control']||'',contentEncoding:page.headers['content-encoding']||'',xRobotsTag:page.headers['x-robots-tag']||'',location:page.headers['location']||''},htmlBytes:new TextEncoder().encode(page.text).byteLength},structuredData,fetchedAt:new Date().toISOString()});
   }
 
   const robotsAsset=await assetText(env,'/robots.txt');

@@ -862,7 +862,7 @@ async function handleIndexing(request:Request,env:Env){
 }
 
 
-type WebsiteAnalysisMode='full'|'traffic'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology';
+type WebsiteAnalysisMode='full'|'traffic'|'seo'|'meta'|'status'|'redirect'|'robots'|'sitemap'|'ssl'|'security'|'technology'|'broken-links'|'schema'|'dns';
 
 type PublicFetchResult={
   requestedUrl:string;
@@ -1155,6 +1155,217 @@ function detectTechnologies(page:PublicFetchResult,html:{generator:string}){
   return [...found];
 }
 
+
+type CheckedPageLink={
+  url:string;
+  text:string;
+  internal:boolean;
+};
+
+function pageLinksForCheck(page:PublicFetchResult){
+  const links:CheckedPageLink[]=[];
+  const seen=new Set<string>();
+  const origin=new URL(page.finalUrl).origin;
+  const re=/<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let match:RegExpExecArray|null;
+  while((match=re.exec(page.text))&&links.length<250){
+    const tag='<a '+(match[1]||'')+'>';
+    const href=tagAttr(tag,'href');
+    if(!href||href.startsWith('#')||/^(mailto:|tel:|javascript:|data:)/i.test(href))continue;
+    try{
+      const target=new URL(href,page.finalUrl);
+      if(target.protocol!=='http:'&&target.protocol!=='https:')continue;
+      if(target.port&&target.port!=='80'&&target.port!=='443')continue;
+      assertPublicHostname(target.hostname);
+      target.hash='';
+      const normalized=target.toString();
+      if(seen.has(normalized))continue;
+      seen.add(normalized);
+      links.push({
+        url:normalized,
+        text:stripHtml(match[2]||'').slice(0,120),
+        internal:target.origin===origin
+      });
+    }catch{}
+  }
+  return links;
+}
+
+async function checkPageLink(link:CheckedPageLink){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),7000);
+  try{
+    const response=await fetch(link.url,{
+      method:'GET',
+      redirect:'manual',
+      signal:controller.signal,
+      headers:{
+        accept:'text/html,application/xhtml+xml,*/*;q=0.5',
+        'user-agent':'ToolmeraLinkChecker/1.0 (+https://toolmera.com/website-analysis/broken-link-checker/)'
+      }
+    });
+    try{if(response.body)await response.body.cancel()}catch{}
+    const status=response.status;
+    const location=response.headers.get('location');
+    let redirectTarget='';
+    if(status>=300&&status<400&&location){
+      try{
+        const target=new URL(location,link.url);
+        if((target.protocol==='http:'||target.protocol==='https:')&&(!target.port||target.port==='80'||target.port==='443')){
+          assertPublicHostname(target.hostname);
+          redirectTarget=target.toString();
+        }
+      }catch{}
+    }
+    const kind=status===404||status===410?'broken':status>=300&&status<400?'redirected':status>=400?'error':'working';
+    return{
+      ...link,
+      finalUrl:redirectTarget||response.url||link.url,
+      status,
+      statusText:response.statusText||'',
+      kind
+    } as const;
+  }catch(error){
+    return{
+      ...link,
+      finalUrl:'',
+      status:0,
+      statusText:error instanceof Error?error.message:'Request failed',
+      kind:'error' as const
+    };
+  }finally{clearTimeout(timer)}
+}
+
+async function brokenLinkReport(page:PublicFetchResult){
+  const all=pageLinksForCheck(page);
+  const sample=all.slice(0,20);
+  const checked:Awaited<ReturnType<typeof checkPageLink>>[]=[];
+  for(let i=0;i<sample.length;i+=5){
+    const rows=await Promise.all(sample.slice(i,i+5).map(checkPageLink));
+    checked.push(...rows);
+  }
+  return{
+    sourceUrl:page.finalUrl,
+    totalFound:all.length,
+    checked:checked.length,
+    working:checked.filter(row=>row.kind==='working').length,
+    redirected:checked.filter(row=>row.kind==='redirected').length,
+    broken:checked.filter(row=>row.kind==='broken').length,
+    errors:checked.filter(row=>row.kind==='error').length,
+    skipped:Math.max(0,all.length-checked.length),
+    links:checked
+  };
+}
+
+function collectJsonLdTypes(value:unknown,types:Set<string>){
+  if(Array.isArray(value)){
+    for(const item of value)collectJsonLdTypes(item,types);
+    return;
+  }
+  if(!value||typeof value!=='object')return;
+  const object=value as Record<string,unknown>;
+  const typeValue=object['@type'];
+  if(typeof typeValue==='string'&&typeValue.trim())types.add(typeValue.trim());
+  if(Array.isArray(typeValue)){
+    for(const type of typeValue)if(typeof type==='string'&&type.trim())types.add(type.trim());
+  }
+  for(const child of Object.values(object))collectJsonLdTypes(child,types);
+}
+
+function structuredDataReport(html:string){
+  const scripts=[...html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].slice(0,30);
+  const allTypes=new Set<string>();
+  const items=scripts.map((script,index)=>{
+    const raw=(script[1]||'').trim();
+    try{
+      const parsed=JSON.parse(raw);
+      const types=new Set<string>();
+      collectJsonLdTypes(parsed,types);
+      for(const type of types)allTypes.add(type);
+      const keys=parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?Object.keys(parsed as Record<string,unknown>).slice(0,20):[];
+      return{index:index+1,valid:true,types:[...types].slice(0,30),keys,error:''};
+    }catch(error){
+      return{index:index+1,valid:false,types:[] as string[],keys:[] as string[],error:(error instanceof Error?error.message:String(error)).slice(0,220)};
+    }
+  });
+  return{
+    scripts:items.length,
+    valid:items.filter(item=>item.valid).length,
+    invalid:items.filter(item=>!item.valid).length,
+    types:[...allTypes].slice(0,50),
+    items
+  };
+}
+
+type DnsJsonResponse={
+  Status?:number;
+  Answer?:{name?:string;type?:number;TTL?:number;data?:string}[];
+};
+
+const dnsTypes=[
+  {label:'A',code:1},
+  {label:'AAAA',code:28},
+  {label:'CNAME',code:5},
+  {label:'MX',code:15},
+  {label:'TXT',code:16},
+  {label:'NS',code:2},
+] as const;
+
+async function dnsLookup(domain:string){
+  assertPublicHostname(domain);
+  const records:{type:string;name:string;ttl:number;data:string}[]=[];
+  for(const batch of [dnsTypes.slice(0,3),dnsTypes.slice(3)]){
+    const responses=await Promise.all(batch.map(async type=>{
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),6000);
+      try{
+        const endpoint=new URL('https://dns.google/resolve');
+        endpoint.searchParams.set('name',domain);
+        endpoint.searchParams.set('type',String(type.code));
+        const response=await fetch(endpoint.toString(),{
+          signal:controller.signal,
+          headers:{accept:'application/dns-json','user-agent':'ToolmeraDNSLookup/1.0 (+https://toolmera.com/website-analysis/dns-lookup/)'}
+        });
+        if(!response.ok)return [] as {type:string;name:string;ttl:number;data:string}[];
+        const payload=await response.json() as DnsJsonResponse;
+        return (payload.Answer||[])
+          .filter(answer=>Number(answer.type)===type.code)
+          .map(answer=>({
+            type:type.label,
+            name:String(answer.name||domain).replace(/\.$/,''),
+            ttl:Number(answer.TTL||0),
+            data:String(answer.data||'').replace(/\.$/,'')
+          }));
+      }catch{return [] as {type:string;name:string;ttl:number;data:string}[]}
+      finally{clearTimeout(timer)}
+    }));
+    for(const rows of responses)records.push(...rows);
+  }
+  const counts:Record<string,number>={};
+  for(const type of dnsTypes)counts[type.label]=records.filter(record=>record.type===type.label).length;
+  return{domain,resolver:'Google Public DNS over HTTPS',records,counts};
+}
+
+function publicPagePayload(page:PublicFetchResult){
+  return{
+    requestedUrl:page.requestedUrl,
+    finalUrl:page.finalUrl,
+    status:page.status,
+    statusText:page.statusText,
+    elapsedMs:page.elapsedMs,
+    redirects:page.redirectChain,
+    headers:{
+      server:page.headers['server']||'',
+      contentType:page.headers['content-type']||'',
+      cacheControl:page.headers['cache-control']||'',
+      contentEncoding:page.headers['content-encoding']||'',
+      xRobotsTag:page.headers['x-robots-tag']||'',
+      location:page.headers['location']||''
+    },
+    htmlBytes:new TextEncoder().encode(page.text).byteLength
+  };
+}
+
 function robotsSummary(text:string,url:string,status:number){
   const sitemaps=[...text.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(m=>m[1]).slice(0,20);
   const blocksAll=/User-agent:\s*\*[\s\S]{0,800}?Disallow:\s*\/\s*(?:#.*)?$/im.test(text);
@@ -1302,11 +1513,15 @@ async function handleWebsiteAnalysis(request:Request){
   catch{return json({error:'Invalid JSON request body.'},400)}
 
   const mode:WebsiteAnalysisMode=body.mode||'full';
-  const allowed:WebsiteAnalysisMode[]=['full','traffic','seo','meta','status','redirect','robots','sitemap','ssl','security','technology'];
+  const allowed:WebsiteAnalysisMode[]=['full','traffic','seo','meta','status','redirect','robots','sitemap','ssl','security','technology','broken-links','schema','dns'];
   if(!allowed.includes(mode))return json({error:'Unsupported analysis mode.'},400);
 
   try{
     const input=normalizePublicUrl(body.url||'');
+    if(mode==='dns'){
+      const dns=await dnsLookup(input.hostname.toLowerCase().replace(/^www\./,''));
+      return json({mode,inputUrl:input.toString(),dns,fetchedAt:new Date().toISOString()});
+    }
     if(mode==='traffic'){
       const domain=input.hostname.toLowerCase().replace(/^www\./,'');
       const [traffic,pageResult]=await Promise.all([
@@ -1344,6 +1559,14 @@ async function handleWebsiteAnalysis(request:Request){
     }
 
     const page=await fetchPublicPage(input.toString());
+    if(mode==='broken-links'){
+      const brokenLinks=await brokenLinkReport(page);
+      return json({mode,inputUrl:input.toString(),page:publicPagePayload(page),brokenLinks,fetchedAt:new Date().toISOString()});
+    }
+    if(mode==='schema'){
+      const structuredData=structuredDataReport(page.text);
+      return json({mode,inputUrl:input.toString(),page:publicPagePayload(page),structuredData,fetchedAt:new Date().toISOString()});
+    }
     const html=analyzeHtml(page);
     const security=securitySignals(page.headers,page.finalUrl);
     const technologies=detectTechnologies(page,html);

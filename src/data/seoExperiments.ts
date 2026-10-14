@@ -10,6 +10,11 @@ export type SeoExperiment={
 // Keep the original experiment immutable; if the same page changes again,
 // add a new entry so the observation window restarts instead of overwriting history.
 export const seoExperiments:SeoExperiment[]=[
+  {id:'launch-broken-link-checker-v1',toolId:'broken-link-checker',changedAt:'2026-10-14',change:'Launched a new bounded Broken Link Checker with handcrafted SEO content and internal-link support; observe before changing intent or copy.'},
+  {id:'launch-schema-checker-v1',toolId:'schema-checker',changedAt:'2026-10-14',change:'Launched a JSON-LD Schema Markup Checker with unique SEO content and contextual internal links; hold early rewrites during discovery.'},
+  {id:'launch-dns-lookup-v1',toolId:'dns-lookup',changedAt:'2026-10-14',change:'Launched DNS Lookup for A, AAAA, CNAME, MX, TXT and NS with unique SEO content; observe initial indexing and queries.'},
+  {id:'launch-tip-calculator-v1',toolId:'tip',changedAt:'2026-10-14',change:'Launched Tip Calculator with bill split functionality, unique SEO content and calculator-cluster links; observe before further SEO edits.'},
+  {id:'launch-fraction-calculator-v1',toolId:'fraction',changedAt:'2026-10-14',change:'Launched exact Fraction Calculator with simplification, mixed-number and decimal results; observe before further SEO edits.'},
   {id:'age-total-months-v1',toolId:'age',changedAt:'2026-10-12',change:'Added a real Total months result plus exact age-in-months guidance; hold further SEO edits during observation.'},
   {id:'percentage-total-intent-v2',toolId:'percentage',changedAt:'2026-10-12',change:'Added percentage-of-a-total exact-intent section and FAQ; hold further edits while Google re-evaluates the page.'},
   {id:'loan-internal-links-v1',toolId:'loan',changedAt:'2026-10-12',change:'Completed a three-source contextual inbound link cluster for Loan Calculator without changing Title, H1 or URL.'},

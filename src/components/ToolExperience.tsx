@@ -3,6 +3,7 @@
 import { DragEvent, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Copy, Download, FileUp, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import type { Tool } from '@/data/tools';
+import { FractionCalculator, TipCalculator } from '@/components/NewWaveCalculators';
 
 type Result = { url: string; name: string; before?: number; after?: number };
 const money = (n: number) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
@@ -2710,6 +2711,30 @@ type WebsiteAnalysisResponse={
   security?:{https:boolean;grade:string;present:number;total:number;headers:{hsts:string;csp:string;xFrameOptions:string;xContentTypeOptions:string;referrerPolicy:string;permissionsPolicy:string}};
   ssl?:{https:boolean;secureConnection:boolean;hsts:boolean;httpRedirectToHttps:boolean|null};
   technologies?:string[];
+  brokenLinks?:{
+    sourceUrl:string;
+    totalFound:number;
+    checked:number;
+    working:number;
+    redirected:number;
+    broken:number;
+    errors:number;
+    skipped:number;
+    links:{url:string;finalUrl:string;status:number;statusText:string;kind:'working'|'redirected'|'broken'|'error';internal:boolean;text:string}[];
+  };
+  structuredData?:{
+    scripts:number;
+    valid:number;
+    invalid:number;
+    types:string[];
+    items:{index:number;valid:boolean;types:string[];keys:string[];error:string}[];
+  };
+  dns?:{
+    domain:string;
+    resolver:string;
+    records:{type:string;name:string;ttl:number;data:string}[];
+    counts:Record<string,number>;
+  };
   seoScore?:number;
   traffic?:{
     domain:string;
@@ -2740,7 +2765,10 @@ const websiteModeById:Record<string,string>={
   'sitemap-checker':'sitemap',
   'ssl-checker':'ssl',
   'security-headers-checker':'security',
-  'technology-checker':'technology'
+  'technology-checker':'technology',
+  'broken-link-checker':'broken-links',
+  'schema-checker':'schema',
+  'dns-lookup':'dns'
 };
 
 function WebsiteSignal({label,value,ok}:{label:string;value:React.ReactNode;ok?:boolean|null}){
@@ -2771,7 +2799,7 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
     }finally{setLoading(false)}
   };
 
-  const page=result?.page,meta=result?.meta,robots=result?.robots,sitemap=result?.sitemap,security=result?.security,ssl=result?.ssl;
+  const page=result?.page,meta=result?.meta,robots=result?.robots,sitemap=result?.sitemap,security=result?.security,ssl=result?.ssl,brokenLinks=result?.brokenLinks,structuredData=result?.structuredData,dns=result?.dns;
   const securityRows=security?[
     ['HSTS',security.headers.hsts],
     ['Content-Security-Policy',security.headers.csp],
@@ -2781,12 +2809,23 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
     ['Permissions-Policy',security.headers.permissionsPolicy],
   ]:[];
 
+  const inputLabel=mode==='dns'?'Domain name':mode==='broken-links'?'Page URL to scan':mode==='schema'?'Page URL with structured data':'Public website URL';
+  const inputPlaceholder=mode==='dns'?'example.com':'https://example.com/page';
+  const actionLabel=mode==='dns'?'Check DNS':mode==='broken-links'?'Check links':mode==='schema'?'Check structured data':'Analyze website';
+  const note=mode==='broken-links'
+    ?'Toolmera checks a bounded set of unique public HTTP/HTTPS links from the submitted page. 404/410 are reported separately from access errors such as 403, 429 or timeouts.'
+    :mode==='schema'
+      ?'This checker reads JSON-LD from the server-returned HTML. It checks parse validity and declared types, not Google rich-result eligibility.'
+      :mode==='dns'
+        ?'DNS results come from a public DNS-over-HTTPS resolver. One resolver view does not prove global DNS propagation.'
+        :'Toolmera fetches only public HTTP/HTTPS pages. Local/private hosts and non-standard ports are blocked, redirects are capped, and response bodies are size-limited.';
+
   return <div className="toolUi">
     <form className="websiteAnalyzerForm" onSubmit={analyze}>
-      <label className="websiteUrlField"><span>Public website URL</span><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com/page" inputMode="url" autoComplete="url"/></label>
-      <button className="primaryButton websiteAnalyzeButton" disabled={loading||!url.trim()}>{loading?<><RefreshCw size={16} className="spin"/> Analyzing…</>:<>Analyze website</>}</button>
+      <label className="websiteUrlField"><span>{inputLabel}</span><input value={url} onChange={e=>setUrl(e.target.value)} placeholder={inputPlaceholder} inputMode="url" autoComplete="url"/></label>
+      <button className="primaryButton websiteAnalyzeButton" disabled={loading||!url.trim()}>{loading?<><RefreshCw size={16} className="spin"/> Analyzing…</>:<>{actionLabel}</>}</button>
     </form>
-    <div className="toolNote"><ShieldCheck size={15}/><span>Toolmera fetches only public HTTP/HTTPS pages. Local/private hosts and non-standard ports are blocked, redirects are capped, and response bodies are size-limited.</span></div>
+    <div className="toolNote"><ShieldCheck size={15}/><span>{note}</span></div>
     {error&&<div className="toolError">{error}</div>}
 
     {result&&<>
@@ -2896,6 +2935,50 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
         <div className="metricGrid websiteMetrics"><MetricCard label="Detected" value={result.technologies?.length||0}/><MetricCard label="HTTP status" value={page?.status||'—'}/><MetricCard label="Server" value={page?.headers.server||'Hidden'}/><MetricCard label="Generator" value={meta?.generator||'None'}/></div>
         <section className="websiteReportPanel"><span className="sectionKicker">TECH STACK</span><h3>Detected public technologies</h3>{result.technologies?.length?<div className="technologyTags">{result.technologies.map(t=><span key={t}>{t}</span>)}</div>:<p className="websiteMuted">No supported CMS, framework, analytics, CDN or integration fingerprints were detected. That does not prove the site uses no technologies; some stacks deliberately hide public fingerprints.</p>}</section>
       </div>}
+
+      {mode==='broken-links'&&brokenLinks&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics">
+          <MetricCard label="Links found" value={brokenLinks.totalFound}/>
+          <MetricCard label="Links checked" value={brokenLinks.checked}/>
+          <MetricCard label="Broken 404/410" value={brokenLinks.broken}/>
+          <MetricCard label="Redirected" value={brokenLinks.redirected}/>
+        </div>
+        <section className="websiteReportPanel"><span className="sectionKicker">BROKEN LINK REPORT</span><h3>Checked destinations</h3>
+          <div className="redirectChain">{brokenLinks.links.map((link,i)=><div key={link.url+'-'+i}><b>{link.status||'ERR'}</b><span><strong>{link.kind}</strong><small>{link.url}</small><em>{link.internal?'Internal':'External'}{link.finalUrl&&link.finalUrl!==link.url?' · → '+link.finalUrl:''}</em></span></div>)}</div>
+          {brokenLinks.skipped>0&&<p className="websiteMuted">{brokenLinks.skipped} additional unique links were not requested in this bounded scan.</p>}
+          {brokenLinks.errors>0&&<p className="websiteMuted">HTTP/access errors are shown separately from true 404/410 broken links because a remote site can block automated requests.</p>}
+        </section>
+      </div>}
+
+      {mode==='schema'&&structuredData&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics">
+          <MetricCard label="JSON-LD blocks" value={structuredData.scripts}/>
+          <MetricCard label="Valid JSON-LD" value={structuredData.valid}/>
+          <MetricCard label="Invalid JSON-LD" value={structuredData.invalid}/>
+          <MetricCard label="Schema types" value={structuredData.types.length}/>
+        </div>
+        <section className="websiteReportPanel"><span className="sectionKicker">STRUCTURED DATA</span><h3>JSON-LD blocks in the server HTML</h3>
+          <div className="websiteSignalList">{structuredData.items.map(item=><WebsiteSignal key={item.index} label={'Block '+item.index} value={item.valid?(item.types.join(', ')||'Valid JSON · no @type found'):'Invalid JSON · '+item.error} ok={item.valid}/>)}</div>
+          {structuredData.types.length>0&&<div className="technologyTags">{structuredData.types.map(type=><span key={type}>{type}</span>)}</div>}
+          {!structuredData.scripts&&<p className="websiteMuted">No application/ld+json blocks were found in the returned HTML. Client-only markup added after JavaScript execution is outside this checker’s current scope.</p>}
+        </section>
+      </div>}
+
+      {mode==='dns'&&dns&&<div className="websiteReport">
+        <div className="metricGrid websiteMetrics">
+          <MetricCard label="DNS records" value={dns.records.length}/>
+          <MetricCard label="IPv4 (A)" value={dns.counts.A||0}/>
+          <MetricCard label="IPv6 (AAAA)" value={dns.counts.AAAA||0}/>
+          <MetricCard label="Mail (MX)" value={dns.counts.MX||0}/>
+        </div>
+        <div className="websiteReportGrid">
+          {['A','AAAA','CNAME','MX','TXT','NS'].map(type=><section className="websiteReportPanel" key={type}><span className="sectionKicker">{type}</span><h3>{type} records</h3>
+            <div className="websiteSignalList">{dns.records.filter(record=>record.type===type).map((record,i)=><WebsiteSignal key={record.name+'-'+type+'-'+i} label={record.name} value={record.data+' · TTL '+record.ttl+'s'}/>)}</div>
+            {!dns.records.some(record=>record.type===type)&&<p className="websiteMuted">No records returned.</p>}
+          </section>)}
+        </div>
+        <div className="toolNote"><ShieldCheck size={15}/><span>Resolver: {dns.resolver}. DNS caches can differ, so use another resolver too when propagation timing matters.</span></div>
+      </div>}
     </>}
   </div>;
 }
@@ -2903,6 +2986,6 @@ function WebsiteAnalysisTool({tool}:{tool:Tool}){
 
 export function ToolExperience({tool}:{tool:Tool}){
   let ui;
-  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='character-counter')ui=<CharacterCounter/>; else if(tool.kind==='remove-duplicate-lines')ui=<RemoveDuplicateLines/>; else if(tool.kind==='sort-lines')ui=<SortLines/>; else if(tool.kind==='text-diff')ui=<TextDiffChecker/>; else if(tool.kind==='json-to-csv')ui=<JsonToCsv/>; else if(tool.kind==='xml-formatter')ui=<XmlFormatter/>; else if(tool.kind==='date-calculator')ui=<DateCalculator/>; else if(tool.kind==='time-duration')ui=<TimeDurationCalculator/>; else if(tool.kind==='website-analysis')ui=<WebsiteAnalysisTool tool={tool}/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
+  if(tool.kind==='image-convert') ui=<ImageConvert tool={tool}/>; else if(tool.kind==='image-compress')ui=<ImageCompress/>; else if(tool.kind==='image-compress-jpg')ui=<ImageCompressJpg/>; else if(tool.kind==='image-compress-png')ui=<ImageCompressPng/>; else if(tool.kind==='image-resize')ui=<ImageResize/>; else if(tool.kind==='image-crop')ui=<CropImage/>; else if(tool.kind==='heic-convert')ui=<HeicConverter/>; else if(tool.kind==='pdf-to-image')ui=<PdfToImage/>; else if(tool.kind==='pdf-rotate')ui=<PdfRotate/>; else if(tool.kind==='pdf-remove-pages')ui=<PdfRemovePages/>; else if(['pdf-merge','pdf-split','images-to-pdf'].includes(tool.kind))ui=<PdfTool tool={tool}/>; else if(tool.kind==='age')ui=<AgeCalculator/>; else if(tool.kind==='percentage')ui=<PercentageCalculator/>; else if(tool.kind==='bmi')ui=<BmiCalculator/>; else if(tool.kind==='interest')ui=<CompoundInterestCalculator/>; else if(tool.kind==='loan')ui=<LoanCalculator/>; else if(tool.kind==='roi')ui=<RoiCalculator/>; else if(tool.kind==='discount')ui=<DiscountCalculator/>; else if(tool.kind==='simple-interest')ui=<SimpleInterestCalculator/>; else if(tool.kind==='date-difference')ui=<DateDifferenceCalculator/>; else if(tool.kind==='average')ui=<AverageCalculator/>; else if(tool.kind==='tip')ui=<TipCalculator/>; else if(tool.kind==='fraction')ui=<FractionCalculator/>; else if(tool.kind==='emi')ui=<EmiIndiaCalculator variant={tool.id==='home-emi-in'?'home':tool.id==='car-emi-in'?'car':'generic'}/>; else if(tool.kind==='sip')ui=<SipIndiaCalculator/>; else if(tool.kind==='fd')ui=<FdIndiaCalculator/>; else if(tool.kind==='gst')ui=<GstIndiaCalculator/>; else if(tool.kind==='cagr')ui=<CagrCoreCalculator/>; else if(tool.kind==='unit-length')ui=<UnitConverter/>; else if(tool.kind==='unit-temperature')ui=<UnitConverter temperature/>; else if(tool.kind==='unit-weight')ui=<WeightConverter/>; else if(tool.kind==='unit-volume')ui=<VolumeConverter/>; else if(tool.kind==='unit-area')ui=<AreaConverter/>; else if(tool.kind==='unit-speed')ui=<SpeedConverter/>; else if(tool.kind==='data-storage')ui=<DataStorageConverter/>; else if(tool.kind==='color-converter')ui=<ColorConverter/>; else if(tool.kind==='time-zone')ui=<TimeZoneConverter/>; else if(tool.kind==='url-encoder')ui=<UrlEncoderDecoder/>; else if(tool.kind==='slug-generator')ui=<SlugGenerator/>; else if(tool.kind==='jwt-decoder')ui=<JwtDecoder/>; else if(tool.kind==='character-counter')ui=<CharacterCounter/>; else if(tool.kind==='remove-duplicate-lines')ui=<RemoveDuplicateLines/>; else if(tool.kind==='sort-lines')ui=<SortLines/>; else if(tool.kind==='text-diff')ui=<TextDiffChecker/>; else if(tool.kind==='json-to-csv')ui=<JsonToCsv/>; else if(tool.kind==='xml-formatter')ui=<XmlFormatter/>; else if(tool.kind==='date-calculator')ui=<DateCalculator/>; else if(tool.kind==='time-duration')ui=<TimeDurationCalculator/>; else if(tool.kind==='website-analysis')ui=<WebsiteAnalysisTool tool={tool}/>; else if(tool.kind==='qr-generator')ui=<QrCodeGenerator/>; else if(tool.kind==='uuid-generator')ui=<UuidGenerator/>; else if(tool.kind==='password-generator')ui=<PasswordGenerator/>; else if(tool.kind==='random-number-generator')ui=<RandomNumberGenerator/>; else if(tool.kind==='unix-timestamp')ui=<UnixTimestampConverter/>; else if(tool.kind==='word-counter')ui=<WordCounter/>; else if(tool.kind==='case-converter')ui=<CaseConverter/>; else if(tool.kind==='json-formatter')ui=<JsonFormatter/>; else if(tool.kind==='base64')ui=<Base64Tool/>; else ui=null;
   return <section className={`toolExperience accent-${tool.accent}`}><div className="experienceTop"><div><span className="eyebrow">TOOLMERA / {tool.categoryLabel.toUpperCase()}</span><div className="experienceTitle">{tool.name}</div></div><span className="privatePill"><ShieldCheck size={15}/> {tool.kind==='website-analysis'?'Live public URL analysis':'Browser-first processing'}</span></div>{ui}</section>
 }

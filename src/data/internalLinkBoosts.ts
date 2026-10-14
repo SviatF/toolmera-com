@@ -72,6 +72,22 @@ export const internalLinkBoosts:InternalLinkBoost[]=[
   {from:'percentage',to:'loan',anchor:'estimate a fixed-rate loan payment from an interest rate',reason:'Complete the Loan Calculator inbound cluster: percentage-rate intent naturally leads into monthly payment and total-interest calculations.'},
   {from:'url-encoder',to:'qr-code',anchor:'turn the finished URL into a QR code',reason:'Connect URL preparation with a common QR-code publishing workflow.'},
   {from:'slug-generator',to:'qr-code',anchor:'create a QR code for the finished page URL',reason:'Connect URL publishing workflows with the QR generator.'},
+  {from:'website-analyzer',to:'broken-link-checker',anchor:'scan the page for broken 404 and 410 links',reason:'Extend the broad audit into a focused live link check.'},
+  {from:'website-analyzer',to:'schema-checker',anchor:'inspect the page’s JSON-LD structured data',reason:'Move from broad schema detection into block-level JSON-LD inspection.'},
+  {from:'website-analyzer',to:'dns-lookup',anchor:'check the domain’s public DNS records',reason:'Connect website diagnostics with the DNS layer behind the hostname.'},
+  {from:'seo-checker',to:'broken-link-checker',anchor:'check whether page links lead to broken destinations',reason:'Turn an SEO audit finding into a focused link-health workflow.'},
+  {from:'seo-checker',to:'schema-checker',anchor:'inspect JSON-LD blocks and schema types',reason:'Give structured-data intent a dedicated diagnostic next step.'},
+  {from:'meta-tag-checker',to:'schema-checker',anchor:'check structured data alongside page metadata',reason:'Connect two source-level search appearance diagnostics.'},
+  {from:'redirect-checker',to:'broken-link-checker',anchor:'scan the source page for other broken or redirected links',reason:'Connect single-URL redirect debugging with page-wide link checking.'},
+  {from:'http-status-checker',to:'broken-link-checker',anchor:'check multiple links from one page for HTTP failures',reason:'Scale from one HTTP status check to a bounded page link scan.'},
+  {from:'ssl-checker',to:'dns-lookup',anchor:'inspect DNS records behind the HTTPS hostname',reason:'Connect transport diagnostics to hostname resolution.'},
+  {from:'security-headers-checker',to:'dns-lookup',anchor:'check the domain’s public DNS setup',reason:'Connect response security diagnostics to public DNS configuration.'},
+  {from:'percentage',to:'tip',anchor:'apply a percentage directly to a bill and split the total',reason:'Move from general percentage math into a real tipping workflow.'},
+  {from:'discount',to:'tip',anchor:'calculate a tip after finding the final sale price',reason:'Connect two common checkout calculations.'},
+  {from:'average',to:'fraction',anchor:'work with exact fractions instead of decimal-only values',reason:'Connect general numerical summaries with exact rational arithmetic.'},
+  {from:'percentage',to:'fraction',anchor:'calculate with exact fractions before converting to percentages',reason:'Bridge percentage and fraction representations without creating duplicate intents.'},
+  {from:'tip',to:'percentage',anchor:'solve a custom percentage question',reason:'Return from the tipping workflow to general percentage math.'},
+  {from:'fraction',to:'percentage',anchor:'convert the ratio into a percentage question',reason:'Connect exact fraction results to percentage calculations.'},
 ];
 
 export function internalLinkBoostsFrom(sourceId:string){
