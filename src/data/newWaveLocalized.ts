@@ -19,6 +19,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'Nicht jeder rote Status bedeutet dasselbe',body:'Ein 404 oder 410 ist etwas anderes als ein 403 durch Bot-Schutz oder ein 429 wegen Rate-Limits. Der Bericht trennt diese Fälle bewusst, damit aus einem technischen Check keine falsche Diagnose wird.'},
         {title:'Besonders nützlich nach Relaunch, Migration oder Content-Aufräumen',body:'Nach URL-Änderungen bleiben alte interne Verweise oft länger bestehen als gedacht. Mit einem Seitenscan kannst du Navigation, Artikel, Landingpages oder Footer gezielt auf tote Ziele und unnötige Redirects kontrollieren.'}
       ],
+      sources:[
+        {label:"MDN — HTTP-Statuscodes",href:"https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"},
+        {label:"Google Search Central — Crawlbare Links",href:"https://developers.google.com/search/docs/crawling-indexing/links-crawlable"}
+      ],
       englishUrl:'/website-analysis/broken-link-checker/'
     },
     {
@@ -38,6 +42,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'Der erste Fehler liegt oft schon vor der eigentlichen Schema-Validierung',body:'Wenn ein JSON-LD-Block durch ein fehlendes Komma, falsche Anführungszeichen oder ein kaputtes Template nicht mehr parsebar ist, braucht man noch gar nicht über Product-, Article- oder FAQ-Anforderungen zu sprechen. Genau diese Basisfehler zeigt der Checker direkt.'},
         {title:'Syntax korrekt heißt noch nicht automatisch suchmaschinenfähig',body:'Ein sauberer JSON-Block kann trotzdem Pflichtfelder für ein bestimmtes Search Feature vermissen. Deshalb trennt Toolmera bewusst die technische JSON-Prüfung von Aussagen über Rich-Result-Berechtigung.'}
       ],
+      sources:[
+        {label:"Schema.org — Einstieg",href:"https://schema.org/docs/gs.html"},
+        {label:"Google Search Central — Strukturierte Daten",href:"https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"}
+      ],
       englishUrl:'/website-analysis/schema-checker/'
     },
     {
@@ -56,6 +64,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
       sections:[
         {title:'Web, E-Mail und Domain-Verifizierung liegen in unterschiedlichen DNS Records',body:'A und AAAA verbinden Hostnamen mit IP-Adressen, MX steuert Mailrouting, TXT wird oft für SPF oder Verifizierungen genutzt und NS zeigt die autoritativen Nameserver. Ein gemeinsamer Überblick spart bei Deployments viel Sucharbeit.'},
         {title:'TTL ist kein Countdown bis „Propagation fertig“',body:'Eine TTL beschreibt Cache-Zeit, nicht einen global synchronen Umschaltzeitpunkt. Unterschiedliche Resolver können deshalb für eine Weile verschiedene Antworten liefern, obwohl die Zone bereits korrekt geändert wurde.'}
+      ],
+      sources:[
+        {label:"Google Public DNS — DNS-over-HTTPS API",href:"https://developers.google.com/speed/public-dns/docs/doh/json"},
+        {label:"Cloudflare — DNS-Record-Typen",href:"https://www.cloudflare.com/learning/dns/dns-records/"}
       ],
       englishUrl:'/website-analysis/dns-lookup/'
     },
@@ -117,6 +129,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'404 और access block को एक ही चीज़ मानना गलत है',body:'कई websites automated request को 403 या 429 दे सकती हैं जबकि normal browser में page खुलता है। इसलिए Toolmera true 404/410 को access errors से अलग रखता है और report को ज्यादा ईमानदार बनाता है।'},
         {title:'Migration के बाद quick spot-check के लिए उपयोगी',body:'URL बदलने, पुराना content हटाने या navigation edit करने के बाद एक landing page या article में पुराने links छूट सकते हैं। यह checker ऐसे छोटे लेकिन practical cleanup tasks के लिए बनाया गया है, full crawler बनने के लिए नहीं।'}
       ],
+      sources:[
+        {label:"MDN — HTTP response status codes",href:"https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"},
+        {label:"Google Search Central — crawlable links",href:"https://developers.google.com/search/docs/crawling-indexing/links-crawlable"}
+      ],
       englishUrl:'/website-analysis/broken-link-checker/'
     },
     {
@@ -136,6 +152,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'पहले यह पक्का करें कि markup page तक पहुँचा भी है',body:'CMS या template change के बाद schema code source में दिख सकता है लेकिन public response में गायब या malformed हो सकता है। Checker इसी basic लेकिन जरूरी layer को साफ़ दिखाता है।'},
         {title:'Valid JSON और valid rich result एक ही बात नहीं हैं',body:'JSON parse होना केवल syntax की पुष्टि है। Product, Article या दूसरे search features के लिए required properties अलग हो सकती हैं, इसलिए Toolmera eligibility का झूठा green badge नहीं देता।'}
       ],
+      sources:[
+        {label:"Schema.org — structured data basics",href:"https://schema.org/docs/gs.html"},
+        {label:"Google Search Central — structured data",href:"https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"}
+      ],
       englishUrl:'/website-analysis/schema-checker/'
     },
     {
@@ -154,6 +174,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
       sections:[
         {title:'Website, email और verification एक ही DNS record से नहीं चलते',body:'A/AAAA web addressing के लिए, MX mail routing के लिए, TXT policies और verification के लिए और NS authoritative DNS के लिए उपयोग होते हैं। अलग records को साथ देखकर troubleshooting तेज़ होती है।'},
         {title:'Propagation को प्रतिशत में दिखाना अक्सर भ्रामक होता है',body:'DNS caches अलग समय पर expire होते हैं। इसलिए Toolmera “100% propagated” जैसा अनुमान नहीं बनाता; वह वही public answer दिखाता है जो resolver ने इस request पर दिया।'}
+      ],
+      sources:[
+        {label:"Google Public DNS — DNS-over-HTTPS API",href:"https://developers.google.com/speed/public-dns/docs/doh/json"},
+        {label:"Cloudflare — DNS record types",href:"https://www.cloudflare.com/learning/dns/dns-records/"}
       ],
       englishUrl:'/website-analysis/dns-lookup/'
     },
@@ -215,6 +239,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'404 и блокировка бота — не одно и то же',body:'Если внешний сайт отвечает 403 или 429, это ещё не доказывает, что ссылка не работает для обычного посетителя. Поэтому отчёт не смешивает такие случаи с настоящими 404/410.'},
         {title:'Хороший сценарий — проверка после миграции или чистки контента',body:'После смены URL, удаления старых страниц или редизайна в меню и статьях часто остаются устаревшие адреса. Точечная проверка помогает быстро убрать такие хвосты без запуска тяжёлого полного краулера.'}
       ],
+      sources:[
+        {label:"MDN — коды HTTP-ответов",href:"https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"},
+        {label:"Google Search Central — сканируемые ссылки",href:"https://developers.google.com/search/docs/crawling-indexing/links-crawlable"}
+      ],
       englishUrl:'/website-analysis/broken-link-checker/'
     },
     {
@@ -234,6 +262,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
         {title:'Сначала нужно убедиться, что разметка вообще дошла до публичной страницы',body:'После обновления CMS или шаблона schema может исчезнуть из ответа или превратиться в невалидный JSON. Такой базовый сбой важнее обсуждения обязательных полей конкретного типа — и его как раз удобно увидеть первым.'},
         {title:'Корректный JSON ещё не означает корректный поисковый feature',body:'Блок может прекрасно парситься, но не иметь полей, необходимых Google для Product, Article или другого результата. Поэтому Toolmera честно отделяет синтаксис от поисковой eligibility.'}
       ],
+      sources:[
+        {label:"Schema.org — основы Schema",href:"https://schema.org/docs/gs.html"},
+        {label:"Google Search Central — структурированные данные",href:"https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"}
+      ],
       englishUrl:'/website-analysis/schema-checker/'
     },
     {
@@ -252,6 +284,10 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
       sections:[
         {title:'Одна доменная проблема может находиться совсем не в той записи, которую вы проверяете',body:'Сайт обычно зависит от A/AAAA/CNAME, почта — от MX, подтверждение домена и SPF — от TXT, а делегирование — от NS. Поэтому быстрый обзор всех этих типов удобнее, чем проверять их по одному в разных сервисах.'},
         {title:'TTL — не таймер до магического момента полной пропагации',body:'DNS меняется через множество независимых кэшей. Toolmera показывает фактический ответ внешнего резолвера и не рисует искусственный процент “готовности”, которого DNS-протокол не обещает.'}
+      ],
+      sources:[
+        {label:"Google Public DNS — DNS-over-HTTPS API",href:"https://developers.google.com/speed/public-dns/docs/doh/json"},
+        {label:"Cloudflare — типы DNS-записей",href:"https://www.cloudflare.com/learning/dns/dns-records/"}
       ],
       englishUrl:'/website-analysis/dns-lookup/'
     },
