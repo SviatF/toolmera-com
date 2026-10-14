@@ -170,13 +170,18 @@ async function checkSelfPageLink(link:SelfCheckedLink,env:Env){
   try{
     const response=await fetch(link.url,{
       method:'GET',
-      redirect:'follow',
+      redirect:'manual',
       signal:controller.signal,
       headers:{accept:'text/html,application/xhtml+xml,*/*;q=0.5','user-agent':'ToolmeraLinkChecker/1.0 (+https://toolmera.com/website-analysis/broken-link-checker/)'}
     });
     try{if(response.body)await response.body.cancel()}catch{}
     const status=response.status;
-    return{...link,finalUrl:response.url||link.url,status,statusText:response.statusText||'',kind:(status===404||status===410?'broken':status>=400?'error':response.redirected?'redirected':'working') as 'broken'|'error'|'working'|'redirected'};
+    const location=response.headers.get('location');
+    let redirectTarget='';
+    if(status>=300&&status<400&&location){
+      try{redirectTarget=new URL(location,link.url).toString()}catch{}
+    }
+    return{...link,finalUrl:redirectTarget||response.url||link.url,status,statusText:response.statusText||'',kind:(status===404||status===410?'broken':status>=300&&status<400?'redirected':status>=400?'error':'working') as 'broken'|'error'|'working'|'redirected'};
   }catch(error){
     return{...link,finalUrl:'',status:0,statusText:error instanceof Error?error.message:'Request failed',kind:'error' as const};
   }finally{clearTimeout(timer)}
