@@ -1,3 +1,5 @@
+import { newWaveSeoContent } from './newWaveSeo';
+
 export type ToolSeoSection = {
   title: string;
   paragraphs: string[];
@@ -15,6 +17,7 @@ export type ToolSeoContent = {
 };
 
 export const toolSeoContent: Record<string, ToolSeoContent> = {
+  ...newWaveSeoContent,
   'png-webp': {
     title: 'PNG to WebP Converter — Free, Private & Transparent',
     description: 'Convert PNG to WebP in your browser with transparency preserved, adjustable quality and a clear before-and-after file size.',
