@@ -5,7 +5,7 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
     {
       toolId:'broken-link-checker',
       slug:'defekte-links-pruefen',
-      name:'Broken-Link-Checker',
+      name:'Defekte Links prüfen',
       title:'Defekte Links prüfen — 404-Links und Weiterleitungen finden',
       description:'Prüfe Links einer öffentlichen Webseite und erkenne 404/410-Ziele, Weiterleitungen und andere HTTP-Fehler getrennt voneinander.',
       intro:'Scanne die Links einer konkreten Seite und sieh sofort, welche Ziele funktionieren, weiterleiten oder tatsächlich ins Leere laufen.',
@@ -24,7 +24,7 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
     {
       toolId:'schema-checker',
       slug:'schema-markup-pruefen',
-      name:'Schema-Markup-Checker',
+      name:'Schema-Markup prüfen',
       title:'Schema Markup prüfen — JSON-LD und strukturierte Daten analysieren',
       description:'Prüfe JSON-LD-Blöcke einer öffentlichen Seite, erkenne Schema-Typen und finde ungültiges JSON, ohne Rich-Result-Eignung vorzutäuschen.',
       intro:'Sieh nach, welches JSON-LD tatsächlich im ausgelieferten HTML steht und ob die einzelnen Blöcke syntaktisch lesbar sind.',
@@ -43,7 +43,7 @@ export const newWaveLocalized: Record<PilotLocale, LocalizedPilotTool[]> = {
     {
       toolId:'dns-lookup',
       slug:'dns-lookup',
-      name:'DNS Lookup',
+      name:'DNS-Abfrage',
       title:'DNS Lookup — A, AAAA, MX, TXT, CNAME und NS prüfen',
       description:'Lies öffentliche DNS-Einträge einer Domain aus und prüfe A, AAAA, CNAME, MX, TXT und NS inklusive TTL.',
       intro:'Kontrolliere, wohin eine Domain im öffentlichen DNS zeigt, welche Mailserver eingetragen sind und welche TXT- oder Nameserver-Einträge aktuell zurückgegeben werden.',
