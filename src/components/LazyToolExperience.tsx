@@ -33,6 +33,7 @@ const indiaCalculatorKinds=new Set(['emi','sip','fd','gst','cagr']);
 const DeferredToolExperience=dynamic(()=>import('@/components/ToolExperience').then(mod=>mod.ToolExperience),{ssr:false,loading:LoadingTool});
 
 export function LazyToolExperience({tool}:{tool:Tool}){
+  if(tool.kind==='website-analysis'&&['broken-link-checker','schema-checker','dns-lookup'].includes(tool.id))return <DeferredToolExperience tool={tool}/>;
   if(tool.kind==='website-analysis')return <WebsiteAnalysisChunk tool={tool}/>;
   if(tool.kind==='percentage')return <PercentageChunk tool={tool}/>;
   if(tool.kind==='qr-generator')return <QrCodeChunk tool={tool}/>;
