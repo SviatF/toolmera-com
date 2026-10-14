@@ -1,4 +1,5 @@
 import { tools, toolUrl, type Tool } from './tools';
+import { newWaveLocalized } from './newWaveLocalized';
 import {
   localizedPilotTools as curatedTools,
   pilotLocaleMeta as curatedLocaleMeta,
@@ -114,7 +115,8 @@ function generatedEntry(locale:PilotLocale, tool:Tool):LocalizedPilotTool{
 }
 
 function expand(locale:PilotLocale){
-  const curated=curatedTools[locale];const seen=new Set(curated.map(item=>item.toolId));
+  const curated=[...curatedTools[locale],...newWaveLocalized[locale]];
+  const seen=new Set(curated.map(item=>item.toolId));
   const generated=tools.filter(tool=>!tool.country&&!seen.has(tool.id)).map(tool=>generatedEntry(locale,tool));
   return [...curated,...generated];
 }
@@ -137,4 +139,4 @@ export function localizedAlternates(toolId:string,englishUrl:string){
   return languages;
 }
 
-export function isCuratedLocalizedTool(locale:PilotLocale,toolId:string){return curatedTools[locale].some(item=>item.toolId===toolId)}
+export function isCuratedLocalizedTool(locale:PilotLocale,toolId:string){return curatedTools[locale].some(item=>item.toolId===toolId)||newWaveLocalized[locale].some(item=>item.toolId===toolId)}
