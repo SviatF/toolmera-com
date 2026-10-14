@@ -7,6 +7,11 @@ const dictionary: Record<string,string> = {
   'JSON-LD blocks':'JSON-LD-Blöcke','Valid JSON-LD':'Gültiges JSON-LD','Invalid JSON-LD':'Ungültiges JSON-LD','Schema types':'Schema-Typen','STRUCTURED DATA':'STRUKTURIERTE DATEN','JSON-LD blocks in the server HTML':'JSON-LD-Blöcke im Server-HTML',
   'DNS records':'DNS-Einträge','IPv4 (A)':'IPv4 (A)','IPv6 (AAAA)':'IPv6 (AAAA)','Mail (MX)':'Mail (MX)','DNS RECORDS':'DNS-EINTRÄGE','No records returned.':'Keine Einträge zurückgegeben.',
   'Use the same currency for the bill and result. Percentage presets are shortcuts, not tipping-etiquette advice.':'Verwende für Rechnung und Ergebnis dieselbe Währung. Die Prozent-Voreinstellungen sind Rechenhilfen, keine Trinkgeld-Empfehlung.',
-  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Das Ergebnis wird zuerst exakt als Bruch gekürzt und erst danach zusätzlich als Dezimalwert angezeigt.'
+  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Das Ergebnis wird zuerst exakt als Bruch gekürzt und erst danach zusätzlich als Dezimalwert angezeigt.',
+  'Live public URL analysis':'Live-Analyse öffentlicher URLs',
+  'Toolmera checks a bounded set of unique public HTTP/HTTPS links from the submitted page. 404/410 are reported separately from access errors such as 403, 429 or timeouts.':'Toolmera prüft eine begrenzte Zahl eindeutiger öffentlicher HTTP/HTTPS-Links der eingegebenen Seite. 404/410 werden getrennt von Zugriffsfehlern wie 403, 429 oder Timeouts ausgewiesen.',
+  'This checker reads JSON-LD from the server-returned HTML. It checks parse validity and declared types, not Google rich-result eligibility.':'Dieser Checker liest JSON-LD aus dem vom Server gelieferten HTML. Er prüft Syntax und deklarierte Typen, nicht die Berechtigung für Google Rich Results.',
+  'DNS results come from a public DNS-over-HTTPS resolver. One resolver view does not prove global DNS propagation.':'Die DNS-Ergebnisse stammen von einem öffentlichen DNS-over-HTTPS-Resolver. Die Sicht eines einzelnen Resolvers beweist keine weltweite DNS-Propagation.',
+  'working':'funktioniert','redirected':'weitergeleitet','broken':'defekt','error':'Fehler','Block':'Block','Valid JSON · no @type found':'Gültiges JSON · kein @type gefunden','Invalid JSON':'Ungültiges JSON'
 };
 export default dictionary;

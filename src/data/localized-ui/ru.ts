@@ -7,6 +7,11 @@ const dictionary: Record<string,string> = {
   'JSON-LD blocks':'JSON-LD блоки','Valid JSON-LD':'Валидный JSON-LD','Invalid JSON-LD':'Невалидный JSON-LD','Schema types':'Типы Schema','STRUCTURED DATA':'СТРУКТУРИРОВАННЫЕ ДАННЫЕ','JSON-LD blocks in the server HTML':'JSON-LD блоки в серверном HTML',
   'DNS records':'DNS-записи','IPv4 (A)':'IPv4 (A)','IPv6 (AAAA)':'IPv6 (AAAA)','Mail (MX)':'Почта (MX)','DNS RECORDS':'DNS-ЗАПИСИ','No records returned.':'Записи не найдены.',
   'Use the same currency for the bill and result. Percentage presets are shortcuts, not tipping-etiquette advice.':'Используйте одну валюту для счёта и результата. Быстрые проценты — это только расчёт, а не совет по этикету.',
-  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Сначала результат точно сокращается в дробной форме и только затем дополнительно показывается десятичное значение.'
+  'Results are simplified exactly with integer arithmetic before the decimal value is shown.':'Сначала результат точно сокращается в дробной форме и только затем дополнительно показывается десятичное значение.',
+  'Live public URL analysis':'Проверка публичного URL в реальном времени',
+  'Toolmera checks a bounded set of unique public HTTP/HTTPS links from the submitted page. 404/410 are reported separately from access errors such as 403, 429 or timeouts.':'Toolmera проверяет ограниченное число уникальных публичных HTTP/HTTPS-ссылок со страницы. 404/410 показываются отдельно от ошибок доступа вроде 403, 429 или таймаута.',
+  'This checker reads JSON-LD from the server-returned HTML. It checks parse validity and declared types, not Google rich-result eligibility.':'Этот инструмент читает JSON-LD из серверного HTML, проверяет синтаксис и заявленные типы, но не определяет право на Google Rich Results.',
+  'DNS results come from a public DNS-over-HTTPS resolver. One resolver view does not prove global DNS propagation.':'DNS-результаты приходят от публичного DNS-over-HTTPS резолвера. Ответ одного резолвера не подтверждает глобальную DNS-пропагацию.',
+  'working':'работает','redirected':'редирект','broken':'битая','error':'ошибка','Block':'Блок','Valid JSON · no @type found':'Валидный JSON · @type не найден','Invalid JSON':'Невалидный JSON'
 };
 export default dictionary;
