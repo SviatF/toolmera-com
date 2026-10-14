@@ -57,7 +57,9 @@ export type ToolKind =
   | 'sip'
   | 'fd'
   | 'cagr'
-  | 'gst';
+  | 'gst'
+  | 'tip'
+  | 'fraction';
 
 export type Tool = {
   id: string;
@@ -297,6 +299,19 @@ export const tools: Tool[] = [
 
 
   {
+    id: 'broken-link-checker', name: 'Broken Link Checker', short: 'Scan links on a public page and spot broken, redirected or unreachable destinations.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'broken-link-checker', kind: 'website-analysis', accent: 'amber',
+    title: 'Free Broken Link Checker — Find 404 Links on a Web Page', description: 'Scan a public web page for links and check a bounded set of destinations for working responses, redirects, 404/410 errors and other HTTP failures.', intro: 'Enter a public page URL to inspect the links it exposes and quickly separate healthy destinations from redirects, true 404/410 links and other HTTP errors.', benefits: ['Live page link scan', '404 / 410 detection', 'Internal vs external links'], faq: commonFaq,
+  },
+  {
+    id: 'schema-checker', name: 'Schema Markup Checker', short: 'Inspect JSON-LD blocks, declared schema types and invalid structured-data JSON.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'schema-checker', kind: 'website-analysis', accent: 'violet',
+    title: 'Free Schema Markup Checker — Inspect JSON-LD Structured Data', description: 'Check a public page for JSON-LD structured data, declared schema types, parse errors and the top-level properties returned in the server HTML.', intro: 'Inspect the JSON-LD that a public page actually returns before debugging rich-result eligibility or schema implementation issues.', benefits: ['JSON-LD block detection', 'Schema type inventory', 'Invalid JSON reporting'], faq: commonFaq,
+  },
+  {
+    id: 'dns-lookup', name: 'DNS Lookup', short: 'Look up A, AAAA, CNAME, MX, TXT and NS records for a public domain.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'dns-lookup', kind: 'website-analysis', accent: 'blue',
+    title: 'Free DNS Lookup — Check A, AAAA, MX, TXT, CNAME & NS Records', description: 'Look up common public DNS records for a domain and review returned values and TTLs from a public DNS-over-HTTPS resolver.', intro: 'Enter a domain to inspect the DNS records that connect it to web servers, mail providers, verification services and authoritative name servers.', benefits: ['Six common DNS record types', 'TTL values', 'Public DNS-over-HTTPS lookup'], faq: commonFaq,
+  },
+
+  {
     id: 'website-analyzer', name: 'Website Analyzer', short: 'Run a complete SEO, crawl, security and technology audit for any public page.', category: 'website-analysis', categoryLabel: 'Website Analysis', slug: 'website-analyzer', kind: 'website-analysis', accent: 'cyan', badge: 'Popular',
     title: 'Free Website Analyzer — SEO, Security & Technical Site Audit', description: 'Analyze a public website for on-page SEO, crawlability, metadata, headings, robots.txt, sitemap, security headers and detected technologies.', intro: 'Enter a public URL to run a practical website audit based on live HTML, HTTP headers, crawl files and verifiable technical signals.', benefits: ['Live URL & HTTP analysis', 'SEO and crawl diagnostics', 'Security & technology signals'], faq: commonFaq,
   },
@@ -388,6 +403,14 @@ export const tools: Tool[] = [
   {
     id: 'average', name: 'Average Calculator', short: 'Calculate mean, median, mode, range and sum.', category: 'calculators', categoryLabel: 'Calculators', slug: 'average-calculator', kind: 'average', accent: 'violet',
     title: 'Free Average Calculator — Mean, Median, Mode & Range', description: 'Calculate mean, median, mode, range, sum, count, minimum and maximum from a list of numbers.', intro: 'Paste a dataset and get a compact statistical summary instantly.', benefits: ['Mean, median & mode', 'Range, min & max', 'Flexible number input'], faq: commonFaq,
+  },
+  {
+    id: 'tip', name: 'Tip Calculator', short: 'Calculate a tip, total bill and per-person split.', category: 'calculators', categoryLabel: 'Calculators', slug: 'tip-calculator', kind: 'tip', accent: 'green',
+    title: 'Free Tip Calculator — Tip Amount, Total Bill & Split Per Person', description: 'Calculate a tip from any bill amount, compare common tip percentages and split both the tip and final total across a group.', intro: 'Enter a bill, choose the tip percentage and number of people, then see the tip, final total and per-person amounts together.', benefits: ['Tip amount', 'Total per person', 'Quick percentage presets'], faq: commonFaq,
+  },
+  {
+    id: 'fraction', name: 'Fraction Calculator', short: 'Add, subtract, multiply and divide fractions with exact simplification.', category: 'calculators', categoryLabel: 'Calculators', slug: 'fraction-calculator', kind: 'fraction', accent: 'cyan',
+    title: 'Free Fraction Calculator — Add, Subtract, Multiply & Divide Fractions', description: 'Calculate fraction arithmetic with an exact simplified result, mixed-number form and decimal value.', intro: 'Enter two fractions, choose an operation and get the exact reduced fraction alongside a mixed number and decimal.', benefits: ['Four fraction operations', 'Automatic simplification', 'Mixed number & decimal'], faq: commonFaq,
   },
   {
     id: 'gst-in', name: 'GST Calculator', short: 'Add or remove GST from an amount.', category: 'tax', categoryLabel: 'India Tax', country: 'in', slug: 'gst-calculator', kind: 'gst', accent: 'pink', badge: 'India',
