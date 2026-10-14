@@ -1197,7 +1197,7 @@ async function checkPageLink(link:CheckedPageLink){
   try{
     const response=await fetch(link.url,{
       method:'GET',
-      redirect:'follow',
+      redirect:'manual',
       signal:controller.signal,
       headers:{
         accept:'text/html,application/xhtml+xml,*/*;q=0.5',
@@ -1206,10 +1206,21 @@ async function checkPageLink(link:CheckedPageLink){
     });
     try{if(response.body)await response.body.cancel()}catch{}
     const status=response.status;
-    const kind=status===404||status===410?'broken':status>=400?'error':response.redirected?'redirected':'working';
+    const location=response.headers.get('location');
+    let redirectTarget='';
+    if(status>=300&&status<400&&location){
+      try{
+        const target=new URL(location,link.url);
+        if((target.protocol==='http:'||target.protocol==='https:')&&(!target.port||target.port==='80'||target.port==='443')){
+          assertPublicHostname(target.hostname);
+          redirectTarget=target.toString();
+        }
+      }catch{}
+    }
+    const kind=status===404||status===410?'broken':status>=300&&status<400?'redirected':status>=400?'error':'working';
     return{
       ...link,
-      finalUrl:response.url||link.url,
+      finalUrl:redirectTarget||response.url||link.url,
       status,
       statusText:response.statusText||'',
       kind
