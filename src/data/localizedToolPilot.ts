@@ -10,6 +10,7 @@ export type LocalizedPilotTool={
   benefits:string[];
   faq:{q:string;a:string}[];
   sections?:{title:string;body:string}[];
+  sources?:{label:string;href:string}[];
   englishUrl:string;
 };
 
