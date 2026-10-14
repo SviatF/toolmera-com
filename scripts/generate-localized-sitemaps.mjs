@@ -6,11 +6,13 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
 const toolsPath = path.join(repoRoot, 'src', 'data', 'tools.ts');
 const pilotPath = path.join(repoRoot, 'src', 'data', 'localizedToolPilot.ts');
+const newWavePath = path.join(repoRoot, 'src', 'data', 'newWaveLocalized.ts');
 const publicDir = path.join(repoRoot, 'public');
 
-const [toolsSource, pilotSource] = await Promise.all([
+const [toolsSource, pilotSource, newWaveSource] = await Promise.all([
   readFile(toolsPath, 'utf8'),
   readFile(pilotPath, 'utf8'),
+  readFile(newWavePath, 'utf8'),
 ]);
 
 function parseGlobalTools(source) {
@@ -83,6 +85,29 @@ function parseCuratedLocale(source, locale) {
   return entries;
 }
 
+function parseNewWaveLocale(source, locale) {
+  const sectionPattern = new RegExp('\\n  ' + locale + ': \\[([\\s\\S]*?)\\n  \\](?:,|\\n})');
+  const sectionMatch = source.match(sectionPattern);
+
+  if (!sectionMatch) {
+    throw new Error(`Could not find new-wave ${locale} localization entries.`);
+  }
+
+  const entries = [];
+  const entryPattern = /toolId:'([^']+)'[\s\S]{0,140}?slug:'([^']+)'/g;
+  let match;
+
+  while ((match = entryPattern.exec(sectionMatch[1])) !== null) {
+    entries.push({ toolId: match[1], slug: match[2] });
+  }
+
+  if (entries.length !== 5) {
+    throw new Error(`Refusing to generate ${locale} sitemap: expected 5 new-wave entries, found ${entries.length}.`);
+  }
+
+  return entries;
+}
+
 const globalTools = parseGlobalTools(toolsSource).filter((tool) => !tool.country);
 
 const escapeXml = (value) => value
@@ -96,7 +121,7 @@ const locales = ['de', 'hi', 'ru'];
 await mkdir(publicDir, { recursive: true });
 
 for (const locale of locales) {
-  const curated = parseCuratedLocale(pilotSource, locale);
+  const curated = [...parseCuratedLocale(pilotSource, locale), ...parseNewWaveLocale(newWaveSource, locale)];
   const curatedToolIds = new Set(curated.map((item) => item.toolId));
   const slugs = [
     ...curated.map((item) => item.slug),
